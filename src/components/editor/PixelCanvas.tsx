@@ -1,13 +1,70 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { useEditorStore } from '@/store/useEditorStore';
 import { usePaletteStore } from '@/store/usePaletteStore';
-import { Minus, Plus } from 'lucide-react';
+import { Minus, Plus, Maximize } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function PixelCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const { pixels, width, height, zoom, setPixel, setPixels, currentTool, primaryColor, setZoom, saveHistory, undo, redo } = useEditorStore();
+  const [isAutoZoom, setIsAutoZoom] = useState(true);
+  const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
+  const [viewOffset, setViewOffset] = useState({ x: 0, y: 0 });
+
+  const clampZoom = (value: number) => Math.max(10, Math.min(1000, value));
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const updateZoomToFit = () => {
+      if (!isAutoZoom) return;
+      
+      const padding = 96;
+      const availableWidth = container.clientWidth - padding;
+      const availableHeight = container.clientHeight - padding;
+      
+      const scaleX = availableWidth / width;
+      const scaleY = availableHeight / height;
+      const nextZoom = clampZoom(Math.floor(Math.min(scaleX, scaleY) * 10));
+      setZoom(nextZoom);
+    };
+
+    const resizeObserver = new ResizeObserver(updateZoomToFit);
+    resizeObserver.observe(container);
+    
+    // Initial fit
+    updateZoomToFit();
+
+    return () => resizeObserver.disconnect();
+  }, [width, height, setZoom, isAutoZoom]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const updateViewport = () => {
+      setViewportSize({ width: container.clientWidth, height: container.clientHeight });
+    };
+
+    const resizeObserver = new ResizeObserver(updateViewport);
+    resizeObserver.observe(container);
+    updateViewport();
+    return () => resizeObserver.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!isAutoZoom) return;
+    if (viewportSize.width === 0 || viewportSize.height === 0) return;
+
+    const scale = zoom / 10;
+    const contentWidth = width * scale;
+    const contentHeight = height * scale;
+    const x = (viewportSize.width - contentWidth) / 2;
+    const y = (viewportSize.height - contentHeight) / 2;
+    setViewOffset({ x, y });
+  }, [isAutoZoom, viewportSize.width, viewportSize.height, zoom, width, height]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -68,14 +125,29 @@ export default function PixelCanvas() {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+    const container = containerRef.current;
+    if (!container) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Clear and draw background
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    // Draw checkerboard background
-    const checkerSize = 1; // 1 pixel in logical space
+    const dpr = window.devicePixelRatio || 1;
+    const viewW = container.clientWidth;
+    const viewH = container.clientHeight;
+
+    canvas.width = Math.max(1, Math.floor(viewW * dpr));
+    canvas.height = Math.max(1, Math.floor(viewH * dpr));
+
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, viewW, viewH);
+    ctx.fillStyle = '#F8F9FA';
+    ctx.fillRect(0, 0, viewW, viewH);
+
+    const scale = zoom / 10;
+    ctx.save();
+    ctx.translate(viewOffset.x, viewOffset.y);
+    ctx.scale(scale, scale);
+    ctx.imageSmoothingEnabled = false;
+
     for (let x = 0; x < width; x++) {
       for (let y = 0; y < height; y++) {
         ctx.fillStyle = (x + y) % 2 === 0 ? '#FFFFFF' : '#F0F0F0';
@@ -83,16 +155,14 @@ export default function PixelCanvas() {
       }
     }
 
-    // Draw pixels
     Object.entries(pixels).forEach(([key, color]) => {
       const [x, y] = key.split(',').map(Number);
       ctx.fillStyle = color;
       ctx.fillRect(x, y, 1, 1);
     });
 
-    // Draw grid lines
     ctx.strokeStyle = GRID_COLOR;
-    ctx.lineWidth = GRID_LINE_WIDTH / zoom;
+    ctx.lineWidth = GRID_LINE_WIDTH / scale;
     ctx.beginPath();
     for (let x = 0; x <= width; x++) {
       ctx.moveTo(x, 0);
@@ -104,7 +174,12 @@ export default function PixelCanvas() {
     }
     ctx.stroke();
 
-  }, [pixels, width, height, zoom]);
+    ctx.lineWidth = 1 / scale;
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.15)';
+    ctx.strokeRect(0, 0, width, height);
+
+    ctx.restore();
+  }, [pixels, width, height, zoom, viewOffset.x, viewOffset.y]);
 
   const getCoordinates = (e: React.MouseEvent | React.TouchEvent) => {
     const canvas = canvasRef.current;
@@ -120,8 +195,11 @@ export default function PixelCanvas() {
       clientY = e.clientY;
     }
 
-    const x = Math.floor((clientX - rect.left) / (rect.width / width));
-    const y = Math.floor((clientY - rect.top) / (rect.height / height));
+    const viewX = clientX - rect.left;
+    const viewY = clientY - rect.top;
+    const scale = zoom / 10;
+    const x = Math.floor((viewX - viewOffset.x) / scale);
+    const y = Math.floor((viewY - viewOffset.y) / scale);
 
     if (x >= 0 && x < width && y >= 0 && y < height) {
       return { x, y };
@@ -205,21 +283,65 @@ export default function PixelCanvas() {
     setLastCoords(null);
   };
 
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        setIsAutoZoom(false);
+
+        const rect = container.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        const scale = zoom / 10;
+        const worldX = (mouseX - viewOffset.x) / scale;
+        const worldY = (mouseY - viewOffset.y) / scale;
+
+        const factor = Math.exp(-e.deltaY / 200);
+        const nextZoom = clampZoom(Math.round(zoom * factor));
+        if (nextZoom === zoom) return;
+
+        const nextScale = nextZoom / 10;
+        setZoom(nextZoom);
+        setViewOffset({
+          x: mouseX - worldX * nextScale,
+          y: mouseY - worldY * nextScale,
+        });
+      }
+    };
+
+    container.addEventListener('wheel', handleWheel, { passive: false });
+    return () => container.removeEventListener('wheel', handleWheel);
+  }, [zoom, setZoom, viewOffset.x, viewOffset.y]);
+
+  const zoomByStep = (direction: 'in' | 'out') => {
+    const container = containerRef.current;
+    if (!container) return;
+    setIsAutoZoom(false);
+    const anchorX = container.clientWidth / 2;
+    const anchorY = container.clientHeight / 2;
+    const scale = zoom / 10;
+    const worldX = (anchorX - viewOffset.x) / scale;
+    const worldY = (anchorY - viewOffset.y) / scale;
+    const step = 10;
+    const nextZoom = clampZoom(direction === 'in' ? zoom + step : zoom - step);
+    const nextScale = nextZoom / 10;
+    setZoom(nextZoom);
+    setViewOffset({
+      x: anchorX - worldX * nextScale,
+      y: anchorY - worldY * nextScale,
+    });
+  };
+
   return (
-    <div ref={containerRef} className="flex-1 relative flex items-center justify-center overflow-auto p-12 bg-[#F8F9FA]">
-      <div 
-        className="relative shadow-2xl bg-white border"
-        style={{
-          width: width * (zoom / 10),
-          height: height * (zoom / 10),
-          imageRendering: 'pixelated'
-        }}
-      >
+    <div className="relative h-full w-full overflow-hidden">
+      <div ref={containerRef} className="absolute inset-0 overflow-hidden bg-[#F8F9FA]">
         <canvas
           ref={canvasRef}
-          width={width}
-          height={height}
-          className="w-full h-full cursor-crosshair"
+          className="absolute inset-0 h-full w-full cursor-crosshair touch-none"
           onMouseDown={onMouseDown}
           onMouseMove={onMouseMove}
           onMouseUp={onMouseUp}
@@ -227,17 +349,18 @@ export default function PixelCanvas() {
           onTouchStart={onMouseDown}
           onTouchMove={onMouseMove}
           onTouchEnd={onMouseUp}
-          style={{ imageRendering: 'pixelated' }}
         />
       </div>
 
-      {/* Zoom Controls */}
-      <div className="absolute bottom-6 right-6 flex items-center gap-2 bg-white rounded-lg shadow-sm border p-1">
+      {/* Zoom Controls - Now absolute to the fixed outer container */}
+      <div className="absolute bottom-6 right-6 flex items-center gap-2 bg-white rounded-lg shadow-sm border p-1 z-20">
         <Button 
           variant="ghost" 
           size="icon" 
           className="h-8 w-8 text-muted-foreground"
-          onClick={() => setZoom(zoom - 10)}
+          onClick={() => {
+            zoomByStep('out');
+          }}
         >
           <Minus size={16} />
         </Button>
@@ -248,9 +371,21 @@ export default function PixelCanvas() {
           variant="ghost" 
           size="icon" 
           className="h-8 w-8 text-muted-foreground"
-          onClick={() => setZoom(zoom + 10)}
+          onClick={() => {
+            zoomByStep('in');
+          }}
         >
           <Plus size={16} />
+        </Button>
+        <div className="w-px h-4 bg-border mx-1" />
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className={`h-8 w-8 ${isAutoZoom ? 'text-pink-500' : 'text-muted-foreground'}`}
+          onClick={() => setIsAutoZoom(true)}
+          title="Fit to Screen"
+        >
+          <Maximize size={16} />
         </Button>
       </div>
     </div>

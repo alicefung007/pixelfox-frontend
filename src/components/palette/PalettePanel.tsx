@@ -52,8 +52,8 @@ export default function PalettePanel() {
   ];
 
   return (
-    <div className="h-64 border-t bg-background flex flex-col p-4 gap-4 overflow-hidden shadow-sm">
-      <div className="flex items-center justify-between">
+    <div className="h-full bg-background flex flex-col p-4 gap-4 overflow-hidden shadow-sm">
+      <div className="flex items-center justify-between shrink-0">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
             <Palette size={16} />

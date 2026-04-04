@@ -5,20 +5,33 @@ import {
   Bell, 
   Languages, 
   Sun,
-  Moon
+  Moon,
+  Check
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/components/theme-provider";
 import i18n from "@/i18n/config";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function Navbar() {
   const { t } = useTranslation();
   const location = useLocation();
   const { theme, setTheme } = useTheme();
 
-  const toggleLanguage = () => {
-    const newLang = i18n.language === 'en' ? 'zh' : 'en';
-    i18n.changeLanguage(newLang);
+  const languages = [
+    { code: 'en', label: 'English' },
+    { code: 'zh', label: '简体中文' },
+    { code: 'ko', label: '한국어' },
+    { code: 'ja', label: '日本語' },
+  ];
+
+  const changeLanguage = (lng: string) => {
+    i18n.changeLanguage(lng);
   };
 
   const navItems = [
@@ -57,9 +70,27 @@ export default function Navbar() {
         <Button variant="ghost" size="icon" className="text-muted-foreground h-9 w-9">
           <Bell className="h-[18px] w-[18px]" />
         </Button>
-        <Button variant="ghost" size="icon" className="text-muted-foreground h-9 w-9" onClick={toggleLanguage}>
-          <Languages className="h-[18px] w-[18px]" />
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="text-muted-foreground h-9 w-9">
+              <Languages className="h-[18px] w-[18px]" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {languages.map((lang) => (
+              <DropdownMenuItem
+                key={lang.code}
+                onClick={() => changeLanguage(lang.code)}
+                className="flex items-center justify-between"
+              >
+                {lang.label}
+                {i18n.language === lang.code && (
+                  <Check className="h-4 w-4 ml-2 opacity-50" />
+                )}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
         <Button 
           variant="ghost" 
           size="icon" 

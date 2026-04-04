@@ -1,0 +1,37 @@
+{
+  "nav": {
+    "editor": "エディター",
+    "gallery": "ギャラリー",
+    "upscaler": "アップスケーラー"
+  },
+  "sidebar": {
+    "upload": "アップロード",
+    "save": "保存",
+    "share": "共有",
+    "assembly": "組み立て",
+    "preview3d": "3D プレビュー",
+    "undo": "元に戻す",
+    "redo": "やり直し",
+    "export": "エクスポート",
+    "clear": "クリア",
+    "settings": "設定",
+    "tools": "ツール",
+    "brush": "ブラシ",
+    "bucket": "バケツ",
+    "hand": "ハンド",
+    "eraser": "消しゴム",
+    "eyedropper": "スポイト",
+    "text": "テキスト",
+    "canvasSize": "キャンバスサイズ",
+    "width": "幅",
+    "height": "高さ"
+  },
+  "palette": {
+    "palette": "パレット",
+    "manage": "管理",
+    "mard": "MARD",
+    "usedColors": "使用色",
+    "recent": "最近",
+    "allColors": "すべての色"
+  }
+}

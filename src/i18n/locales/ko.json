@@ -1,0 +1,37 @@
+{
+  "nav": {
+    "editor": "편집기",
+    "gallery": "갤러리",
+    "upscaler": "업스케일러"
+  },
+  "sidebar": {
+    "upload": "업로드",
+    "save": "저장",
+    "share": "공유",
+    "assembly": "조립",
+    "preview3d": "3D 미리보기",
+    "undo": "실행 취소",
+    "redo": "다시 실행",
+    "export": "내보내기",
+    "clear": "지우기",
+    "settings": "설정",
+    "tools": "도구",
+    "brush": "브러시",
+    "bucket": "페인트통",
+    "hand": "손",
+    "eraser": "지우개",
+    "eyedropper": "스포이드",
+    "text": "텍스트",
+    "canvasSize": "캔버스 크기",
+    "width": "너비",
+    "height": "높이"
+  },
+  "palette": {
+    "palette": "팔레트",
+    "manage": "관리",
+    "mard": "MARD",
+    "usedColors": "사용된 색상",
+    "recent": "최근",
+    "allColors": "모든 색상"
+  }
+}
