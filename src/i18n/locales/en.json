@@ -1,0 +1,37 @@
+{
+  "nav": {
+    "editor": "Editor",
+    "gallery": "Gallery",
+    "upscaler": "Upscaler"
+  },
+  "sidebar": {
+    "upload": "Upload",
+    "save": "Save",
+    "share": "Share",
+    "assembly": "Assembly",
+    "preview3d": "3D Preview",
+    "undo": "Undo",
+    "redo": "Redo",
+    "export": "Export",
+    "clear": "Clear",
+    "settings": "Settings",
+    "tools": "Tools",
+    "brush": "Brush",
+    "bucket": "Bucket",
+    "hand": "Hand",
+    "eraser": "Eraser",
+    "eyedropper": "Eyedropper",
+    "text": "Text",
+    "canvasSize": "Canvas Size",
+    "width": "Width",
+    "height": "Height"
+  },
+  "palette": {
+    "palette": "Palette",
+    "manage": "Manage",
+    "mard": "MARD",
+    "usedColors": "Used Colors",
+    "recent": "Recent",
+    "allColors": "All Colors"
+  }
+}

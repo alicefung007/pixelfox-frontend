@@ -1,0 +1,147 @@
+import { useTranslation } from "react-i18next";
+import { 
+  Upload, 
+  Save, 
+  Share2, 
+  Layers, 
+  Box, 
+  Undo2, 
+  Redo2, 
+  Download, 
+  Trash2, 
+  Settings,
+  ChevronRight,
+  Pencil,
+  PaintBucket,
+  Hand,
+  Eraser,
+  Pipette,
+  Type
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useEditorStore } from "@/store/useEditorStore";
+import type { ToolType } from "@/store/useEditorStore";
+
+export default function Sidebar() {
+  const { t } = useTranslation();
+  const { currentTool, setTool, undo, redo, clear, width } = useEditorStore();
+
+  const actionButtons = [
+    { icon: <Upload size={18} />, label: t("sidebar.upload"), shortcut: "⌘ U" },
+    { icon: <Save size={18} />, label: t("sidebar.save"), shortcut: "⌘ S" },
+    { icon: <Share2 size={18} />, label: t("sidebar.share"), shortcut: "⌥ ⌘ S" },
+    { icon: <Layers size={18} />, label: t("sidebar.assembly") },
+    { icon: <Box size={18} />, label: t("sidebar.preview3d") },
+  ];
+
+  const tools: { id: ToolType; icon: React.ReactNode; label: string; shortcut: string }[] = [
+    { id: 'brush', icon: <Pencil size={18} />, label: t("sidebar.brush"), shortcut: "B" },
+    { id: 'bucket', icon: <PaintBucket size={18} />, label: t("sidebar.bucket"), shortcut: "G" },
+    { id: 'hand', icon: <Hand size={18} />, label: t("sidebar.hand"), shortcut: "H" },
+    { id: 'eraser', icon: <Eraser size={18} />, label: t("sidebar.eraser"), shortcut: "E" },
+    { id: 'eyedropper', icon: <Pipette size={18} />, label: t("sidebar.eyedropper"), shortcut: "I" },
+    { id: 'text', icon: <Type size={18} />, label: t("sidebar.text"), shortcut: "T" },
+  ];
+
+  return (
+    <aside className="w-64 border-r bg-background flex flex-col h-[calc(100vh-64px)] overflow-hidden">
+      <ScrollArea className="flex-1">
+        <div className="p-3 space-y-4">
+          {/* Action Buttons */}
+          <div className="space-y-1">
+            {actionButtons.map((btn, i) => (
+              <Button key={i} variant="ghost" className="w-full justify-between h-9 px-2 text-sm font-normal">
+                <div className="flex items-center gap-2">
+                  {btn.icon}
+                  <span>{btn.label}</span>
+                </div>
+                {btn.shortcut && <span className="text-[10px] text-muted-foreground uppercase">{btn.shortcut}</span>}
+              </Button>
+            ))}
+          </div>
+
+          <Separator />
+
+          {/* History */}
+          <div className="grid grid-cols-2 gap-2">
+            <Button variant="outline" size="sm" className="h-9 gap-2" onClick={undo}>
+              <Undo2 size={16} />
+              <span className="text-xs">{t("sidebar.undo")}</span>
+            </Button>
+            <Button variant="outline" size="sm" className="h-9 gap-2" onClick={redo}>
+              <Redo2 size={16} />
+              <span className="text-xs">{t("sidebar.redo")}</span>
+            </Button>
+          </div>
+
+          {/* Export/Clear */}
+          <div className="space-y-2">
+            <Button className="w-full justify-between h-10 bg-gradient-to-r from-pink-500 to-violet-500 hover:opacity-90 border-none text-white font-medium">
+              <div className="flex items-center gap-2">
+                <Download size={18} />
+                <span>{t("sidebar.export")}</span>
+              </div>
+              <span className="text-[10px] opacity-80 uppercase">⌘ E</span>
+            </Button>
+            <Button variant="outline" className="w-full justify-between h-9 px-2 text-sm font-normal" onClick={clear}>
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Trash2 size={18} />
+                <span>{t("sidebar.clear")}</span>
+              </div>
+              <span className="text-[10px] text-muted-foreground uppercase">⌘ ⌫</span>
+            </Button>
+          </div>
+
+          <Separator />
+
+          {/* Settings */}
+          <Button variant="ghost" className="w-full justify-between h-9 px-2 text-sm font-normal">
+            <div className="flex items-center gap-2">
+              <Settings size={18} />
+              <span>{t("sidebar.settings")}</span>
+            </div>
+            <ChevronRight size={16} className="text-muted-foreground" />
+          </Button>
+
+          {/* Tools */}
+          <div className="space-y-1">
+            <span className="text-[10px] font-bold text-muted-foreground uppercase px-2 mb-1 block">
+              {t("sidebar.tools")}
+            </span>
+            {tools.map((tool) => (
+              <Button 
+                key={tool.id} 
+                variant={currentTool === tool.id ? "secondary" : "ghost"} 
+                onClick={() => setTool(tool.id)}
+                className={`w-full justify-between h-9 px-2 text-sm font-normal ${
+                  currentTool === tool.id ? "bg-pink-500/10 text-pink-500 hover:bg-pink-500/20 hover:text-pink-500" : ""
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  {tool.icon}
+                  <span>{tool.label}</span>
+                </div>
+                <span className="text-[10px] text-muted-foreground uppercase">{tool.shortcut}</span>
+              </Button>
+            ))}
+          </div>
+
+          <Separator />
+
+          {/* Canvas Size */}
+          <div className="space-y-2 px-2 pb-4">
+             <span className="text-[10px] font-bold text-muted-foreground uppercase block">
+              {t("sidebar.canvasSize")}
+            </span>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">{t("sidebar.width")}</span>
+              <span className="text-xs font-medium">{width}</span>
+            </div>
+          </div>
+        </div>
+      </ScrollArea>
+    </aside>
+  );
+}

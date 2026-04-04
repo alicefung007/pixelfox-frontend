@@ -1,21 +1,34 @@
-# React + TypeScript + Vite + shadcn/ui
+# pixelfox
 
-This is a template for a new Vite project with React, TypeScript, and shadcn/ui.
+A modern pixel art editor interface ([pixelfox.art](https://pixelfox.art)) built with React, TypeScript, and shadcn/ui.
 
-## Adding components
+## Tech Stack
 
-To add components to your app, run the following command:
+- **Framework**: React 19
+- **Build Tool**: Vite
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS v4
+- **Components**: shadcn/ui (Radix UI)
+- **State Management**: Zustand
+- **Routing**: React Router v7
+- **i18n**: i18next
 
-```bash
-npx shadcn@latest add button
-```
+## Getting Started
 
-This will place the ui components in the `src/components` directory.
+1. Clone the repository
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Start the development server:
+   ```bash
+   npm run dev
+   ```
 
-## Using components
+## Development
 
-To use the components in your app, import them as follows:
-
-```tsx
-import { Button } from "@/components/ui/button"
-```
+- `npm run dev`: Start development server
+- `npm run build`: Build for production
+- `npm run lint`: Run ESLint
+- `npm run format`: Format code with Prettier
+- `npm run typecheck`: Run TypeScript type checking

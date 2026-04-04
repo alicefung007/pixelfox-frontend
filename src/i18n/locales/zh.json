@@ -1,0 +1,37 @@
+{
+  "nav": {
+    "editor": "编辑器",
+    "gallery": "图库",
+    "upscaler": "放大器"
+  },
+  "sidebar": {
+    "upload": "上传",
+    "save": "保存",
+    "share": "分享",
+    "assembly": "组装",
+    "preview3d": "3D 预览",
+    "undo": "撤销",
+    "redo": "重做",
+    "export": "导出",
+    "clear": "清空",
+    "settings": "设置",
+    "tools": "工具",
+    "brush": "画笔",
+    "bucket": "油漆桶",
+    "hand": "抓手",
+    "eraser": "橡皮擦",
+    "eyedropper": "吸色器",
+    "text": "文本",
+    "canvasSize": "画布尺寸",
+    "width": "宽度",
+    "height": "高度"
+  },
+  "palette": {
+    "palette": "调色盘",
+    "manage": "管理",
+    "mard": "MARD",
+    "usedColors": "已用颜色",
+    "recent": "最近",
+    "allColors": "所有颜色"
+  }
+}
