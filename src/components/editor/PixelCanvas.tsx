@@ -11,8 +11,20 @@ export default function PixelCanvas() {
   const [isAutoZoom, setIsAutoZoom] = useState(true);
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
   const [viewOffset, setViewOffset] = useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
+  const panLastRef = useRef<{ x: number; y: number } | null>(null);
+  const zoomRef = useRef(zoom);
+  const viewOffsetRef = useRef(viewOffset);
 
   const clampZoom = (value: number) => Math.max(10, Math.min(1000, value));
+
+  useEffect(() => {
+    zoomRef.current = zoom;
+  }, [zoom]);
+
+  useEffect(() => {
+    viewOffsetRef.current = viewOffset;
+  }, [viewOffset]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -179,7 +191,7 @@ export default function PixelCanvas() {
     ctx.strokeRect(0, 0, width, height);
 
     ctx.restore();
-  }, [pixels, width, height, zoom, viewOffset.x, viewOffset.y]);
+  }, [pixels, width, height, zoom, viewOffset.x, viewOffset.y, viewportSize.width, viewportSize.height]);
 
   const getCoordinates = (e: React.MouseEvent | React.TouchEvent) => {
     const canvas = canvasRef.current;
@@ -265,17 +277,43 @@ export default function PixelCanvas() {
   };
 
   const onMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
+    if (!('touches' in e)) {
+      if ((currentTool === 'hand' && e.button === 0) || e.button === 1 || e.button === 2) {
+        e.preventDefault();
+        setIsAutoZoom(false);
+        setIsDrawing(false);
+        setLastCoords(null);
+        setIsPanning(true);
+        panLastRef.current = { x: e.clientX, y: e.clientY };
+        return;
+      }
+    }
     setIsDrawing(true);
     handleDraw(e);
   };
 
   const onMouseMove = (e: React.MouseEvent | React.TouchEvent) => {
+    if (!('touches' in e) && isPanning) {
+      e.preventDefault();
+      const last = panLastRef.current;
+      if (!last) return;
+      const dx = e.clientX - last.x;
+      const dy = e.clientY - last.y;
+      panLastRef.current = { x: e.clientX, y: e.clientY };
+      setViewOffset(prev => ({ x: prev.x + dx, y: prev.y + dy }));
+      return;
+    }
     if (isDrawing) {
       handleDraw(e);
     }
   };
 
   const onMouseUp = () => {
+    if (isPanning) {
+      setIsPanning(false);
+      panLastRef.current = null;
+      return;
+    }
     if (isDrawing) {
       saveHistory();
     }
@@ -288,21 +326,23 @@ export default function PixelCanvas() {
     if (!container) return;
 
     const handleWheel = (e: WheelEvent) => {
-      if (e.ctrlKey || e.metaKey) {
-        e.preventDefault();
-        setIsAutoZoom(false);
+      e.preventDefault();
+      setIsAutoZoom(false);
 
+      if (e.ctrlKey || e.metaKey) {
         const rect = container.getBoundingClientRect();
         const mouseX = e.clientX - rect.left;
         const mouseY = e.clientY - rect.top;
 
-        const scale = zoom / 10;
-        const worldX = (mouseX - viewOffset.x) / scale;
-        const worldY = (mouseY - viewOffset.y) / scale;
+        const zoomNow = zoomRef.current;
+        const offsetNow = viewOffsetRef.current;
+        const scale = zoomNow / 10;
+        const worldX = (mouseX - offsetNow.x) / scale;
+        const worldY = (mouseY - offsetNow.y) / scale;
 
         const factor = Math.exp(-e.deltaY / 200);
-        const nextZoom = clampZoom(Math.round(zoom * factor));
-        if (nextZoom === zoom) return;
+        const nextZoom = clampZoom(Math.round(zoomNow * factor));
+        if (nextZoom === zoomNow) return;
 
         const nextScale = nextZoom / 10;
         setZoom(nextZoom);
@@ -310,12 +350,25 @@ export default function PixelCanvas() {
           x: mouseX - worldX * nextScale,
           y: mouseY - worldY * nextScale,
         });
+        return;
       }
+
+      let dx = e.deltaX;
+      let dy = e.deltaY;
+      if (e.deltaMode === 1) {
+        dx *= 16;
+        dy *= 16;
+      } else if (e.deltaMode === 2) {
+        dx *= container.clientWidth;
+        dy *= container.clientHeight;
+      }
+
+      setViewOffset(prev => ({ x: prev.x - dx, y: prev.y - dy }));
     };
 
     container.addEventListener('wheel', handleWheel, { passive: false });
     return () => container.removeEventListener('wheel', handleWheel);
-  }, [zoom, setZoom, viewOffset.x, viewOffset.y]);
+  }, [setZoom]);
 
   const zoomByStep = (direction: 'in' | 'out') => {
     const container = containerRef.current;
@@ -341,11 +394,14 @@ export default function PixelCanvas() {
       <div ref={containerRef} className="absolute inset-0 overflow-hidden bg-[#F8F9FA]">
         <canvas
           ref={canvasRef}
-          className="absolute inset-0 h-full w-full cursor-crosshair touch-none"
+          className={`absolute inset-0 h-full w-full touch-none ${currentTool === 'hand' ? (isPanning ? 'cursor-grabbing' : 'cursor-grab') : 'cursor-crosshair'}`}
           onMouseDown={onMouseDown}
           onMouseMove={onMouseMove}
           onMouseUp={onMouseUp}
           onMouseLeave={onMouseUp}
+          onContextMenu={(e) => {
+            if (isPanning || currentTool === 'hand') e.preventDefault();
+          }}
           onTouchStart={onMouseDown}
           onTouchMove={onMouseMove}
           onTouchEnd={onMouseUp}
