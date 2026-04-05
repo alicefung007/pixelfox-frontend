@@ -51,6 +51,7 @@
     "usedColors": "使用済み色",
     "recent": "最近",
     "allColors": "すべての色",
+    "custom": "カスタム",
     "manageDialog": {
       "title": "配色管理",
       "description": "作品で使用する配色システムと配色方案を選択します。",

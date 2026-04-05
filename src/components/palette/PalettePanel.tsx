@@ -5,17 +5,18 @@ import {
   Settings, 
   Grid, 
   History, 
-  Shapes
+  Shapes,
+  Star
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEditorStore } from "@/store/useEditorStore";
 import { usePaletteStore } from "@/store/usePaletteStore";
 import PaletteManageDialog from "@/components/palette/PaletteManageDialog";
-import { MARD_PALETTE, type PaletteSwatch } from "@/lib/palettes";
+import { getSystemPalette, type PaletteSwatch } from "@/lib/palettes";
 import { cn } from "@/lib/utils";
 
-type TabId = "used" | "recent" | "all";
+type TabId = "used" | "recent" | "all" | "custom";
 
 function normalizeHex(hex: string) {
   return hex.trim().toUpperCase();
@@ -24,6 +25,12 @@ function normalizeHex(hex: string) {
 function hexLabel(hex: string) {
   const v = normalizeHex(hex);
   return v.startsWith("#") ? v.slice(1) : v;
+}
+
+function getLabelFromColor(hex: string, paletteSwatches: PaletteSwatch[]): string {
+  const normalizedHex = normalizeHex(hex);
+  const found = paletteSwatches.find((s) => normalizeHex(s.color) === normalizedHex);
+  return found?.label ?? hexLabel(hex);
 }
 
 function isDarkColor(hex: string): boolean {
@@ -38,17 +45,18 @@ function isDarkColor(hex: string): boolean {
 export default function PalettePanel() {
   const { t } = useTranslation();
   const { primaryColor, setColor } = useEditorStore();
-  const { recentColors, usedColors } = usePaletteStore();
+  const { currentPaletteId, recentColors, usedColors, customPalette, setCustomPalette } = usePaletteStore();
   const [isManageOpen, setIsManageOpen] = useState(false);
   const [tab, setTab] = useState<TabId>("all");
 
-  const palette = MARD_PALETTE;
+  const palette = getSystemPalette(currentPaletteId)!;
 
   const visibleSwatches = useMemo((): PaletteSwatch[] => {
     if (tab === "all") return palette.swatches;
-    if (tab === "used") return usedColors.map((c) => ({ label: hexLabel(c), color: c }));
-    return recentColors.map((c) => ({ label: hexLabel(c), color: c }));
-  }, [palette.swatches, recentColors, tab, usedColors]);
+    if (tab === "used") return usedColors.map((c) => ({ label: getLabelFromColor(c, palette.swatches), color: c }));
+    if (tab === "custom") return customPalette.map((c) => ({ label: getLabelFromColor(c, palette.swatches), color: c }));
+    return recentColors.map((c) => ({ label: getLabelFromColor(c, palette.swatches), color: c }));
+  }, [palette.swatches, recentColors, usedColors, customPalette, tab]);
 
   return (
     <div className="h-full bg-background flex flex-col gap-4 overflow-hidden shadow-sm">
@@ -86,6 +94,12 @@ export default function PalettePanel() {
               <Shapes size={12} />
               {t("palette.allColors")}
             </TabsTrigger>
+            {customPalette.length > 0 && (
+              <TabsTrigger value="custom" className="text-[10px] h-6 px-3 gap-1">
+                <Star size={12} />
+                {t("palette.custom")}
+              </TabsTrigger>
+            )}
           </TabsList>
         </Tabs>
       </div>
@@ -124,6 +138,10 @@ export default function PalettePanel() {
       <PaletteManageDialog
         open={isManageOpen}
         onOpenChange={setIsManageOpen}
+        onConfirm={(selectedColors) => {
+          setCustomPalette(selectedColors);
+          setTab("custom");
+        }}
       />
     </div>
   );

@@ -51,6 +51,7 @@
     "usedColors": "已使用颜色",
     "recent": "最近",
     "allColors": "所有颜色",
+    "custom": "自定义",
     "manageDialog": {
       "title": "配色管理",
       "description": "挑选并在图纸中使用不同的配色系统及配色方案。",

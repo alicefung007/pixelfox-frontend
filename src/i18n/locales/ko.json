@@ -51,6 +51,7 @@
     "usedColors": "사용된 색상",
     "recent": "최근",
     "allColors": "모든 색상",
+    "custom": "사용자 지정",
     "manageDialog": {
       "title": "팔레트 관리",
       "description": "작품에서 사용할 색상 시스템과 색상 구성안을 선택합니다.",

@@ -61,10 +61,10 @@ export default function PaletteManageDialog({
   onConfirm,
 }: Props) {
   const { t } = useTranslation();
-  const { recentColors, usedColors } = usePaletteStore();
+  const { currentPaletteId, recentColors, usedColors, setCurrentPaletteId } = usePaletteStore();
   const [scheme, setScheme] = useState<SchemeId>("all");
   const [search, setSearch] = useState("");
-  const [systemFilter, setSystemFilter] = useState<SystemPaletteId>("MARD");
+  const [systemFilter, setSystemFilter] = useState<SystemPaletteId>(currentPaletteId);
   const [groupMode, setGroupMode] = useState<"letters" | "palette">("letters");
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
 
@@ -247,7 +247,10 @@ export default function PaletteManageDialog({
                         <button
                           key={p.id}
                           type="button"
-                          onClick={() => setSystemFilter(p.id)}
+                          onClick={() => {
+                            setSystemFilter(p.id);
+                            setCurrentPaletteId(p.id);
+                          }}
                           className={cn(
                             "h-7 rounded-full px-3 text-xs font-semibold transition-colors border",
                             active

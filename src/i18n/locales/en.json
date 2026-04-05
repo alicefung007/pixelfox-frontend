@@ -51,6 +51,7 @@
     "usedColors": "Used Colors",
     "recent": "Recent",
     "allColors": "All Colors",
+    "custom": "Custom",
     "manageDialog": {
       "title": "Palette Manager",
       "description": "Pick and use different color systems and schemes in your artwork.",

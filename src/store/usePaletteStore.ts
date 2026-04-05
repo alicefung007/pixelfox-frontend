@@ -1,15 +1,23 @@
 import { create } from 'zustand';
+import type { SystemPaletteId } from '@/lib/palettes';
 
 interface PaletteState {
+  currentPaletteId: SystemPaletteId;
   recentColors: string[];
   usedColors: string[];
+  customPalette: string[];
+  setCurrentPaletteId: (id: SystemPaletteId) => void;
   addRecentColor: (color: string) => void;
   addUsedColor: (color: string) => void;
+  setCustomPalette: (colors: string[]) => void;
 }
 
 export const usePaletteStore = create<PaletteState>((set) => ({
+  currentPaletteId: 'MARD',
   recentColors: [],
   usedColors: [],
+  customPalette: [],
+  setCurrentPaletteId: (id) => set({ currentPaletteId: id }),
   addRecentColor: (color) => set((state) => {
     if (state.recentColors.includes(color)) {
       return {
@@ -26,4 +34,5 @@ export const usePaletteStore = create<PaletteState>((set) => ({
       usedColors: [color, ...state.usedColors].slice(0, 50),
     };
   }),
+  setCustomPalette: (colors) => set({ customPalette: colors }),
 }));
