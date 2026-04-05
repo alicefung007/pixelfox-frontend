@@ -98,7 +98,7 @@ export default function PalettePanel() {
               <button
                 className={cn(
                   "w-12 h-12 rounded-md shadow-sm relative flex items-center justify-center",
-                  primaryColor === swatch.color ? "ring-2 ring-pink-500 ring-offset-2" : ""
+                  primaryColor === swatch.color ? "ring-2 ring-pink-500" : ""
                 )}
                 style={{ backgroundColor: swatch.color }}
                 onClick={() => setColor(swatch.color)}

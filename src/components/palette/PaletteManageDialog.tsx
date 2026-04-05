@@ -277,9 +277,9 @@ export default function PaletteManageDialog({
             </Tabs>
           </div>
 
-          <div className="px-6 pb-6 flex-1 min-h-0">
+          <div className="px-6 pb-6 flex-1 min-h-[300px] overflow-hidden">
             <ScrollArea className="h-full rounded-3xl border border-border/50 bg-background/40">
-              <div className="p-1 grid grid-cols-[repeat(auto-fill,minmax(48px,1fr))] gap-3">
+              <div className="p-1 pr-5 grid grid-cols-8 sm:grid-cols-10 md:grid-cols-12 lg:grid-cols-14 gap-3">
                 {visibleColors.map((swatch) => {
                   const key = normalizeHex(swatch.color);
                   const isSelected = selected.has(key);
