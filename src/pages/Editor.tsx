@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import PixelCanvas from "@/components/editor/PixelCanvas";
 import PalettePanel from "@/components/palette/PalettePanel";
 
@@ -11,36 +11,32 @@ export default function Editor() {
     const saved = localStorage.getItem("palette-height");
     return saved ? parseInt(saved, 10) : DEFAULT_PALETTE_HEIGHT;
   });
-  const [isResizing, setIsResizing] = useState(false);
+  const isResizing = useRef(false);
 
   useEffect(() => {
     localStorage.setItem("palette-height", paletteHeight.toString());
   }, [paletteHeight]);
 
-  useEffect(() => {
-    if (!isResizing) return;
-    const handleMouseMove = (e: MouseEvent) => {
-      const newHeight = window.innerHeight - e.clientY;
-      if (newHeight >= MIN_PALETTE_HEIGHT && newHeight <= MAX_PALETTE_HEIGHT) {
-        setPaletteHeight(newHeight);
-      }
-    };
-    const handleMouseUp = () => {
-      setIsResizing(false);
-    };
+  const handleMouseDown = (e: React.MouseEvent) => {
+    isResizing.current = true;
     document.addEventListener("mousemove", handleMouseMove);
     document.addEventListener("mouseup", handleMouseUp);
     document.body.style.cursor = "ns-resize";
-    return () => {
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
-      document.body.style.cursor = "default";
-    };
-  }, [isResizing]);
+  };
 
-  const handleMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setIsResizing(true);
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!isResizing.current) return;
+    const newHeight = window.innerHeight - e.clientY;
+    if (newHeight >= MIN_PALETTE_HEIGHT && newHeight <= MAX_PALETTE_HEIGHT) {
+      setPaletteHeight(newHeight);
+    }
+  };
+
+  const handleMouseUp = () => {
+    isResizing.current = false;
+    document.removeEventListener("mousemove", handleMouseMove);
+    document.removeEventListener("mouseup", handleMouseUp);
+    document.body.style.cursor = "default";
   };
 
   return (

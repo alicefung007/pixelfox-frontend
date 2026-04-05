@@ -45,9 +45,8 @@ export const useEditorStore = create<EditorState>((set) => ({
   clearPixel: (x, y) => set((state) => {
     const key = `${x},${y}`;
     if (!(key in state.pixels)) return state;
-    const nextPixels = { ...state.pixels };
-    delete nextPixels[key];
-    return { pixels: nextPixels };
+    const { [key]: _removed, ...rest } = state.pixels;
+    return { pixels: rest };
   }),
 
   setPixels: (newPixels) => set({ pixels: newPixels }),

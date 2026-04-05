@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, useMemo } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { useEditorStore } from '@/store/useEditorStore';
 import { usePaletteStore } from '@/store/usePaletteStore';
 import { Minus, Plus, Maximize, Pencil, PaintBucket, Eraser, Pipette } from 'lucide-react';
@@ -10,12 +10,11 @@ export default function PixelCanvas() {
   const { pixels, width, height, zoom, setPixel, clearPixel, setPixels, currentTool, primaryColor, setZoom, saveHistory, undo, redo } = useEditorStore();
   const [isAutoZoom, setIsAutoZoom] = useState(true);
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
-  const [manualViewOffset, setManualViewOffset] = useState({ x: 0, y: 0 });
+  const [viewOffset, setViewOffset] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const panLastRef = useRef<{ x: number; y: number } | null>(null);
   const zoomRef = useRef(zoom);
-  const viewOffsetRef = useRef(manualViewOffset);
-  const isAutoZoomRef = useRef(isAutoZoom);
+  const viewOffsetRef = useRef(viewOffset);
   const [cursorOverlay, setCursorOverlay] = useState<{ x: number; y: number; visible: boolean }>({ x: 0, y: 0, visible: false });
   const cursorRafRef = useRef<number | null>(null);
   const cursorPendingRef = useRef<{ x: number; y: number; visible: boolean }>(cursorOverlay);
@@ -27,28 +26,12 @@ export default function PixelCanvas() {
   }, [zoom]);
 
   useEffect(() => {
-    isAutoZoomRef.current = isAutoZoom;
-  }, [isAutoZoom]);
+    viewOffsetRef.current = viewOffset;
+  }, [viewOffset]);
 
   useEffect(() => {
     cursorPendingRef.current = cursorOverlay;
   }, [cursorOverlay]);
-
-  const autoViewOffset = useMemo(() => {
-    if (viewportSize.width === 0 || viewportSize.height === 0) return { x: 0, y: 0 };
-    const scale = zoom / 10;
-    const contentWidth = width * scale;
-    const contentHeight = height * scale;
-    const x = (viewportSize.width - contentWidth) / 2;
-    const y = (viewportSize.height - contentHeight) / 2;
-    return { x, y };
-  }, [viewportSize.width, viewportSize.height, zoom, width, height]);
-
-  const viewOffset = isAutoZoom ? autoViewOffset : manualViewOffset;
-
-  useEffect(() => {
-    viewOffsetRef.current = viewOffset;
-  }, [viewOffset]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -89,6 +72,18 @@ export default function PixelCanvas() {
     updateViewport();
     return () => resizeObserver.disconnect();
   }, []);
+
+  useEffect(() => {
+    if (!isAutoZoom) return;
+    if (viewportSize.width === 0 || viewportSize.height === 0) return;
+
+    const scale = zoom / 10;
+    const contentWidth = width * scale;
+    const contentHeight = height * scale;
+    const x = (viewportSize.width - contentWidth) / 2;
+    const y = (viewportSize.height - contentHeight) / 2;
+    setViewOffset({ x, y });
+  }, [isAutoZoom, viewportSize.width, viewportSize.height, zoom, width, height]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -315,7 +310,6 @@ export default function PixelCanvas() {
     if (!('touches' in e)) {
       if ((currentTool === 'hand' && e.button === 0) || e.button === 1 || e.button === 2) {
         e.preventDefault();
-        if (isAutoZoomRef.current) setManualViewOffset(viewOffsetRef.current);
         setIsAutoZoom(false);
         setIsDrawing(false);
         setLastCoords(null);
@@ -337,7 +331,7 @@ export default function PixelCanvas() {
       const dx = e.clientX - last.x;
       const dy = e.clientY - last.y;
       panLastRef.current = { x: e.clientX, y: e.clientY };
-      setManualViewOffset((prev) => ({ x: prev.x + dx, y: prev.y + dy }));
+      setViewOffset(prev => ({ x: prev.x + dx, y: prev.y + dy }));
       return;
     }
     if (!('touches' in e)) {
@@ -367,8 +361,6 @@ export default function PixelCanvas() {
 
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault();
-      const offsetNow = viewOffsetRef.current;
-      if (isAutoZoomRef.current) setManualViewOffset(offsetNow);
       setIsAutoZoom(false);
 
       if (e.ctrlKey || e.metaKey) {
@@ -377,6 +369,7 @@ export default function PixelCanvas() {
         const mouseY = e.clientY - rect.top;
 
         const zoomNow = zoomRef.current;
+        const offsetNow = viewOffsetRef.current;
         const scale = zoomNow / 10;
         const worldX = (mouseX - offsetNow.x) / scale;
         const worldY = (mouseY - offsetNow.y) / scale;
@@ -387,7 +380,7 @@ export default function PixelCanvas() {
 
         const nextScale = nextZoom / 10;
         setZoom(nextZoom);
-        setManualViewOffset({
+        setViewOffset({
           x: mouseX - worldX * nextScale,
           y: mouseY - worldY * nextScale,
         });
@@ -404,7 +397,7 @@ export default function PixelCanvas() {
         dy *= container.clientHeight;
       }
 
-      setManualViewOffset({ x: offsetNow.x - dx, y: offsetNow.y - dy });
+      setViewOffset(prev => ({ x: prev.x - dx, y: prev.y - dy }));
     };
 
     container.addEventListener('wheel', handleWheel, { passive: false });
@@ -424,7 +417,7 @@ export default function PixelCanvas() {
     const nextZoom = clampZoom(direction === 'in' ? zoom + step : zoom - step);
     const nextScale = nextZoom / 10;
     setZoom(nextZoom);
-    setManualViewOffset({
+    setViewOffset({
       x: anchorX - worldX * nextScale,
       y: anchorY - worldY * nextScale,
     });
