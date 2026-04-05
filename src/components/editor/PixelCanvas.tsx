@@ -373,6 +373,33 @@ export default function PixelCanvas() {
   };
 
   useEffect(() => {
+    if (!isPanning) return;
+
+    const handleWindowMouseMove = (e: MouseEvent) => {
+      const last = panLastRef.current;
+      if (!last) return;
+      const dx = e.clientX - last.x;
+      const dy = e.clientY - last.y;
+      panLastRef.current = { x: e.clientX, y: e.clientY };
+      setViewOffset(prev => ({ x: prev.x + dx, y: prev.y + dy }));
+    };
+
+    const endPan = () => {
+      setIsPanning(false);
+      panLastRef.current = null;
+    };
+
+    window.addEventListener('mousemove', handleWindowMouseMove);
+    window.addEventListener('mouseup', endPan);
+    window.addEventListener('blur', endPan);
+    return () => {
+      window.removeEventListener('mousemove', handleWindowMouseMove);
+      window.removeEventListener('mouseup', endPan);
+      window.removeEventListener('blur', endPan);
+    };
+  }, [isPanning]);
+
+  useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
@@ -463,7 +490,7 @@ export default function PixelCanvas() {
         : { x: cursorIconSize / 2, y: cursorIconSize / 2 };
 
   const onCanvasLeave = () => {
-    onMouseUp();
+    if (!isPanning) onMouseUp();
     queueCursorOverlay({ x: cursorPendingRef.current.x, y: cursorPendingRef.current.y, visible: false });
   };
 
