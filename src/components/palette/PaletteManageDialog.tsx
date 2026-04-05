@@ -22,20 +22,21 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import {
+  SYSTEM_PALETTES,
+  getSystemPalette,
+  type SystemPaletteId,
+  type PaletteSwatch,
+} from "@/lib/palettes";
 import { usePaletteStore } from "@/store/usePaletteStore";
-
-export type PaletteSwatch = { label: string; color: string };
 
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  allColors: PaletteSwatch[];
   onConfirm?: (selectedColors: string[]) => void;
 };
 
 type SchemeId = "all" | "used" | "recent";
-
-const SYSTEM_FILTERS = ["MARD", "COCO", "漫漫", "盼盼", "咪小窝"] as const;
 
 function normalizeHex(hex: string) {
   return hex.trim().toUpperCase();
@@ -49,24 +50,24 @@ function hexLabel(hex: string) {
 export default function PaletteManageDialog({
   open,
   onOpenChange,
-  allColors,
   onConfirm,
 }: Props) {
   const { t } = useTranslation();
   const { recentColors, usedColors } = usePaletteStore();
   const [scheme, setScheme] = useState<SchemeId>("all");
   const [search, setSearch] = useState("");
-  const [systemFilter, setSystemFilter] = useState<(typeof SYSTEM_FILTERS)[number]>(
-    "MARD"
-  );
+  const [systemFilter, setSystemFilter] = useState<SystemPaletteId>("MARD");
   const [groupMode, setGroupMode] = useState<"letters" | "palette">("letters");
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
+
+  const activePalette = getSystemPalette(systemFilter) ?? SYSTEM_PALETTES[0];
+  const paletteColors = activePalette?.swatches ?? [];
 
   const schemeOptions = useMemo(() => {
     return [
       {
         id: "all" as const,
-        label: t("palette.manageDialog.schemeAll", { count: allColors.length }),
+        label: t("palette.manageDialog.schemeAll", { count: paletteColors.length }),
       },
       {
         id: "used" as const,
@@ -77,12 +78,12 @@ export default function PaletteManageDialog({
         label: t("palette.manageDialog.schemeRecent", { count: recentColors.length }),
       },
     ];
-  }, [t, allColors.length, usedColors.length, recentColors.length]);
+  }, [t, paletteColors.length, usedColors.length, recentColors.length]);
 
   const visibleColors = useMemo(() => {
     const base: PaletteSwatch[] =
       scheme === "all"
-        ? allColors
+        ? paletteColors
         : scheme === "used"
           ? usedColors.map((c) => ({ label: hexLabel(c), color: c }))
           : recentColors.map((c) => ({ label: hexLabel(c), color: c }));
@@ -95,7 +96,7 @@ export default function PaletteManageDialog({
       const color = c.color.toLowerCase();
       return label.includes(q) || color.includes(q);
     });
-  }, [scheme, allColors, usedColors, recentColors, search]);
+  }, [scheme, paletteColors, usedColors, recentColors, search]);
 
   const selectedCount = selected.size;
 
@@ -231,13 +232,13 @@ export default function PaletteManageDialog({
                 {t("palette.manageDialog.systemFilter")}
               </span>
               <div className="flex flex-wrap gap-2">
-                {SYSTEM_FILTERS.map((name) => {
-                  const active = systemFilter === name;
+                {SYSTEM_PALETTES.map((p) => {
+                  const active = systemFilter === p.id;
                   return (
                     <button
-                      key={name}
+                      key={p.id}
                       type="button"
-                      onClick={() => setSystemFilter(name)}
+                      onClick={() => setSystemFilter(p.id)}
                       className={cn(
                         "h-7 rounded-full px-3 text-xs font-semibold transition-colors border",
                         active
@@ -245,7 +246,7 @@ export default function PaletteManageDialog({
                           : "bg-muted/40 text-muted-foreground border-border hover:bg-muted"
                       )}
                     >
-                      {name}
+                      {p.i18nKey ? t(p.i18nKey) : p.name}
                     </button>
                   );
                 })}
