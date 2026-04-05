@@ -3,6 +3,7 @@ import { useEditorStore } from '@/store/useEditorStore';
 import { usePaletteStore } from '@/store/usePaletteStore';
 import { Minus, Plus, Maximize, Pencil, PaintBucket, Eraser, Pipette } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useTheme } from '@/components/theme-provider';
 
 export default function PixelCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -18,6 +19,11 @@ export default function PixelCanvas() {
   const [cursorOverlay, setCursorOverlay] = useState<{ x: number; y: number; visible: boolean }>({ x: 0, y: 0, visible: false });
   const cursorRafRef = useRef<number | null>(null);
   const cursorPendingRef = useRef<{ x: number; y: number; visible: boolean }>(cursorOverlay);
+  const { theme } = useTheme();
+  const [systemTheme, setSystemTheme] = useState<'dark' | 'light'>(() => {
+    if (typeof window === 'undefined' || !('matchMedia' in window)) return 'light';
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  });
 
   const clampZoom = (value: number) => Math.max(10, Math.min(1000, value));
 
@@ -32,6 +38,16 @@ export default function PixelCanvas() {
   useEffect(() => {
     cursorPendingRef.current = cursorOverlay;
   }, [cursorOverlay]);
+
+  useEffect(() => {
+    if (theme !== 'system') return;
+    if (!('matchMedia' in window)) return;
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleChange = () => setSystemTheme(mediaQuery.matches ? 'dark' : 'light');
+    handleChange();
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, [theme]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -158,7 +174,8 @@ export default function PixelCanvas() {
 
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, viewW, viewH);
-    ctx.fillStyle = '#F8F9FA';
+    const resolvedTheme = theme === 'system' ? systemTheme : theme;
+    ctx.fillStyle = resolvedTheme === 'dark' ? '#0B0B0C' : '#F8F9FA';
     ctx.fillRect(0, 0, viewW, viewH);
 
     const scale = zoom / 10;
@@ -198,7 +215,7 @@ export default function PixelCanvas() {
     ctx.strokeRect(0, 0, width, height);
 
     ctx.restore();
-  }, [pixels, width, height, zoom, viewOffset.x, viewOffset.y, viewportSize.width, viewportSize.height]);
+  }, [pixels, width, height, zoom, viewOffset.x, viewOffset.y, viewportSize.width, viewportSize.height, theme, systemTheme]);
 
   const getCoordinates = (e: React.MouseEvent | React.TouchEvent) => {
     const canvas = canvasRef.current;
@@ -374,7 +391,7 @@ export default function PixelCanvas() {
         const worldX = (mouseX - offsetNow.x) / scale;
         const worldY = (mouseY - offsetNow.y) / scale;
 
-        const factor = Math.exp(-e.deltaY / 200);
+        const factor = Math.exp(-e.deltaY / 80);
         const nextZoom = clampZoom(Math.round(zoomNow * factor));
         if (nextZoom === zoomNow) return;
 
@@ -397,7 +414,8 @@ export default function PixelCanvas() {
         dy *= container.clientHeight;
       }
 
-      setViewOffset(prev => ({ x: prev.x - dx, y: prev.y - dy }));
+      const panSpeed = 1.5;
+      setViewOffset(prev => ({ x: prev.x - dx * panSpeed, y: prev.y - dy * panSpeed }));
     };
 
     container.addEventListener('wheel', handleWheel, { passive: false });
@@ -451,7 +469,7 @@ export default function PixelCanvas() {
 
   return (
     <div className="relative h-full w-full overflow-hidden">
-      <div ref={containerRef} className="absolute inset-0 overflow-hidden bg-[#F8F9FA]">
+      <div ref={containerRef} className="absolute inset-0 overflow-hidden bg-background">
         <canvas
           ref={canvasRef}
           className={`absolute inset-0 h-full w-full touch-none ${cursorClass}`}
@@ -481,7 +499,7 @@ export default function PixelCanvas() {
       </div>
 
       {/* Zoom Controls - Now absolute to the fixed outer container */}
-      <div className="absolute bottom-6 right-6 flex items-center gap-2 bg-white rounded-lg shadow-sm border p-1 z-20">
+      <div className="absolute bottom-6 right-6 flex items-center gap-2 rounded-lg border border-border bg-popover text-popover-foreground shadow-sm p-1 z-20">
         <Button 
           variant="ghost" 
           size="icon" 
