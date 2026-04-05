@@ -2,7 +2,12 @@
   "nav": {
     "editor": "エディター",
     "gallery": "ギャラリー",
-    "upscaler": "アップスケーラー"
+    "upscaler": "アップスケーラー",
+    "theme": {
+      "light": "ライトモード",
+      "dark": "ダークモード",
+      "system": "システム"
+    }
   },
   "sidebar": {
     "upload": "アップロード",

@@ -2,7 +2,12 @@
   "nav": {
     "editor": "편집기",
     "gallery": "갤러리",
-    "upscaler": "업스케일러"
+    "upscaler": "업스케일러",
+    "theme": {
+      "light": "라이트 모드",
+      "dark": "다크 모드",
+      "system": "시스템"
+    }
   },
   "sidebar": {
     "upload": "업로드",

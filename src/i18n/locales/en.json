@@ -2,7 +2,12 @@
   "nav": {
     "editor": "Editor",
     "gallery": "Gallery",
-    "upscaler": "Upscaler"
+    "upscaler": "Upscaler",
+    "theme": {
+      "light": "Light Mode",
+      "dark": "Dark Mode",
+      "system": "System"
+    }
   },
   "sidebar": {
     "upload": "Upload",
