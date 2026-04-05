@@ -130,7 +130,7 @@ export default function PixelCanvas() {
   const [lastCoords, setLastCoords] = useState<{ x: number, y: number } | null>(null);
 
   // Constants
-  const GRID_LINE_WIDTH = 0.5;
+  const GRID_LINE_WIDTH = 1;
   const GRID_COLOR = 'rgba(0, 0, 0, 0.05)';
 
   const getLinePoints = (x0: number, y0: number, x1: number, y1: number) => {
@@ -197,14 +197,49 @@ export default function PixelCanvas() {
       ctx.fillRect(x, y, 1, 1);
     });
 
-    ctx.strokeStyle = GRID_COLOR;
-    ctx.lineWidth = GRID_LINE_WIDTH / scale;
+    const gridLineWidth = GRID_LINE_WIDTH / scale;
+    const bold5LineWidth = (GRID_LINE_WIDTH * 1.5) / scale;  // 1.5px
+    const bold10LineWidth = (GRID_LINE_WIDTH * 2) / scale;    // 2px
+    const gridColor = GRID_COLOR;
+
+    ctx.strokeStyle = gridColor;
+    ctx.lineWidth = gridLineWidth;
     ctx.beginPath();
     for (let x = 0; x <= width; x++) {
       ctx.moveTo(x, 0);
       ctx.lineTo(x, height);
     }
     for (let y = 0; y <= height; y++) {
+      ctx.moveTo(0, y);
+      ctx.lineTo(width, y);
+    }
+    ctx.stroke();
+
+    ctx.strokeStyle = gridColor;
+    ctx.lineWidth = bold5LineWidth;
+    ctx.beginPath();
+    for (let x = 5; x <= width; x += 5) {
+      if (x % 10 !== 0) {
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, height);
+      }
+    }
+    for (let y = 5; y <= height; y += 5) {
+      if (y % 10 !== 0) {
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+      }
+    }
+    ctx.stroke();
+
+    ctx.strokeStyle = gridColor;
+    ctx.lineWidth = bold10LineWidth;
+    ctx.beginPath();
+    for (let x = 10; x <= width; x += 10) {
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, height);
+    }
+    for (let y = 10; y <= height; y += 10) {
       ctx.moveTo(0, y);
       ctx.lineTo(width, y);
     }

@@ -26,8 +26,8 @@ interface EditorState {
 
 export const useEditorStore = create<EditorState>((set) => ({
   pixels: {},
-  width: 32,
-  height: 32,
+  width: 30,
+  height: 30,
   currentTool: 'brush',
   primaryColor: '#FF61A6',
   zoom: 160,

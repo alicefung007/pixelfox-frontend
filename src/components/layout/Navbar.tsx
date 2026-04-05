@@ -45,7 +45,7 @@ export default function Navbar() {
       <div className="flex items-center gap-8">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-pink-500 rounded flex items-center justify-center text-white font-bold text-xs">PX</div>
-          <span className="font-bold text-lg tracking-tight">Pixelfox</span>
+          <span className="font-bold text-lg tracking-tight">pixelfox<span className="text-pink-500">.art</span></span>
         </div>
         
         <div className="hidden md:flex items-center gap-6">
