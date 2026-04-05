@@ -14,6 +14,7 @@ import { usePaletteStore } from "@/store/usePaletteStore";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import PaletteManageDialog from "@/components/palette/PaletteManageDialog";
 import { MARD_PALETTE, type PaletteSwatch } from "@/lib/palettes";
+import { cn } from "@/lib/utils";
 
 type TabId = "used" | "recent" | "all";
 
@@ -24,6 +25,15 @@ function normalizeHex(hex: string) {
 function hexLabel(hex: string) {
   const v = normalizeHex(hex);
   return v.startsWith("#") ? v.slice(1) : v;
+}
+
+function isDarkColor(hex: string): boolean {
+  const h = hex.replace("#", "");
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance < 0.5;
 }
 
 export default function PalettePanel() {
@@ -84,21 +94,29 @@ export default function PalettePanel() {
       <ScrollArea className="flex-1">
         <div className="grid grid-cols-[repeat(auto-fill,minmax(48px,1fr))] gap-3 p-1">
           {visibleSwatches.map((swatch, i) => (
-            <div key={i} className="flex flex-col items-center gap-1 group p-1">
+            <div key={i} className="flex flex-col items-center gap-1 p-1 transition-transform hover:scale-105 active:scale-95">
               <button
-                className={`w-12 h-12 rounded-md shadow-sm transition-transform hover:scale-105 active:scale-95 relative ${
+                className={cn(
+                  "w-12 h-12 rounded-md shadow-sm relative flex items-center justify-center",
                   primaryColor === swatch.color ? "ring-2 ring-pink-500 ring-offset-2" : ""
-                }`}
+                )}
                 style={{ backgroundColor: swatch.color }}
                 onClick={() => setColor(swatch.color)}
               >
+                <span className={cn(
+                  "text-[10px] font-bold transition-colors",
+                  isDarkColor(swatch.color) ? "text-white" : "text-black/70"
+                )}>
+                  {swatch.label}
+                </span>
                 {primaryColor === swatch.color && (
-                  <div className="absolute inset-0 rounded-md border-2 border-pink-500/50" />
+                  <div className="absolute -top-1 -right-1 size-4 rounded-full bg-pink-500 text-white flex items-center justify-center shadow-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  </div>
                 )}
               </button>
-              <span className="text-[10px] text-muted-foreground font-medium group-hover:text-foreground transition-colors">
-                {swatch.label}
-              </span>
             </div>
           ))}
         </div>
