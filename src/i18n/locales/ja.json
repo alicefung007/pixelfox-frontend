@@ -35,7 +35,8 @@
     "palette": "パレット",
     "manage": "管理",
     "mard": "MARD",
-    "usedColors": "使用色",
+    "mard24": "MARD 24",
+    "usedColors": "使用済み色",
     "recent": "最近",
     "allColors": "すべての色",
     "manageDialog": {

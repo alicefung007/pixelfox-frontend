@@ -35,7 +35,8 @@
     "palette": "调色盘",
     "manage": "管理",
     "mard": "MARD",
-    "usedColors": "已用颜色",
+    "mard24": "MARD 24",
+    "usedColors": "已使用颜色",
     "recent": "最近",
     "allColors": "所有颜色",
     "manageDialog": {
