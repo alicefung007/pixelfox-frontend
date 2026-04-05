@@ -32,6 +32,23 @@
     "mard": "MARD",
     "usedColors": "사용된 색상",
     "recent": "최근",
-    "allColors": "모든 색상"
+    "allColors": "모든 색상",
+    "manageDialog": {
+      "title": "팔레트 관리",
+      "description": "작품에서 사용할 색상 시스템과 색상 구성안을 선택합니다.",
+      "schemes": "Plan",
+      "schemeAll": "모든 색상 ({{count}})",
+      "schemeUsed": "사용된 색상 ({{count}})",
+      "schemeRecent": "최근 색상 ({{count}})",
+      "searchPlaceholder": "이름 또는 HASH 검색...",
+      "selectAll": "전체 선택",
+      "clear": "비우기",
+      "saveScheme": "Plan 저장",
+      "systemFilter": "시스템:",
+      "groupLetters": "문자 그룹",
+      "groupPalette": "팔레트 그룹",
+      "cancel": "취소",
+      "confirm": "확인 ({{count}})"
+    }
   }
 }

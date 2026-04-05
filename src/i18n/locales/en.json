@@ -32,6 +32,23 @@
     "mard": "MARD",
     "usedColors": "Used Colors",
     "recent": "Recent",
-    "allColors": "All Colors"
+    "allColors": "All Colors",
+    "manageDialog": {
+      "title": "Palette Manager",
+      "description": "Pick and use different color systems and schemes in your artwork.",
+      "schemes": "Plan",
+      "schemeAll": "All Colors ({{count}})",
+      "schemeUsed": "Used Colors ({{count}})",
+      "schemeRecent": "Recent Colors ({{count}})",
+      "searchPlaceholder": "Search name or HASH...",
+      "selectAll": "Select all",
+      "clear": "Clear",
+      "saveScheme": "Save Plan",
+      "systemFilter": "System:",
+      "groupLetters": "A-Z",
+      "groupPalette": "Palette",
+      "cancel": "Cancel",
+      "confirm": "Confirm ({{count}})"
+    }
   }
 }

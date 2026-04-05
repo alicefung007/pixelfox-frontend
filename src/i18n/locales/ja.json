@@ -32,6 +32,23 @@
     "mard": "MARD",
     "usedColors": "使用色",
     "recent": "最近",
-    "allColors": "すべての色"
+    "allColors": "すべての色",
+    "manageDialog": {
+      "title": "配色管理",
+      "description": "作品で使用する配色システムと配色方案を選択します。",
+      "schemes": "Plan",
+      "schemeAll": "すべての色 ({{count}})",
+      "schemeUsed": "使用色 ({{count}})",
+      "schemeRecent": "最近の色 ({{count}})",
+      "searchPlaceholder": "色名または HASH を検索...",
+      "selectAll": "全選択",
+      "clear": "クリア",
+      "saveScheme": "Plan として保存",
+      "systemFilter": "システム:",
+      "groupLetters": "文字グループ",
+      "groupPalette": "パレット",
+      "cancel": "キャンセル",
+      "confirm": "確認 ({{count}})"
+    }
   }
 }

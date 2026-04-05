@@ -32,6 +32,23 @@
     "mard": "MARD",
     "usedColors": "已用颜色",
     "recent": "最近",
-    "allColors": "所有颜色"
+    "allColors": "所有颜色",
+    "manageDialog": {
+      "title": "配色管理",
+      "description": "挑选并在图纸中使用不同的配色系统及配色方案。",
+      "schemes": "Plan",
+      "schemeAll": "所有颜色 ({{count}})",
+      "schemeUsed": "已用颜色 ({{count}})",
+      "schemeRecent": "最近颜色 ({{count}})",
+      "searchPlaceholder": "搜索颜色名或 HASH...",
+      "selectAll": "全选",
+      "clear": "清空",
+      "saveScheme": "存为 Plan",
+      "systemFilter": "筛选系统:",
+      "groupLetters": "字母分组",
+      "groupPalette": "色盘分组",
+      "cancel": "取消",
+      "confirm": "确认 ({{count}})"
+    }
   }
 }

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { 
   Palette, 
@@ -11,14 +12,13 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useEditorStore } from "@/store/useEditorStore";
 import { usePaletteStore } from "@/store/usePaletteStore";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import PaletteManageDialog from "@/components/palette/PaletteManageDialog";
 
 export default function PalettePanel() {
   const { t } = useTranslation();
   const { primaryColor, setColor } = useEditorStore();
   const { recentColors, usedColors } = usePaletteStore();
-  
-  // Example of using the variables or removing them
-  console.log("State:", { recentColors, usedColors });
+  const [isManageOpen, setIsManageOpen] = useState(false);
 
   const presetColors = [
     // Row 1
@@ -59,7 +59,12 @@ export default function PalettePanel() {
             <Palette size={16} />
             <span>{t("palette.palette")}</span>
           </div>
-          <Button variant="outline" size="sm" className="h-8 gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 gap-2"
+            onClick={() => setIsManageOpen(true)}
+          >
             <Settings size={14} />
             <span className="text-xs">{t("palette.manage")}</span>
           </Button>
@@ -110,6 +115,12 @@ export default function PalettePanel() {
           {/* Recent/Used colors could be rendered here based on the active tab */}
         </div>
       </ScrollArea>
+
+      <PaletteManageDialog
+        open={isManageOpen}
+        onOpenChange={setIsManageOpen}
+        allColors={colorSwatches}
+      />
     </div>
   );
 }
