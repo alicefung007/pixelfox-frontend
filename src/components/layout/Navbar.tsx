@@ -7,7 +7,8 @@ import {
   Sun,
   Moon,
   Monitor,
-  Check
+  Check,
+  Menu
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/components/theme-provider";
@@ -21,7 +22,11 @@ import {
   DropdownMenuRadioItem,
 } from "@/components/ui/dropdown-menu";
 
-export default function Navbar() {
+type Props = {
+  onMenuClick?: () => void;
+};
+
+export default function Navbar({ onMenuClick }: Props) {
   const { t } = useTranslation();
   const location = useLocation();
   const { theme, setTheme } = useTheme();
@@ -44,11 +49,20 @@ export default function Navbar() {
   ];
 
   return (
-    <nav className="h-16 border-b flex items-center justify-between px-4 bg-background z-50">
-      <div className="flex items-center gap-8">
+    <nav className="h-14 sm:h-16 border-b flex items-center justify-between px-3 sm:px-4 bg-background z-50">
+      <div className="flex items-center gap-2 sm:gap-4 md:gap-8">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="text-muted-foreground h-9 w-9 md:hidden"
+          onClick={onMenuClick}
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
+
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-pink-500 rounded flex items-center justify-center text-white font-bold text-xs">PX</div>
-          <span className="font-bold text-lg tracking-tight">pixelfox<span className="text-pink-500">.art</span></span>
+          <div className="w-7 h-7 sm:w-8 sm:h-8 bg-pink-500 rounded flex items-center justify-center text-white font-bold text-[10px] sm:text-xs">PX</div>
+          <span className="font-bold text-base sm:text-lg tracking-tight hidden sm:inline">pixelfox<span className="text-pink-500">.art</span></span>
         </div>
         
         <div className="hidden md:flex items-center gap-6">
@@ -66,7 +80,7 @@ export default function Navbar() {
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1 sm:gap-2">
         <Button variant="ghost" size="icon" className="text-muted-foreground h-9 w-9">
           <User className="h-[18px] w-[18px]" />
         </Button>

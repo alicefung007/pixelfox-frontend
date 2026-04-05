@@ -560,8 +560,8 @@ export default function PixelCanvas() {
         )}
       </div>
 
-      {/* Zoom Controls - Now absolute to the fixed outer container */}
-      <div className="absolute bottom-6 right-6 flex items-center gap-2 rounded-lg border border-border bg-popover text-popover-foreground shadow-sm p-1 z-20">
+      {/* Zoom Controls */}
+      <div className="absolute bottom-4 right-4 sm:bottom-6 sm:right-6 flex items-center gap-1 sm:gap-2 rounded-lg border border-border bg-popover text-popover-foreground shadow-sm p-1 z-20">
         <Button 
           variant="ghost" 
           size="icon" 
@@ -572,7 +572,7 @@ export default function PixelCanvas() {
         >
           <Minus size={16} />
         </Button>
-        <div className="text-xs font-medium w-12 text-center text-muted-foreground">
+        <div className="text-xs font-medium w-10 sm:w-12 text-center text-muted-foreground">
           {zoom}%
         </div>
         <Button 
@@ -585,7 +585,7 @@ export default function PixelCanvas() {
         >
           <Plus size={16} />
         </Button>
-        <div className="w-px h-4 bg-border mx-1" />
+        <div className="w-px h-4 bg-border mx-0.5 sm:mx-1" />
         <Button 
           variant="ghost" 
           size="icon" 

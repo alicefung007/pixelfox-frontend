@@ -209,7 +209,7 @@ export default function PaletteManageDialog({
 
         <div className="flex-1 min-h-0 overflow-y-auto">
           <div className="px-6 pt-4 pb-6 flex flex-col gap-4">
-              <div className="flex items-center gap-3 mb-4">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-4">
                 <div className="relative flex-1 min-w-0">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                   <Input
@@ -220,41 +220,43 @@ export default function PaletteManageDialog({
                   />
                 </div>
 
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-9 gap-2"
-                  onClick={handleSelectAllVisible}
-                >
-                  <Check className="size-4" />
-                  {t("palette.manageDialog.selectAll")}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-9 gap-2"
-                  onClick={handleClear}
-                >
-                  <Trash2 className="size-4" />
-                  {t("palette.manageDialog.clear")}
-                </Button>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-9 gap-1 sm:gap-2"
+                    onClick={handleSelectAllVisible}
+                  >
+                    <Check className="size-4" />
+                    <span className="hidden sm:hidden md:inline">{t("palette.manageDialog.selectAll")}</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-9 gap-1 sm:gap-2"
+                    onClick={handleClear}
+                  >
+                    <Trash2 className="size-4" />
+                    <span className="hidden sm:hidden md:inline">{t("palette.manageDialog.clear")}</span>
+                  </Button>
 
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-9 gap-2 text-pink-600 border-pink-300/60 hover:bg-pink-500/10"
-                >
-                  <Save className="size-4" />
-                  {t("palette.manageDialog.saveScheme")}
-                </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-9 gap-1 sm:gap-2 text-pink-600 border-pink-300/60 hover:bg-pink-500/10"
+                  >
+                    <Save className="size-4" />
+                    <span className="hidden sm:inline">{t("palette.manageDialog.saveScheme")}</span>
+                  </Button>
+                </div>
               </div>
 
-              <div className="flex items-center justify-between gap-4 mb-4">
-                <div className="flex items-center gap-2 min-w-0">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
+                <div className="flex items-center gap-2 min-w-0 w-full overflow-x-auto scrollbar-hide -mx-2 px-2">
                   <span className="text-xs text-muted-foreground shrink-0">
                     {t("palette.manageDialog.systemFilter")}
                   </span>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex gap-2 shrink-0">
                     {SYSTEM_PALETTES.map((p) => {
                       const active = systemFilter === p.id;
                       return (
@@ -268,7 +270,7 @@ export default function PaletteManageDialog({
                             setSelected(new Set(allColors));
                           }}
                           className={cn(
-                            "h-7 rounded-full px-3 text-xs font-semibold transition-colors border",
+                            "h-7 rounded-full px-3 text-xs font-semibold transition-colors border shrink-0",
                             active
                               ? "bg-pink-500 text-white border-pink-500"
                               : "bg-muted/40 text-muted-foreground border-border hover:bg-muted"
@@ -297,7 +299,7 @@ export default function PaletteManageDialog({
               </div>
 
               <div className="rounded-3xl bg-background/40 p-1">
-                <div className="grid grid-cols-8 sm:grid-cols-10 md:grid-cols-12 lg:grid-cols-14 gap-3">
+                <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 xl:grid-cols-14 gap-2 sm:gap-3">
                 {visibleColors.map((swatch) => {
                   const key = normalizeHex(swatch.color);
                   const isSelected = selected.has(key);
@@ -310,20 +312,20 @@ export default function PaletteManageDialog({
                     >
                       <div
                         className={cn(
-                          "relative w-12 h-12 rounded-md shadow-sm ring-1 ring-foreground/5 transition-shadow flex items-center justify-center",
+                          "relative w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-md shadow-sm ring-1 ring-foreground/5 transition-shadow flex items-center justify-center",
                           isSelected ? "ring-2 ring-pink-500" : ""
                         )}
                         style={{ backgroundColor: swatch.color }}
                       >
                         <span className={cn(
-                          "text-[10px] font-bold transition-colors",
+                          "text-[8px] sm:text-[9px] md:text-[10px] font-bold transition-colors",
                           isDarkColor(swatch.color) ? "text-white" : "text-black/70"
                         )}>
                           {swatch.label}
                         </span>
                         {isSelected && (
-                          <div className="absolute -top-1 -right-1 size-4 rounded-full bg-pink-500 text-white flex items-center justify-center shadow-sm">
-                            <Check className="size-2.5" />
+                          <div className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 size-3 sm:size-4 rounded-full bg-pink-500 text-white flex items-center justify-center shadow-sm">
+                            <Check className="size-2 sm:size-2.5" />
                           </div>
                         )}
                       </div>
@@ -337,11 +339,11 @@ export default function PaletteManageDialog({
 
         <Separator />
 
-        <div className="px-6 py-4 flex items-center justify-end gap-3">
+        <div className="px-4 sm:px-6 py-3 sm:py-4 flex flex-col-reverse sm:flex-row items-center justify-end gap-2 sm:gap-3">
           <DialogClose asChild>
-            <Button variant="outline">{t("palette.manageDialog.cancel")}</Button>
+            <Button variant="outline" className="w-full sm:w-auto">{t("palette.manageDialog.cancel")}</Button>
           </DialogClose>
-          <Button onClick={handleConfirm} disabled={selectedCount === 0}>
+          <Button onClick={handleConfirm} disabled={selectedCount === 0} className="w-full sm:w-auto">
             {t("palette.manageDialog.confirm", { count: selectedCount })}
           </Button>
         </div>

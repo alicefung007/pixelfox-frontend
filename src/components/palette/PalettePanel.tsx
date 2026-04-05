@@ -59,12 +59,12 @@ export default function PalettePanel() {
   }, [palette.swatches, recentColors, usedColors, customPalette, tab]);
 
   return (
-    <div className="h-full bg-background flex flex-col gap-4 overflow-hidden shadow-sm">
-      <div className="flex items-center justify-between shrink-0 pl-4 pr-4 pt-4">
-        <div className="flex items-center gap-4">
+    <div className="h-full bg-background flex flex-col overflow-hidden shadow-sm">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4 shrink-0 px-3 sm:px-4 pt-3 sm:pt-4">
+        <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto">
           <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
             <Palette size={16} />
-            <span>{t("palette.palette")}</span>
+            <span className="hidden sm:inline">{t("palette.palette")}</span>
           </div>
           <Button
             variant="outline"
@@ -73,58 +73,58 @@ export default function PalettePanel() {
             onClick={() => setIsManageOpen(true)}
           >
             <Settings size={14} />
-            <span className="text-xs">{t("palette.manage")}</span>
+            <span className="text-xs hidden sm:inline">{t("palette.manage")}</span>
           </Button>
-          <div className="bg-pink-100 text-pink-500 text-[10px] font-bold px-2 py-0.5 rounded border border-pink-200 uppercase tracking-wider">
+          <div className="bg-pink-100 dark:bg-pink-900/30 text-pink-500 text-[10px] font-bold px-2 py-0.5 rounded border border-pink-200 dark:border-pink-800 uppercase tracking-wider">
             {palette.i18nKey ? t(palette.i18nKey) : palette.name}
           </div>
         </div>
 
-        <Tabs value={tab} onValueChange={(v) => setTab(v as TabId)} className="w-auto">
+        <Tabs value={tab} onValueChange={(v) => setTab(v as TabId)} className="w-full sm:w-auto">
           <TabsList className="h-8 bg-muted/50 p-1">
-            <TabsTrigger value="used" className="text-[10px] h-6 px-3 gap-1">
+            <TabsTrigger value="used" className="text-[10px] h-6 px-2 sm:px-3 gap-1">
               <Grid size={12} />
-              {t("palette.usedColors")}
+              <span className="hidden xs:inline">{t("palette.usedColors")}</span>
             </TabsTrigger>
-            <TabsTrigger value="recent" className="text-[10px] h-6 px-3 gap-1">
+            <TabsTrigger value="recent" className="text-[10px] h-6 px-2 sm:px-3 gap-1">
               <History size={12} />
-              {t("palette.recent")}
+              <span className="hidden xs:inline">{t("palette.recent")}</span>
             </TabsTrigger>
-            <TabsTrigger value="all" className="text-[10px] h-6 px-3 gap-1">
+            <TabsTrigger value="all" className="text-[10px] h-6 px-2 sm:px-3 gap-1">
               <Shapes size={12} />
-              {t("palette.allColors")}
+              <span className="hidden xs:inline">{t("palette.allColors")}</span>
             </TabsTrigger>
             {customPalette.length > 0 && (
-              <TabsTrigger value="custom" className="text-[10px] h-6 px-3 gap-1">
+              <TabsTrigger value="custom" className="text-[10px] h-6 px-2 sm:px-3 gap-1">
                 <Star size={12} />
-                {t("palette.custom")}
+                <span className="hidden xs:inline">{t("palette.custom")}</span>
               </TabsTrigger>
             )}
           </TabsList>
         </Tabs>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4">
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(48px,1fr))] gap-3 py-1">
+      <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-2">
+        <div className="grid grid-cols-8 sm:grid-cols-10 md:grid-cols-[repeat(auto-fill,minmax(48px,1fr))] gap-2 sm:gap-3 py-1">
           {visibleSwatches.map((swatch, i) => (
-            <div key={i} className="flex flex-col items-center gap-1 p-1 transition-transform hover:scale-105 active:scale-95">
+            <div key={i} className="flex flex-col items-center gap-1 p-0.5 sm:p-1 transition-transform hover:scale-105 active:scale-95">
               <button
                 className={cn(
-                  "w-12 h-12 rounded-md shadow-sm relative flex items-center justify-center",
+                  "w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-md shadow-sm relative flex items-center justify-center",
                   primaryColor === swatch.color ? "ring-2 ring-pink-500" : ""
                 )}
                 style={{ backgroundColor: swatch.color }}
                 onClick={() => setColor(swatch.color)}
               >
                 <span className={cn(
-                  "text-[10px] font-bold transition-colors",
+                  "text-[8px] sm:text-[9px] md:text-[10px] font-bold transition-colors",
                   isDarkColor(swatch.color) ? "text-white" : "text-black/70"
                 )}>
                   {swatch.label}
                 </span>
                 {primaryColor === swatch.color && (
-                  <div className="absolute -top-1 -right-1 size-4 rounded-full bg-pink-500 text-white flex items-center justify-center shadow-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <div className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 size-3 sm:size-4 rounded-full bg-pink-500 text-white flex items-center justify-center shadow-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                       <polyline points="20 6 9 17 4 12" />
                     </svg>
                   </div>
