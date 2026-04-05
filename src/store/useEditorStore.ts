@@ -13,6 +13,7 @@ interface EditorState {
   historyIndex: number;
 
   setPixel: (x: number, y: number, color: string) => void;
+  clearPixel: (x: number, y: number) => void;
   saveHistory: () => void;
   setPixels: (pixels: Record<string, string>) => void;
   setTool: (tool: ToolType) => void;
@@ -39,6 +40,14 @@ export const useEditorStore = create<EditorState>((set) => ({
     return {
       pixels: { ...state.pixels, [key]: color }
     };
+  }),
+
+  clearPixel: (x, y) => set((state) => {
+    const key = `${x},${y}`;
+    if (!(key in state.pixels)) return state;
+    const nextPixels = { ...state.pixels };
+    delete nextPixels[key];
+    return { pixels: nextPixels };
   }),
 
   setPixels: (newPixels) => set({ pixels: newPixels }),

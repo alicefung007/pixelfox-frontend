@@ -1,26 +1,50 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useMemo } from 'react';
 import { useEditorStore } from '@/store/useEditorStore';
 import { usePaletteStore } from '@/store/usePaletteStore';
-import { Minus, Plus, Maximize } from 'lucide-react';
+import { Minus, Plus, Maximize, Pencil, PaintBucket, Eraser, Pipette } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function PixelCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const { pixels, width, height, zoom, setPixel, setPixels, currentTool, primaryColor, setZoom, saveHistory, undo, redo } = useEditorStore();
+  const { pixels, width, height, zoom, setPixel, clearPixel, setPixels, currentTool, primaryColor, setZoom, saveHistory, undo, redo } = useEditorStore();
   const [isAutoZoom, setIsAutoZoom] = useState(true);
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
-  const [viewOffset, setViewOffset] = useState({ x: 0, y: 0 });
+  const [manualViewOffset, setManualViewOffset] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const panLastRef = useRef<{ x: number; y: number } | null>(null);
   const zoomRef = useRef(zoom);
-  const viewOffsetRef = useRef(viewOffset);
+  const viewOffsetRef = useRef(manualViewOffset);
+  const isAutoZoomRef = useRef(isAutoZoom);
+  const [cursorOverlay, setCursorOverlay] = useState<{ x: number; y: number; visible: boolean }>({ x: 0, y: 0, visible: false });
+  const cursorRafRef = useRef<number | null>(null);
+  const cursorPendingRef = useRef<{ x: number; y: number; visible: boolean }>(cursorOverlay);
 
   const clampZoom = (value: number) => Math.max(10, Math.min(1000, value));
 
   useEffect(() => {
     zoomRef.current = zoom;
   }, [zoom]);
+
+  useEffect(() => {
+    isAutoZoomRef.current = isAutoZoom;
+  }, [isAutoZoom]);
+
+  useEffect(() => {
+    cursorPendingRef.current = cursorOverlay;
+  }, [cursorOverlay]);
+
+  const autoViewOffset = useMemo(() => {
+    if (viewportSize.width === 0 || viewportSize.height === 0) return { x: 0, y: 0 };
+    const scale = zoom / 10;
+    const contentWidth = width * scale;
+    const contentHeight = height * scale;
+    const x = (viewportSize.width - contentWidth) / 2;
+    const y = (viewportSize.height - contentHeight) / 2;
+    return { x, y };
+  }, [viewportSize.width, viewportSize.height, zoom, width, height]);
+
+  const viewOffset = isAutoZoom ? autoViewOffset : manualViewOffset;
 
   useEffect(() => {
     viewOffsetRef.current = viewOffset;
@@ -65,18 +89,6 @@ export default function PixelCanvas() {
     updateViewport();
     return () => resizeObserver.disconnect();
   }, []);
-
-  useEffect(() => {
-    if (!isAutoZoom) return;
-    if (viewportSize.width === 0 || viewportSize.height === 0) return;
-
-    const scale = zoom / 10;
-    const contentWidth = width * scale;
-    const contentHeight = height * scale;
-    const x = (viewportSize.width - contentWidth) / 2;
-    const y = (viewportSize.height - contentHeight) / 2;
-    setViewOffset({ x, y });
-  }, [isAutoZoom, viewportSize.width, viewportSize.height, zoom, width, height]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -219,7 +231,7 @@ export default function PixelCanvas() {
     return null;
   };
 
-  const floodFill = (startX: number, startY: number, targetColor: string, replacementColor: string) => {
+  const floodFill = (startX: number, startY: number, targetColor: string | null, replacementColor: string) => {
     if (targetColor === replacementColor) return;
     
     const newPixels = { ...pixels };
@@ -233,7 +245,7 @@ export default function PixelCanvas() {
       if (x < 0 || x >= width || y < 0 || y >= height) continue;
       if (visited.has(key)) continue;
       
-      const currentColor = pixels[key] || '#FFFFFF'; // Default to white for empty
+      const currentColor = pixels[key] ?? null;
       if (currentColor !== targetColor) continue;
 
       visited.add(key);
@@ -252,22 +264,23 @@ export default function PixelCanvas() {
     if (!coords) return;
 
     if (currentTool === 'brush' || currentTool === 'eraser') {
-      const color = currentTool === 'brush' ? primaryColor : '#FFFFFF';
-      
+      const isErase = currentTool === 'eraser';
+
       if (lastCoords) {
         const points = getLinePoints(lastCoords.x, lastCoords.y, coords.x, coords.y);
-        points.forEach(p => setPixel(p.x, p.y, color));
+        points.forEach(p => (isErase ? clearPixel(p.x, p.y) : setPixel(p.x, p.y, primaryColor)));
       } else {
-        setPixel(coords.x, coords.y, color);
+        if (isErase) clearPixel(coords.x, coords.y);
+        else setPixel(coords.x, coords.y, primaryColor);
       }
       
-      if (currentTool === 'brush') {
+      if (!isErase) {
         addUsedColor(primaryColor);
         addRecentColor(primaryColor);
       }
       setLastCoords(coords);
     } else if (currentTool === 'bucket') {
-      const targetColor = pixels[`${coords.x},${coords.y}`] || '#FFFFFF';
+      const targetColor = pixels[`${coords.x},${coords.y}`] ?? null;
       floodFill(coords.x, coords.y, targetColor, primaryColor);
     } else if (currentTool === 'eyedropper') {
       const pickedColor = pixels[`${coords.x},${coords.y}`] || '#FFFFFF';
@@ -276,15 +289,39 @@ export default function PixelCanvas() {
     }
   };
 
+  useEffect(() => {
+    return () => {
+      if (cursorRafRef.current !== null) cancelAnimationFrame(cursorRafRef.current);
+    };
+  }, []);
+
+  const queueCursorOverlay = (next: { x: number; y: number; visible: boolean }) => {
+    cursorPendingRef.current = next;
+    if (cursorRafRef.current !== null) return;
+    cursorRafRef.current = requestAnimationFrame(() => {
+      cursorRafRef.current = null;
+      setCursorOverlay(cursorPendingRef.current);
+    });
+  };
+
+  const updateCursorFromMouseEvent = (e: React.MouseEvent) => {
+    const container = containerRef.current;
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    queueCursorOverlay({ x: e.clientX - rect.left, y: e.clientY - rect.top, visible: true });
+  };
+
   const onMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
     if (!('touches' in e)) {
       if ((currentTool === 'hand' && e.button === 0) || e.button === 1 || e.button === 2) {
         e.preventDefault();
+        if (isAutoZoomRef.current) setManualViewOffset(viewOffsetRef.current);
         setIsAutoZoom(false);
         setIsDrawing(false);
         setLastCoords(null);
         setIsPanning(true);
         panLastRef.current = { x: e.clientX, y: e.clientY };
+        queueCursorOverlay({ x: cursorPendingRef.current.x, y: cursorPendingRef.current.y, visible: false });
         return;
       }
     }
@@ -300,8 +337,11 @@ export default function PixelCanvas() {
       const dx = e.clientX - last.x;
       const dy = e.clientY - last.y;
       panLastRef.current = { x: e.clientX, y: e.clientY };
-      setViewOffset(prev => ({ x: prev.x + dx, y: prev.y + dy }));
+      setManualViewOffset((prev) => ({ x: prev.x + dx, y: prev.y + dy }));
       return;
+    }
+    if (!('touches' in e)) {
+      updateCursorFromMouseEvent(e);
     }
     if (isDrawing) {
       handleDraw(e);
@@ -327,6 +367,8 @@ export default function PixelCanvas() {
 
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault();
+      const offsetNow = viewOffsetRef.current;
+      if (isAutoZoomRef.current) setManualViewOffset(offsetNow);
       setIsAutoZoom(false);
 
       if (e.ctrlKey || e.metaKey) {
@@ -335,7 +377,6 @@ export default function PixelCanvas() {
         const mouseY = e.clientY - rect.top;
 
         const zoomNow = zoomRef.current;
-        const offsetNow = viewOffsetRef.current;
         const scale = zoomNow / 10;
         const worldX = (mouseX - offsetNow.x) / scale;
         const worldY = (mouseY - offsetNow.y) / scale;
@@ -346,7 +387,7 @@ export default function PixelCanvas() {
 
         const nextScale = nextZoom / 10;
         setZoom(nextZoom);
-        setViewOffset({
+        setManualViewOffset({
           x: mouseX - worldX * nextScale,
           y: mouseY - worldY * nextScale,
         });
@@ -363,7 +404,7 @@ export default function PixelCanvas() {
         dy *= container.clientHeight;
       }
 
-      setViewOffset(prev => ({ x: prev.x - dx, y: prev.y - dy }));
+      setManualViewOffset({ x: offsetNow.x - dx, y: offsetNow.y - dy });
     };
 
     container.addEventListener('wheel', handleWheel, { passive: false });
@@ -383,10 +424,36 @@ export default function PixelCanvas() {
     const nextZoom = clampZoom(direction === 'in' ? zoom + step : zoom - step);
     const nextScale = nextZoom / 10;
     setZoom(nextZoom);
-    setViewOffset({
+    setManualViewOffset({
       x: anchorX - worldX * nextScale,
       y: anchorY - worldY * nextScale,
     });
+  };
+
+  const isOverlayTool = currentTool === 'brush' || currentTool === 'bucket' || currentTool === 'eraser' || currentTool === 'eyedropper';
+  const CursorIcon =
+    currentTool === 'brush'
+      ? Pencil
+      : currentTool === 'bucket'
+        ? PaintBucket
+        : currentTool === 'eraser'
+          ? Eraser
+          : currentTool === 'eyedropper'
+            ? Pipette
+            : null;
+
+  const cursorClass = isPanning ? 'cursor-grabbing' : currentTool === 'hand' ? 'cursor-grab' : currentTool === 'text' ? 'cursor-text' : isOverlayTool ? 'cursor-none' : 'cursor-crosshair';
+  const cursorIconSize = 18;
+  const cursorHotspot =
+    currentTool === 'brush'
+      ? { x: 3, y: 15 }
+      : currentTool === 'eyedropper'
+        ? { x: 4, y: 16 }
+        : { x: cursorIconSize / 2, y: cursorIconSize / 2 };
+
+  const onCanvasLeave = () => {
+    onMouseUp();
+    queueCursorOverlay({ x: cursorPendingRef.current.x, y: cursorPendingRef.current.y, visible: false });
   };
 
   return (
@@ -394,11 +461,11 @@ export default function PixelCanvas() {
       <div ref={containerRef} className="absolute inset-0 overflow-hidden bg-[#F8F9FA]">
         <canvas
           ref={canvasRef}
-          className={`absolute inset-0 h-full w-full touch-none ${currentTool === 'hand' ? (isPanning ? 'cursor-grabbing' : 'cursor-grab') : 'cursor-crosshair'}`}
+          className={`absolute inset-0 h-full w-full touch-none ${cursorClass}`}
           onMouseDown={onMouseDown}
           onMouseMove={onMouseMove}
           onMouseUp={onMouseUp}
-          onMouseLeave={onMouseUp}
+          onMouseLeave={onCanvasLeave}
           onContextMenu={(e) => {
             if (isPanning || currentTool === 'hand') e.preventDefault();
           }}
@@ -406,6 +473,18 @@ export default function PixelCanvas() {
           onTouchMove={onMouseMove}
           onTouchEnd={onMouseUp}
         />
+        {CursorIcon && cursorOverlay.visible && !isPanning && (
+          <div
+            className="pointer-events-none absolute z-10 text-foreground"
+            style={{
+              left: cursorOverlay.x - cursorHotspot.x,
+              top: cursorOverlay.y - cursorHotspot.y,
+              color: currentTool === 'brush' ? primaryColor : undefined,
+            }}
+          >
+            <CursorIcon size={cursorIconSize} />
+          </div>
+        )}
       </div>
 
       {/* Zoom Controls - Now absolute to the fixed outer container */}
