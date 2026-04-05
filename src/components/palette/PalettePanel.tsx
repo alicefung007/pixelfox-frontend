@@ -81,12 +81,12 @@ export default function PalettePanel() {
         </Tabs>
       </div>
 
-      <ScrollArea className="flex-1 h-full">
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(48px,1fr))] gap-3 p-1 pr-3 pb-12">
+      <ScrollArea className="flex-1">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(48px,1fr))] gap-3 p-1">
           {visibleSwatches.map((swatch, i) => (
             <div key={i} className="flex flex-col items-center gap-1 group p-1">
               <button
-                className={`w-12 h-10 rounded-md shadow-sm transition-transform hover:scale-105 active:scale-95 relative ${
+                className={`w-12 h-12 rounded-md shadow-sm transition-transform hover:scale-105 active:scale-95 relative ${
                   primaryColor === swatch.color ? "ring-2 ring-pink-500 ring-offset-2" : ""
                 }`}
                 style={{ backgroundColor: swatch.color }}

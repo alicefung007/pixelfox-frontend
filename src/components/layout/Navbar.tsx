@@ -6,8 +6,7 @@ import {
   Languages, 
   Sun,
   Moon,
-  Check,
-  Monitor
+  Check
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/components/theme-provider";
@@ -39,12 +38,6 @@ export default function Navbar() {
     { label: t("nav.editor"), path: "/" },
     { label: t("nav.gallery"), path: "/gallery" },
     { label: t("nav.upscaler"), path: "/upscaler" },
-  ];
-
-  const themeOptions = [
-    { value: 'light', label: t('nav.theme.light'), icon: Sun },
-    { value: 'dark', label: t('nav.theme.dark'), icon: Moon },
-    { value: 'system', label: t('nav.theme.system'), icon: Monitor },
   ];
 
   return (
@@ -98,35 +91,14 @@ export default function Navbar() {
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="text-muted-foreground h-9 w-9">
-              {theme === "dark" ? <Moon className="h-[18px] w-[18px]" /> : 
-               theme === "light" ? <Sun className="h-[18px] w-[18px]" /> : 
-               <Monitor className="h-[18px] w-[18px]" />}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {themeOptions.map((option) => {
-              const IconComponent = option.icon;
-              return (
-                <DropdownMenuItem
-                  key={option.value}
-                  onClick={() => setTheme(option.value as any)}
-                  className="flex items-center justify-between"
-                >
-                  <span className="flex items-center gap-2">
-                    <IconComponent className="h-4 w-4" />
-                    {option.label}
-                  </span>
-                  {theme === option.value && (
-                    <Check className="h-4 w-4 ml-2 opacity-50" />
-                  )}
-                </DropdownMenuItem>
-              );
-            })}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="text-muted-foreground h-9 w-9"
+          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+        >
+          {theme === "dark" ? <Sun className="h-[18px] w-[18px]" /> : <Moon className="h-[18px] w-[18px]" />}
+        </Button>
       </div>
     </nav>
   );

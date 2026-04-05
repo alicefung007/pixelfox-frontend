@@ -47,6 +47,15 @@ function hexLabel(hex: string) {
   return v.startsWith("#") ? v.slice(1) : v;
 }
 
+function isDarkColor(hex: string): boolean {
+  const h = hex.replace("#", "");
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance < 0.5;
+}
+
 export default function PaletteManageDialog({
   open,
   onOpenChange,
@@ -270,7 +279,7 @@ export default function PaletteManageDialog({
 
           <div className="px-6 pb-6 flex-1 min-h-0">
             <ScrollArea className="h-full rounded-3xl border border-border/50 bg-background/40">
-              <div className="p-4 grid grid-cols-[repeat(auto-fill,minmax(72px,1fr))] gap-4">
+              <div className="p-1 grid grid-cols-[repeat(auto-fill,minmax(48px,1fr))] gap-3">
                 {visibleColors.map((swatch) => {
                   const key = normalizeHex(swatch.color);
                   const isSelected = selected.has(key);
@@ -279,29 +288,27 @@ export default function PaletteManageDialog({
                       key={`${swatch.label}-${key}`}
                       type="button"
                       onClick={() => handleToggleColor(swatch.color)}
-                      className={cn(
-                        "group flex flex-col items-center gap-2 rounded-2xl p-2 transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/30",
-                        isSelected ? "bg-pink-500/5" : "hover:bg-muted/40"
-                      )}
+                      className="group flex flex-col items-center gap-1 p-1 transition-transform hover:scale-105 active:scale-95 relative"
                     >
                       <div
                         className={cn(
-                          "relative h-14 w-full rounded-2xl shadow-sm ring-1 ring-foreground/5",
+                          "relative w-12 h-12 rounded-md shadow-sm ring-1 ring-foreground/5 transition-shadow flex items-center justify-center",
                           isSelected ? "ring-2 ring-pink-500" : ""
                         )}
                         style={{ backgroundColor: swatch.color }}
                       >
+                        <span className={cn(
+                          "text-[10px] font-bold transition-colors",
+                          isDarkColor(swatch.color) ? "text-white" : "text-black/70"
+                        )}>
+                          {swatch.label}
+                        </span>
                         {isSelected && (
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="size-8 rounded-full bg-pink-500 text-white flex items-center justify-center shadow-md">
-                              <Check className="size-4" />
-                            </div>
+                          <div className="absolute -top-1 -right-1 size-4 rounded-full bg-pink-500 text-white flex items-center justify-center shadow-sm">
+                            <Check className="size-2.5" />
                           </div>
                         )}
                       </div>
-                      <span className="text-[11px] font-semibold text-muted-foreground group-hover:text-foreground">
-                        {swatch.label}
-                      </span>
                     </button>
                   );
                 })}
