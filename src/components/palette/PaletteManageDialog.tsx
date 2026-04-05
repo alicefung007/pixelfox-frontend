@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import { Bookmark, Check, Save, Search, Settings2, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -194,92 +193,92 @@ export default function PaletteManageDialog({
 
         <Separator />
 
-        <div className="flex-1 min-h-0 flex flex-col">
-          <div className="px-6 py-4 flex items-center gap-3 shrink-0">
-            <div className="relative flex-1 min-w-0">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-              <Input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder={t("palette.manageDialog.searchPlaceholder")}
-                className="pl-9"
-              />
-            </div>
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          <div className="px-6 pt-4 pb-6 flex flex-col gap-4">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="relative flex-1 min-w-0">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                  <Input
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder={t("palette.manageDialog.searchPlaceholder")}
+                    className="pl-9"
+                  />
+                </div>
 
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-9 gap-2"
-              onClick={handleSelectAllVisible}
-            >
-              <Check className="size-4" />
-              {t("palette.manageDialog.selectAll")}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-9 gap-2"
-              onClick={handleClear}
-            >
-              <Trash2 className="size-4" />
-              {t("palette.manageDialog.clear")}
-            </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-9 gap-2"
+                  onClick={handleSelectAllVisible}
+                >
+                  <Check className="size-4" />
+                  {t("palette.manageDialog.selectAll")}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-9 gap-2"
+                  onClick={handleClear}
+                >
+                  <Trash2 className="size-4" />
+                  {t("palette.manageDialog.clear")}
+                </Button>
 
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-9 gap-2 text-pink-600 border-pink-300/60 hover:bg-pink-500/10"
-            >
-              <Save className="size-4" />
-              {t("palette.manageDialog.saveScheme")}
-            </Button>
-          </div>
-
-          <div className="px-6 pb-3 flex items-center justify-between gap-4 shrink-0">
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="text-xs text-muted-foreground shrink-0">
-                {t("palette.manageDialog.systemFilter")}
-              </span>
-              <div className="flex flex-wrap gap-2">
-                {SYSTEM_PALETTES.map((p) => {
-                  const active = systemFilter === p.id;
-                  return (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => setSystemFilter(p.id)}
-                      className={cn(
-                        "h-7 rounded-full px-3 text-xs font-semibold transition-colors border",
-                        active
-                          ? "bg-pink-500 text-white border-pink-500"
-                          : "bg-muted/40 text-muted-foreground border-border hover:bg-muted"
-                      )}
-                    >
-                      {p.i18nKey ? t(p.i18nKey) : p.name}
-                    </button>
-                  );
-                })}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-9 gap-2 text-pink-600 border-pink-300/60 hover:bg-pink-500/10"
+                >
+                  <Save className="size-4" />
+                  {t("palette.manageDialog.saveScheme")}
+                </Button>
               </div>
-            </div>
 
-            <Tabs
-              value={groupMode}
-              onValueChange={(v) => setGroupMode(v as "letters" | "palette")}
-            >
-              <TabsList className="h-8 bg-muted/50 p-1">
-                <TabsTrigger value="letters" className="text-[10px] h-6 px-3">
-                  {t("palette.manageDialog.groupLetters")}
-                </TabsTrigger>
-                <TabsTrigger value="palette" className="text-[10px] h-6 px-3">
-                  {t("palette.manageDialog.groupPalette")}
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
+              <div className="flex items-center justify-between gap-4 mb-4">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-xs text-muted-foreground shrink-0">
+                    {t("palette.manageDialog.systemFilter")}
+                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    {SYSTEM_PALETTES.map((p) => {
+                      const active = systemFilter === p.id;
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => setSystemFilter(p.id)}
+                          className={cn(
+                            "h-7 rounded-full px-3 text-xs font-semibold transition-colors border",
+                            active
+                              ? "bg-pink-500 text-white border-pink-500"
+                              : "bg-muted/40 text-muted-foreground border-border hover:bg-muted"
+                          )}
+                        >
+                          {p.i18nKey ? t(p.i18nKey) : p.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
 
-          <div className="px-6 pb-6 flex-1 min-h-[300px] overflow-hidden">
-            <ScrollArea className="h-full rounded-3xl border border-border/50 bg-background/40">
-              <div className="p-1 pr-5 grid grid-cols-8 sm:grid-cols-10 md:grid-cols-12 lg:grid-cols-14 gap-3">
+                <Tabs
+                  value={groupMode}
+                  onValueChange={(v) => setGroupMode(v as "letters" | "palette")}
+                >
+                  <TabsList className="h-8 bg-muted/50 p-1">
+                    <TabsTrigger value="letters" className="text-[10px] h-6 px-3">
+                      {t("palette.manageDialog.groupLetters")}
+                    </TabsTrigger>
+                    <TabsTrigger value="palette" className="text-[10px] h-6 px-3">
+                      {t("palette.manageDialog.groupPalette")}
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
+
+              <div className="rounded-3xl border border-border/50 bg-background/40">
+                <div className="p-1 pr-5 grid grid-cols-8 sm:grid-cols-10 md:grid-cols-12 lg:grid-cols-14 gap-3">
                 {visibleColors.map((swatch) => {
                   const key = normalizeHex(swatch.color);
                   const isSelected = selected.has(key);
@@ -313,8 +312,8 @@ export default function PaletteManageDialog({
                   );
                 })}
               </div>
-            </ScrollArea>
-          </div>
+              </div>
+            </div>
         </div>
 
         <Separator />
