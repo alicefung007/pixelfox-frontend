@@ -6,6 +6,7 @@ import {
   Languages, 
   Sun,
   Moon,
+  Monitor,
   Check
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,8 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
 } from "@/components/ui/dropdown-menu";
 
 export default function Navbar() {
@@ -91,14 +94,35 @@ export default function Navbar() {
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="text-muted-foreground h-9 w-9"
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-        >
-          {theme === "dark" ? <Sun className="h-[18px] w-[18px]" /> : <Moon className="h-[18px] w-[18px]" />}
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="text-muted-foreground h-9 w-9">
+              {theme === "system" ? (
+                <Monitor className="h-[18px] w-[18px]" />
+              ) : theme === "dark" ? (
+                <Moon className="h-[18px] w-[18px]" />
+              ) : (
+                <Sun className="h-[18px] w-[18px]" />
+              )}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuRadioGroup value={theme} onValueChange={(v) => setTheme(v as "light" | "dark" | "system")}>
+              <DropdownMenuRadioItem value="light" className="flex items-center gap-2">
+                <Sun className="h-4 w-4" />
+                {t("nav.theme.light")}
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="dark" className="flex items-center gap-2">
+                <Moon className="h-4 w-4" />
+                {t("nav.theme.dark")}
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="system" className="flex items-center gap-2">
+                <Monitor className="h-4 w-4" />
+                {t("nav.theme.system")}
+              </DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </nav>
   );
