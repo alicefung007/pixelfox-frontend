@@ -33,6 +33,7 @@ type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm?: (selectedColors: string[]) => void;
+  onPaletteChange?: (paletteId: SystemPaletteId) => void;
 };
 
 type SchemeId = "all" | "used" | "recent";
@@ -59,9 +60,10 @@ export default function PaletteManageDialog({
   open,
   onOpenChange,
   onConfirm,
+  onPaletteChange,
 }: Props) {
   const { t } = useTranslation();
-  const { currentPaletteId, recentColors, usedColors, setCurrentPaletteId } = usePaletteStore();
+  const { currentPaletteId, recentColors, usedColors } = usePaletteStore();
   const [scheme, setScheme] = useState<SchemeId>("all");
   const [search, setSearch] = useState("");
   const [systemFilter, setSystemFilter] = useState<SystemPaletteId>(currentPaletteId);
@@ -129,6 +131,7 @@ export default function PaletteManageDialog({
   const handleClear = () => setSelected(new Set());
 
   const handleConfirm = () => {
+    onPaletteChange?.(systemFilter);
     const colors = Array.from(selected);
     onConfirm?.(colors);
     onOpenChange(false);
@@ -249,7 +252,6 @@ export default function PaletteManageDialog({
                           type="button"
                           onClick={() => {
                             setSystemFilter(p.id);
-                            setCurrentPaletteId(p.id);
                           }}
                           className={cn(
                             "h-7 rounded-full px-3 text-xs font-semibold transition-colors border",

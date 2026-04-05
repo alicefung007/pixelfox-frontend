@@ -45,7 +45,7 @@ function isDarkColor(hex: string): boolean {
 export default function PalettePanel() {
   const { t } = useTranslation();
   const { primaryColor, setColor } = useEditorStore();
-  const { currentPaletteId, recentColors, usedColors, customPalette, setCustomPalette } = usePaletteStore();
+  const { currentPaletteId, recentColors, usedColors, customPalette, setCustomPalette, setCurrentPaletteId } = usePaletteStore();
   const [isManageOpen, setIsManageOpen] = useState(false);
   const [tab, setTab] = useState<TabId>("all");
 
@@ -138,6 +138,9 @@ export default function PalettePanel() {
       <PaletteManageDialog
         open={isManageOpen}
         onOpenChange={setIsManageOpen}
+        onPaletteChange={(paletteId) => {
+          setCurrentPaletteId(paletteId);
+        }}
         onConfirm={(selectedColors) => {
           setCustomPalette(selectedColors);
           setTab("custom");
