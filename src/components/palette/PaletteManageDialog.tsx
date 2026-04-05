@@ -277,8 +277,8 @@ export default function PaletteManageDialog({
                 </Tabs>
               </div>
 
-              <div className="rounded-3xl border border-border/50 bg-background/40">
-                <div className="p-1 pr-5 grid grid-cols-8 sm:grid-cols-10 md:grid-cols-12 lg:grid-cols-14 gap-3">
+              <div className="rounded-3xl bg-background/40 p-1">
+                <div className="grid grid-cols-8 sm:grid-cols-10 md:grid-cols-12 lg:grid-cols-14 gap-3">
                 {visibleColors.map((swatch) => {
                   const key = normalizeHex(swatch.color);
                   const isSelected = selected.has(key);

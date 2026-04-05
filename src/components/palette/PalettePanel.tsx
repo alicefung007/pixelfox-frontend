@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEditorStore } from "@/store/useEditorStore";
 import { usePaletteStore } from "@/store/usePaletteStore";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import PaletteManageDialog from "@/components/palette/PaletteManageDialog";
 import { MARD_PALETTE, type PaletteSwatch } from "@/lib/palettes";
 import { cn } from "@/lib/utils";
@@ -52,8 +51,8 @@ export default function PalettePanel() {
   }, [palette.swatches, recentColors, tab, usedColors]);
 
   return (
-    <div className="h-full bg-background flex flex-col p-4 gap-4 overflow-hidden shadow-sm">
-      <div className="flex items-center justify-between shrink-0">
+    <div className="h-full bg-background flex flex-col gap-4 overflow-hidden shadow-sm">
+      <div className="flex items-center justify-between shrink-0 pl-4 pr-4 pt-4">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
             <Palette size={16} />
@@ -91,8 +90,8 @@ export default function PalettePanel() {
         </Tabs>
       </div>
 
-      <ScrollArea className="flex-1">
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(48px,1fr))] gap-3 p-1">
+      <div className="flex-1 overflow-y-auto px-4">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(48px,1fr))] gap-3 py-1">
           {visibleSwatches.map((swatch, i) => (
             <div key={i} className="flex flex-col items-center gap-1 p-1 transition-transform hover:scale-105 active:scale-95">
               <button
@@ -120,7 +119,7 @@ export default function PalettePanel() {
             </div>
           ))}
         </div>
-      </ScrollArea>
+      </div>
 
       <PaletteManageDialog
         open={isManageOpen}
