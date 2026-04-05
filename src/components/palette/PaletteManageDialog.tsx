@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Bookmark, Check, Save, Search, Settings2, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -69,6 +69,17 @@ export default function PaletteManageDialog({
   const [systemFilter, setSystemFilter] = useState<SystemPaletteId>(currentPaletteId);
   const [groupMode, setGroupMode] = useState<"letters" | "palette">("letters");
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
+
+  useEffect(() => {
+    if (open) {
+      setSystemFilter(currentPaletteId);
+      const palette = getSystemPalette(currentPaletteId);
+      const defaultSelected = usedColors.length > 0
+        ? usedColors.map(normalizeHex)
+        : palette?.swatches.map((s) => normalizeHex(s.color)) ?? [];
+      setSelected(new Set(defaultSelected));
+    }
+  }, [open, currentPaletteId, usedColors]);
 
   const activePalette = getSystemPalette(systemFilter) ?? SYSTEM_PALETTES[0];
   const paletteColors = activePalette?.swatches ?? [];
@@ -252,6 +263,9 @@ export default function PaletteManageDialog({
                           type="button"
                           onClick={() => {
                             setSystemFilter(p.id);
+                            const newPalette = getSystemPalette(p.id);
+                            const allColors = newPalette?.swatches.map((s) => normalizeHex(s.color)) ?? [];
+                            setSelected(new Set(allColors));
                           }}
                           className={cn(
                             "h-7 rounded-full px-3 text-xs font-semibold transition-colors border",
