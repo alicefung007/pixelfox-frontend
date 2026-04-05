@@ -199,7 +199,7 @@ export default function PixelCanvas() {
 
     const gridLineWidth = GRID_LINE_WIDTH / scale;
     const bold5LineWidth = (GRID_LINE_WIDTH * 1.5) / scale;  // 1.5px
-    const bold10LineWidth = (GRID_LINE_WIDTH * 2) / scale;    // 2px
+    const bold10LineWidth = (GRID_LINE_WIDTH * 3) / scale;    // 3px
     const gridColor = GRID_COLOR;
 
     ctx.strokeStyle = gridColor;
