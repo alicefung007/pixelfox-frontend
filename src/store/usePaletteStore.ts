@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 import type { SystemPaletteId } from '@/lib/palettes';
 
 function normalizeHex(hex: string) {
-  return hex.trim().toUpperCase();
+  return hex.trim().toUpperCase().replace(/^#/, "");
 }
 
 interface PaletteState {
@@ -26,13 +26,14 @@ export const usePaletteStore = create<PaletteState>()(
       customPalette: [],
       setCurrentPaletteId: (id) => set({ currentPaletteId: id }),
       addRecentColor: (color) => set((state) => {
-        if (state.recentColors.includes(color)) {
+        const normalizedColor = normalizeHex(color);
+        if (state.recentColors.some((c) => normalizeHex(c) === normalizedColor)) {
           return {
-            recentColors: [color, ...state.recentColors.filter((c) => c !== color)].slice(0, 20),
+            recentColors: [normalizedColor, ...state.recentColors.filter((c) => normalizeHex(c) !== normalizedColor)].slice(0, 20),
           };
         }
         return {
-          recentColors: [color, ...state.recentColors].slice(0, 20),
+          recentColors: [normalizedColor, ...state.recentColors].slice(0, 20),
         };
       }),
       addUsedColor: (color) => set((state) => {

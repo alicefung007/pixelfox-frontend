@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 type TabId = "used" | "recent" | "all" | "custom";
 
 function normalizeHex(hex: string) {
-  return hex.trim().toUpperCase();
+  return hex.trim().toUpperCase().replace(/^#/, "");
 }
 
 function hexLabel(hex: string) {
