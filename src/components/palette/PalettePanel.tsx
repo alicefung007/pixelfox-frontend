@@ -60,12 +60,10 @@ export default function PalettePanel() {
 
   return (
     <div className="h-full bg-background flex flex-col overflow-hidden shadow-sm">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4 shrink-0 px-3 sm:px-4 pt-3 sm:pt-4">
-        <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto">
-          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-            <Palette size={16} />
-            <span className="hidden sm:inline">{t("palette.palette")}</span>
-          </div>
+      <div className="flex items-center justify-between gap-2 shrink-0 px-3 sm:px-4 pt-3 sm:pt-4 overflow-x-auto">
+        <div className="flex items-center gap-2 shrink-0">
+          <Palette size={16} className="text-muted-foreground" />
+          <span className="text-sm font-medium text-muted-foreground hidden sm:inline">{t("palette.palette")}</span>
           <Button
             variant="outline"
             size="sm"
@@ -73,31 +71,31 @@ export default function PalettePanel() {
             onClick={() => setIsManageOpen(true)}
           >
             <Settings size={14} />
-            <span className="text-xs hidden sm:inline">{t("palette.manage")}</span>
+            <span className="text-xs">{t("palette.manage")}</span>
           </Button>
-          <div className="bg-pink-100 dark:bg-pink-900/30 text-pink-500 text-[10px] font-bold px-2 py-0.5 rounded border border-pink-200 dark:border-pink-800 uppercase tracking-wider">
+          <div className="bg-pink-100 dark:bg-pink-900/30 text-pink-500 text-[10px] font-bold px-2 py-0.5 rounded border border-pink-200 dark:border-pink-800 uppercase tracking-wider shrink-0">
             {palette.i18nKey ? t(palette.i18nKey) : palette.name}
           </div>
         </div>
 
-        <Tabs value={tab} onValueChange={(v) => setTab(v as TabId)} className="w-full sm:w-auto">
+        <Tabs value={tab} onValueChange={(v) => setTab(v as TabId)}>
           <TabsList className="h-8 bg-muted/50 p-1">
             <TabsTrigger value="used" className="text-[10px] h-6 px-2 sm:px-3 gap-1">
               <Grid size={12} />
-              <span className="hidden xs:inline">{t("palette.usedColors")}</span>
+              <span className="hidden sm:inline">{t("palette.usedColors")}</span>
             </TabsTrigger>
             <TabsTrigger value="recent" className="text-[10px] h-6 px-2 sm:px-3 gap-1">
               <History size={12} />
-              <span className="hidden xs:inline">{t("palette.recent")}</span>
+              <span className="hidden sm:inline">{t("palette.recent")}</span>
             </TabsTrigger>
             <TabsTrigger value="all" className="text-[10px] h-6 px-2 sm:px-3 gap-1">
               <Shapes size={12} />
-              <span className="hidden xs:inline">{t("palette.allColors")}</span>
+              <span className="hidden sm:inline">{t("palette.allColors")}</span>
             </TabsTrigger>
             {customPalette.length > 0 && (
               <TabsTrigger value="custom" className="text-[10px] h-6 px-2 sm:px-3 gap-1">
                 <Star size={12} />
-                <span className="hidden xs:inline">{t("palette.custom")}</span>
+                <span className="hidden sm:inline">{t("palette.custom")}</span>
               </TabsTrigger>
             )}
           </TabsList>
