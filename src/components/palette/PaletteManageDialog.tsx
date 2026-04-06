@@ -74,9 +74,9 @@ export default function PaletteManageDialog({
     if (open) {
       setSystemFilter(currentPaletteId);
       const palette = getSystemPalette(currentPaletteId);
-      const defaultSelected = usedColors.length > 0
-        ? usedColors.map(normalizeHex)
-        : palette?.swatches.map((s) => normalizeHex(s.color)) ?? [];
+      const allPaletteColors = palette?.swatches.map((s) => normalizeHex(s.color)) ?? [];
+      const usedNormalized = usedColors.map(normalizeHex);
+      const defaultSelected = [...new Set([...allPaletteColors, ...usedNormalized])];
       setSelected(new Set(defaultSelected));
     }
   }, [open, currentPaletteId, usedColors]);
