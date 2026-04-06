@@ -14,32 +14,14 @@ import { useEditorStore } from "@/store/useEditorStore";
 import { usePaletteStore } from "@/store/usePaletteStore";
 import PaletteManageDialog from "@/components/palette/PaletteManageDialog";
 import { getSystemPalette, type PaletteSwatch } from "@/lib/palettes";
-import { cn } from "@/lib/utils";
+import { cn, normalizeHex, hexLabel, isDarkColor } from "@/lib/utils";
 
 type TabId = "used" | "recent" | "all" | "custom";
-
-function normalizeHex(hex: string) {
-  return hex.trim().toUpperCase().replace(/^#/, "");
-}
-
-function hexLabel(hex: string) {
-  const v = normalizeHex(hex);
-  return v.startsWith("#") ? v.slice(1) : v;
-}
 
 function getLabelFromColor(hex: string, paletteSwatches: PaletteSwatch[]): string {
   const normalizedHex = normalizeHex(hex);
   const found = paletteSwatches.find((s) => normalizeHex(s.color) === normalizedHex);
   return found?.label ?? hexLabel(hex);
-}
-
-function isDarkColor(hex: string): boolean {
-  const h = hex.replace("#", "");
-  const r = parseInt(h.slice(0, 2), 16);
-  const g = parseInt(h.slice(2, 4), 16);
-  const b = parseInt(h.slice(4, 6), 16);
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return luminance < 0.5;
 }
 
 export default function PalettePanel() {

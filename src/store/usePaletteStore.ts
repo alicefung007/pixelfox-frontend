@@ -1,10 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { SystemPaletteId } from '@/lib/palettes';
-
-function normalizeHex(hex: string) {
-  return hex.trim().toUpperCase().replace(/^#/, "");
-}
+import { normalizeHex } from '@/lib/utils';
+import { PALETTE_CONFIG } from '@/lib/constants';
 
 interface PaletteState {
   currentPaletteId: SystemPaletteId;
@@ -29,24 +27,24 @@ export const usePaletteStore = create<PaletteState>()(
         const normalizedColor = normalizeHex(color);
         if (state.recentColors.some((c) => normalizeHex(c) === normalizedColor)) {
           return {
-            recentColors: [normalizedColor, ...state.recentColors.filter((c) => normalizeHex(c) !== normalizedColor)].slice(0, 20),
+            recentColors: [normalizedColor, ...state.recentColors.filter((c) => normalizeHex(c) !== normalizedColor)].slice(0, PALETTE_CONFIG.RECENT_COLORS_LIMIT),
           };
         }
         return {
-          recentColors: [normalizedColor, ...state.recentColors].slice(0, 20),
+          recentColors: [normalizedColor, ...state.recentColors].slice(0, PALETTE_CONFIG.RECENT_COLORS_LIMIT),
         };
       }),
       addUsedColor: (color) => set((state) => {
         const normalizedColor = normalizeHex(color);
         if (state.usedColors.some((c) => normalizeHex(c) === normalizedColor)) return state;
         return {
-          usedColors: [normalizedColor, ...state.usedColors].slice(0, 50),
+          usedColors: [normalizedColor, ...state.usedColors].slice(0, PALETTE_CONFIG.USED_COLORS_LIMIT),
         };
       }),
       setCustomPalette: (colors) => set({ customPalette: colors }),
     }),
     {
-      name: 'pixelfox-palette-storage',
+      name: PALETTE_CONFIG.STORAGE_KEY,
     }
   )
 );

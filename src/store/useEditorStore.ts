@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import { EDITOR_CONFIG } from '@/lib/constants';
+import { clampZoom } from '@/lib/utils';
 
 export type ToolType = 'brush' | 'bucket' | 'hand' | 'eraser' | 'eyedropper' | 'text';
 
@@ -26,11 +28,11 @@ interface EditorState {
 
 export const useEditorStore = create<EditorState>((set) => ({
   pixels: {},
-  width: 30,
-  height: 30,
+  width: EDITOR_CONFIG.DEFAULT_WIDTH,
+  height: EDITOR_CONFIG.DEFAULT_HEIGHT,
   currentTool: 'brush',
-  primaryColor: '#FF61A6',
-  zoom: 160,
+  primaryColor: EDITOR_CONFIG.DEFAULT_PRIMARY_COLOR,
+  zoom: EDITOR_CONFIG.DEFAULT_ZOOM,
   history: [{}],
   historyIndex: 0,
 
@@ -45,18 +47,17 @@ export const useEditorStore = create<EditorState>((set) => ({
   clearPixel: (x, y) => set((state) => {
     const key = `${x},${y}`;
     if (!(key in state.pixels)) return state;
-    const { [key]: _removed, ...rest } = state.pixels;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { [key]: _, ...rest } = state.pixels;
     return { pixels: rest };
   }),
 
   setPixels: (newPixels) => set({ pixels: newPixels }),
 
   saveHistory: () => set((state) => {
-    // Check if the current state is different from the last history entry
     const currentPixels = state.pixels;
     const lastHistoryEntry = state.history[state.historyIndex];
     
-    // Simple deep equality check for the objects
     if (JSON.stringify(currentPixels) === JSON.stringify(lastHistoryEntry)) {
       return state;
     }
@@ -73,7 +74,7 @@ export const useEditorStore = create<EditorState>((set) => ({
   
   setColor: (color) => set({ primaryColor: color }),
   
-  setZoom: (zoom) => set({ zoom: Math.max(10, Math.min(1000, zoom)) }),
+  setZoom: (zoom) => set({ zoom: clampZoom(zoom) }),
 
   undo: () => set((state) => {
     if (state.historyIndex > 0) {

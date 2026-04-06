@@ -1,9 +1,11 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useLayoutEffect, useState } from 'react';
 import { useEditorStore } from '@/store/useEditorStore';
 import { usePaletteStore } from '@/store/usePaletteStore';
 import { Minus, Plus, Maximize, Pencil, PaintBucket, Eraser, Pipette } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/components/theme-provider';
+import { clampZoom, getLinePoints } from '@/lib/utils';
+import { EDITOR_CONFIG, CANVAS_CONFIG, CURSOR_CONFIG } from '@/lib/constants';
 
 export default function PixelCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -24,8 +26,6 @@ export default function PixelCanvas() {
     if (typeof window === 'undefined' || !('matchMedia' in window)) return 'light';
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   });
-
-  const clampZoom = (value: number) => Math.max(10, Math.min(1000, value));
 
   useEffect(() => {
     zoomRef.current = zoom;
@@ -56,9 +56,8 @@ export default function PixelCanvas() {
     const updateZoomToFit = () => {
       if (!isAutoZoom) return;
       
-      const padding = 96;
-      const availableWidth = container.clientWidth - padding;
-      const availableHeight = container.clientHeight - padding;
+      const availableWidth = container.clientWidth - EDITOR_CONFIG.AUTO_FIT_PADDING;
+      const availableHeight = container.clientHeight - EDITOR_CONFIG.AUTO_FIT_PADDING;
       
       const scaleX = availableWidth / width;
       const scaleY = availableHeight / height;
@@ -69,7 +68,6 @@ export default function PixelCanvas() {
     const resizeObserver = new ResizeObserver(updateZoomToFit);
     resizeObserver.observe(container);
     
-    // Initial fit
     updateZoomToFit();
 
     return () => resizeObserver.disconnect();
@@ -89,7 +87,7 @@ export default function PixelCanvas() {
     return () => resizeObserver.disconnect();
   }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!isAutoZoom) return;
     if (viewportSize.width === 0 || viewportSize.height === 0) return;
 
@@ -98,6 +96,7 @@ export default function PixelCanvas() {
     const contentHeight = height * scale;
     const x = (viewportSize.width - contentWidth) / 2;
     const y = (viewportSize.height - contentHeight) / 2;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setViewOffset({ x, y });
   }, [isAutoZoom, viewportSize.width, viewportSize.height, zoom, width, height]);
 
@@ -129,34 +128,6 @@ export default function PixelCanvas() {
   const [isDrawing, setIsDrawing] = useState(false);
   const [lastCoords, setLastCoords] = useState<{ x: number, y: number } | null>(null);
 
-  // Constants
-  const GRID_LINE_WIDTH = 1;
-  const GRID_COLOR = 'rgba(0, 0, 0, 0.05)';
-
-  const getLinePoints = (x0: number, y0: number, x1: number, y1: number) => {
-    const points: { x: number, y: number }[] = [];
-    const dx = Math.abs(x1 - x0);
-    const dy = Math.abs(y1 - y0);
-    const sx = (x0 < x1) ? 1 : -1;
-    const sy = (y0 < y1) ? 1 : -1;
-    let err = dx - dy;
-
-    while (true) {
-      points.push({ x: x0, y: y0 });
-      if (x0 === x1 && y0 === y1) break;
-      const e2 = 2 * err;
-      if (e2 > -dy) {
-        err -= dy;
-        x0 += sx;
-      }
-      if (e2 < dx) {
-        err += dx;
-        y0 += sy;
-      }
-    }
-    return points;
-  };
-
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -186,7 +157,7 @@ export default function PixelCanvas() {
 
     for (let x = 0; x < width; x++) {
       for (let y = 0; y < height; y++) {
-        ctx.fillStyle = (x + y) % 2 === 0 ? '#FFFFFF' : '#F0F0F0';
+        ctx.fillStyle = (x + y) % 2 === 0 ? CANVAS_CONFIG.CHECKER_LIGHT : CANVAS_CONFIG.CHECKER_DARK;
         ctx.fillRect(x, y, 1, 1);
       }
     }
@@ -197,10 +168,10 @@ export default function PixelCanvas() {
       ctx.fillRect(x, y, 1, 1);
     });
 
-    const gridLineWidth = GRID_LINE_WIDTH / scale;
-    const bold5LineWidth = (GRID_LINE_WIDTH * 1.5) / scale;  // 1.5px
-    const bold10LineWidth = (GRID_LINE_WIDTH * 3) / scale;    // 3px
-    const gridColor = GRID_COLOR;
+    const gridLineWidth = CANVAS_CONFIG.GRID_LINE_WIDTH / scale;
+    const bold5LineWidth = (CANVAS_CONFIG.BOLD_LINE_WIDTH * CANVAS_CONFIG.GRID_LINE_WIDTH) / scale;
+    const bold10LineWidth = (CANVAS_CONFIG.MAJOR_LINE_WIDTH * CANVAS_CONFIG.GRID_LINE_WIDTH) / scale;
+    const gridColor = CANVAS_CONFIG.GRID_COLOR;
 
     ctx.strokeStyle = gridColor;
     ctx.lineWidth = gridLineWidth;
@@ -218,14 +189,14 @@ export default function PixelCanvas() {
     ctx.strokeStyle = gridColor;
     ctx.lineWidth = bold5LineWidth;
     ctx.beginPath();
-    for (let x = 5; x <= width; x += 5) {
-      if (x % 10 !== 0) {
+    for (let x = CANVAS_CONFIG.GRID_INTERVAL_5; x <= width; x += CANVAS_CONFIG.GRID_INTERVAL_5) {
+      if (x % CANVAS_CONFIG.GRID_INTERVAL_10 !== 0) {
         ctx.moveTo(x, 0);
         ctx.lineTo(x, height);
       }
     }
-    for (let y = 5; y <= height; y += 5) {
-      if (y % 10 !== 0) {
+    for (let y = CANVAS_CONFIG.GRID_INTERVAL_5; y <= height; y += CANVAS_CONFIG.GRID_INTERVAL_5) {
+      if (y % CANVAS_CONFIG.GRID_INTERVAL_10 !== 0) {
         ctx.moveTo(0, y);
         ctx.lineTo(width, y);
       }
@@ -235,18 +206,18 @@ export default function PixelCanvas() {
     ctx.strokeStyle = gridColor;
     ctx.lineWidth = bold10LineWidth;
     ctx.beginPath();
-    for (let x = 10; x <= width; x += 10) {
+    for (let x = CANVAS_CONFIG.GRID_INTERVAL_10; x <= width; x += CANVAS_CONFIG.GRID_INTERVAL_10) {
       ctx.moveTo(x, 0);
       ctx.lineTo(x, height);
     }
-    for (let y = 10; y <= height; y += 10) {
+    for (let y = CANVAS_CONFIG.GRID_INTERVAL_10; y <= height; y += CANVAS_CONFIG.GRID_INTERVAL_10) {
       ctx.moveTo(0, y);
       ctx.lineTo(width, y);
     }
     ctx.stroke();
 
     ctx.lineWidth = 1 / scale;
-    ctx.strokeStyle = 'rgba(0, 0, 0, 0.15)';
+    ctx.strokeStyle = CANVAS_CONFIG.BORDER_COLOR;
     ctx.strokeRect(0, 0, width, height);
 
     ctx.restore();
@@ -476,7 +447,7 @@ export default function PixelCanvas() {
         dy *= container.clientHeight;
       }
 
-      const panSpeed = 1.5;
+      const panSpeed = EDITOR_CONFIG.PAN_SPEED;
       setViewOffset(prev => ({ x: prev.x - dx * panSpeed, y: prev.y - dy * panSpeed }));
     };
 
@@ -493,7 +464,7 @@ export default function PixelCanvas() {
     const scale = zoom / 10;
     const worldX = (anchorX - viewOffset.x) / scale;
     const worldY = (anchorY - viewOffset.y) / scale;
-    const step = 10;
+    const step = EDITOR_CONFIG.ZOOM_STEP;
     const nextZoom = clampZoom(direction === 'in' ? zoom + step : zoom - step);
     const nextScale = nextZoom / 10;
     setZoom(nextZoom);
@@ -516,13 +487,12 @@ export default function PixelCanvas() {
             : null;
 
   const cursorClass = isPanning ? 'cursor-grabbing' : currentTool === 'hand' ? 'cursor-grab' : currentTool === 'text' ? 'cursor-text' : isOverlayTool ? 'cursor-none' : 'cursor-crosshair';
-  const cursorIconSize = 18;
   const cursorHotspot =
     currentTool === 'brush'
-      ? { x: 3, y: 15 }
+      ? CURSOR_CONFIG.BRUSH_HOTSPOT
       : currentTool === 'eyedropper'
-        ? { x: 4, y: 16 }
-        : { x: cursorIconSize / 2, y: cursorIconSize / 2 };
+        ? CURSOR_CONFIG.EYEDROPPER_HOTSPOT
+        : { x: CURSOR_CONFIG.ICON_SIZE / 2, y: CURSOR_CONFIG.ICON_SIZE / 2 };
 
   const onCanvasLeave = () => {
     if (!isPanning) onMouseUp();
@@ -555,12 +525,11 @@ export default function PixelCanvas() {
               color: currentTool === 'brush' ? primaryColor : undefined,
             }}
           >
-            <CursorIcon size={cursorIconSize} />
+            <CursorIcon size={CURSOR_CONFIG.ICON_SIZE} />
           </div>
         )}
       </div>
 
-      {/* Zoom Controls */}
       <div className="absolute bottom-4 right-4 sm:bottom-6 sm:right-6 flex items-center gap-1 sm:gap-2 rounded-lg border border-border bg-popover text-popover-foreground shadow-sm p-1 z-20">
         <Button 
           variant="ghost" 

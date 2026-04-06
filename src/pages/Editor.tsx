@@ -1,18 +1,15 @@
 import { useState, useEffect, useRef } from "react";
 import PixelCanvas from "@/components/editor/PixelCanvas";
 import PalettePanel from "@/components/palette/PalettePanel";
-
-const DEFAULT_PALETTE_HEIGHT = 280;
-const MIN_PALETTE_HEIGHT = 100;
-const MAX_PALETTE_HEIGHT = 600;
+import { PANEL_CONFIG } from "@/lib/constants";
 
 export default function Editor() {
   const [paletteHeight, setPaletteHeight] = useState(() => {
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem("palette-height");
-      return saved ? parseInt(saved, 10) : DEFAULT_PALETTE_HEIGHT;
+      const saved = localStorage.getItem(PANEL_CONFIG.STORAGE_KEY);
+      return saved ? parseInt(saved, 10) : PANEL_CONFIG.DEFAULT_HEIGHT;
     }
-    return DEFAULT_PALETTE_HEIGHT;
+    return PANEL_CONFIG.DEFAULT_HEIGHT;
   });
   const isResizing = useRef(false);
   const lastTouchY = useRef(0);
@@ -20,14 +17,14 @@ export default function Editor() {
   const handleMouseUpRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
-    localStorage.setItem("palette-height", paletteHeight.toString());
+    localStorage.setItem(PANEL_CONFIG.STORAGE_KEY, paletteHeight.toString());
   }, [paletteHeight]);
 
   useEffect(() => {
     handleMouseMoveRef.current = (e: MouseEvent) => {
       if (!isResizing.current) return;
       const newHeight = window.innerHeight - e.clientY;
-      if (newHeight >= MIN_PALETTE_HEIGHT && newHeight <= MAX_PALETTE_HEIGHT) {
+      if (newHeight >= PANEL_CONFIG.MIN_HEIGHT && newHeight <= PANEL_CONFIG.MAX_HEIGHT) {
         setPaletteHeight(newHeight);
       }
     };
@@ -62,7 +59,7 @@ export default function Editor() {
     
     setPaletteHeight((prev) => {
       const newHeight = prev + deltaY;
-      if (newHeight >= MIN_PALETTE_HEIGHT && newHeight <= MAX_PALETTE_HEIGHT) {
+      if (newHeight >= PANEL_CONFIG.MIN_HEIGHT && newHeight <= PANEL_CONFIG.MAX_HEIGHT) {
         return newHeight;
       }
       return prev;

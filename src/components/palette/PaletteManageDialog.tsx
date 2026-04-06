@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useLayoutEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Bookmark, Check, Save, Search, Settings2, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,7 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { cn } from "@/lib/utils";
+import { cn, normalizeHex, hexLabel, isDarkColor } from "@/lib/utils";
 import {
   SYSTEM_PALETTES,
   getSystemPalette,
@@ -38,24 +38,6 @@ type Props = {
 
 type SchemeId = "all" | "used" | "recent";
 
-function normalizeHex(hex: string) {
-  return hex.trim().toUpperCase();
-}
-
-function hexLabel(hex: string) {
-  const v = normalizeHex(hex);
-  return v.startsWith("#") ? v.slice(1) : v;
-}
-
-function isDarkColor(hex: string): boolean {
-  const h = hex.replace("#", "");
-  const r = parseInt(h.slice(0, 2), 16);
-  const g = parseInt(h.slice(2, 4), 16);
-  const b = parseInt(h.slice(4, 6), 16);
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return luminance < 0.5;
-}
-
 export default function PaletteManageDialog({
   open,
   onOpenChange,
@@ -70,8 +52,9 @@ export default function PaletteManageDialog({
   const [groupMode, setGroupMode] = useState<"letters" | "palette">("letters");
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSystemFilter(currentPaletteId);
       const palette = getSystemPalette(currentPaletteId);
       const allPaletteColors = palette?.swatches.map((s) => normalizeHex(s.color)) ?? [];
@@ -82,7 +65,7 @@ export default function PaletteManageDialog({
   }, [open, currentPaletteId, usedColors]);
 
   const activePalette = getSystemPalette(systemFilter) ?? SYSTEM_PALETTES[0];
-  const paletteColors = activePalette?.swatches ?? [];
+  const paletteColors = useMemo(() => activePalette?.swatches ?? [], [activePalette]);
 
   const schemeOptions = useMemo(() => {
     return [
