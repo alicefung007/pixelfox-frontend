@@ -14,7 +14,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type Props = {
   open: boolean;
@@ -23,8 +22,14 @@ type Props = {
 
 export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
   const { t } = useTranslation();
-  const [adjustMode, setAdjustMode] = useState("pattern");
-  const [previewTab, setPreviewTab] = useState("original");
+  
+  // Pattern size beads
+  const [widthBeads, setWidthBeads] = useState("50");
+  const [heightBeads, setHeightBeads] = useState("50");
+
+  // Offset values
+  const [offsetX, setOffsetX] = useState("0.00");
+  const [offsetY, setOffsetY] = useState("0.00");
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -54,31 +59,9 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
 
             <Card className="rounded-xl py-4 gap-4 shadow-none ring-1 ring-border/60">
               <CardHeader className="px-4">
-                <div className="flex items-center justify-between gap-2">
-                  <CardTitle className="text-sm">{t("editor.uploadDialog.gridSettings")}</CardTitle>
-                  <Button variant="ghost" size="xs" className="h-7 px-2 text-xs text-muted-foreground">
-                    <Sparkles className="size-3.5" />
-                    {t("editor.uploadDialog.autoDetect")}
-                  </Button>
-                </div>
+                <CardTitle className="text-sm">{t("editor.uploadDialog.gridSettings")}</CardTitle>
               </CardHeader>
               <CardContent className="px-4 space-y-4">
-                <div className="space-y-2">
-                  <Label className="text-[11px] text-muted-foreground">
-                    {t("editor.uploadDialog.adjustmentMode")}
-                  </Label>
-                  <Tabs value={adjustMode} onValueChange={setAdjustMode}>
-                    <TabsList className="h-8 bg-muted/50 p-1">
-                      <TabsTrigger value="cell" className="h-6 px-3 text-[11px]">
-                        {t("editor.uploadDialog.cellSize")}
-                      </TabsTrigger>
-                      <TabsTrigger value="pattern" className="h-6 px-3 text-[11px]">
-                        {t("editor.uploadDialog.patternSize")}
-                      </TabsTrigger>
-                    </TabsList>
-                  </Tabs>
-                </div>
-
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label className="text-[11px] font-semibold">
@@ -94,13 +77,27 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
                       <Label className="text-[10px] text-muted-foreground">
                         {t("editor.uploadDialog.widthBeads")}
                       </Label>
-                      <Input defaultValue="50" inputMode="numeric" />
+                      <Input
+                        value={widthBeads}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setWidthBeads(val);
+                        }}
+                        inputMode="numeric"
+                      />
                     </div>
                     <div className="space-y-1">
                       <Label className="text-[10px] text-muted-foreground">
                         {t("editor.uploadDialog.heightBeads")}
                       </Label>
-                      <Input defaultValue="50" inputMode="numeric" />
+                      <Input
+                        value={heightBeads}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setHeightBeads(val);
+                        }}
+                        inputMode="numeric"
+                      />
                     </div>
                   </div>
 
@@ -109,13 +106,27 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
                       <Label className="text-[10px] text-muted-foreground">
                         {t("editor.uploadDialog.widthBeads")}
                       </Label>
-                      <input type="range" min={1} max={200} defaultValue={50} className="w-full accent-pink-500" />
+                      <input
+                        type="range"
+                        min={1}
+                        max={200}
+                        value={Number(widthBeads) || 1}
+                        onChange={(e) => setWidthBeads(e.target.value)}
+                        className="w-full accent-pink-500"
+                      />
                     </div>
                     <div className="space-y-1">
                       <Label className="text-[10px] text-muted-foreground">
                         {t("editor.uploadDialog.heightBeads")}
                       </Label>
-                      <input type="range" min={1} max={200} defaultValue={50} className="w-full accent-pink-500" />
+                      <input
+                        type="range"
+                        min={1}
+                        max={200}
+                        value={Number(heightBeads) || 1}
+                        onChange={(e) => setHeightBeads(e.target.value)}
+                        className="w-full accent-pink-500"
+                      />
                     </div>
                   </div>
                 </div>
@@ -125,11 +136,19 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1">
                       <Label className="text-[10px] text-muted-foreground">X</Label>
-                      <Input defaultValue="0.00" inputMode="decimal" />
+                      <Input
+                        value={offsetX}
+                        onChange={(e) => setOffsetX(e.target.value)}
+                        inputMode="decimal"
+                      />
                     </div>
                     <div className="space-y-1">
                       <Label className="text-[10px] text-muted-foreground">Y</Label>
-                      <Input defaultValue="0.00" inputMode="decimal" />
+                      <Input
+                        value={offsetY}
+                        onChange={(e) => setOffsetY(e.target.value)}
+                        inputMode="decimal"
+                      />
                     </div>
                   </div>
                   <div className="space-y-2 pt-1">
@@ -137,13 +156,27 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
                       <Label className="text-[10px] text-muted-foreground">
                         {t("editor.uploadDialog.horizontalOffset")}
                       </Label>
-                      <input type="range" min={-200} max={200} defaultValue={0} className="w-full accent-pink-500" />
+                      <input
+                        type="range"
+                        min={-200}
+                        max={200}
+                        value={Number(offsetX) || 0}
+                        onChange={(e) => setOffsetX(e.target.value)}
+                        className="w-full accent-pink-500"
+                      />
                     </div>
                     <div className="space-y-1">
                       <Label className="text-[10px] text-muted-foreground">
                         {t("editor.uploadDialog.verticalOffset")}
                       </Label>
-                      <input type="range" min={-200} max={200} defaultValue={0} className="w-full accent-pink-500" />
+                      <input
+                        type="range"
+                        min={-200}
+                        max={200}
+                        value={Number(offsetY) || 0}
+                        onChange={(e) => setOffsetY(e.target.value)}
+                        className="w-full accent-pink-500"
+                      />
                     </div>
                   </div>
                 </div>
@@ -153,17 +186,7 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
 
           <div className="flex-1 min-w-0 space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold">{t("editor.uploadDialog.adjustAlign")}</h3>
-              <Tabs value={previewTab} onValueChange={setPreviewTab}>
-                <TabsList className="h-8 bg-muted/50 p-1">
-                  <TabsTrigger value="original" className="h-6 px-3 text-[11px]">
-                    {t("editor.uploadDialog.originalImage")}
-                  </TabsTrigger>
-                  <TabsTrigger value="adjust" className="h-6 px-3 text-[11px]">
-                    {t("editor.uploadDialog.adjustAlign")}
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
+              <h3 className="text-sm font-semibold">{t("editor.uploadDialog.originalImage")}</h3>
             </div>
 
             <div className="rounded-xl border bg-muted/20 h-[320px] flex items-center justify-center text-sm text-muted-foreground">
