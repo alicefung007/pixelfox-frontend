@@ -59,7 +59,7 @@
       "schemeAll": "所有颜色 ({{count}})",
       "schemeUsed": "已用颜色 ({{count}})",
       "schemeRecent": "最近颜色 ({{count}})",
-      "searchPlaceholder": "搜索颜色名或 HASH...",
+      "searchPlaceholder": "搜索颜色名或 HEX...",
       "selectAll": "全选",
       "clear": "清空",
       "saveScheme": "存为 Plan",

@@ -59,7 +59,7 @@
       "schemeAll": "すべての色 ({{count}})",
       "schemeUsed": "使用色 ({{count}})",
       "schemeRecent": "最近の色 ({{count}})",
-      "searchPlaceholder": "色名または HASH を検索...",
+      "searchPlaceholder": "色名または HEX を検索...",
       "selectAll": "全選択",
       "clear": "クリア",
       "saveScheme": "Plan として保存",

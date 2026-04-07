@@ -59,7 +59,7 @@
       "schemeAll": "모든 색상 ({{count}})",
       "schemeUsed": "사용된 색상 ({{count}})",
       "schemeRecent": "최근 색상 ({{count}})",
-      "searchPlaceholder": "이름 또는 HASH 검색...",
+      "searchPlaceholder": "색상명 또는 HEX 검색...",
       "selectAll": "전체 선택",
       "clear": "비우기",
       "saveScheme": "Plan 저장",

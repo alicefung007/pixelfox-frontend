@@ -59,7 +59,7 @@
       "schemeAll": "All Colors ({{count}})",
       "schemeUsed": "Used Colors ({{count}})",
       "schemeRecent": "Recent Colors ({{count}})",
-      "searchPlaceholder": "Search name or HASH...",
+      "searchPlaceholder": "Search color name or HEX...",
       "selectAll": "Select all",
       "clear": "Clear",
       "saveScheme": "Save Plan",
