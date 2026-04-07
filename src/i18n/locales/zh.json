@@ -63,7 +63,7 @@
       "selectAll": "全选",
       "clear": "清空",
       "saveScheme": "存为 Plan",
-      "systemFilter": "筛选系统:",
+      "presetPlansFilter": "预设方案:",
       "groupLetters": "字母分组",
       "groupPalette": "色盘分组",
       "cancel": "取消",

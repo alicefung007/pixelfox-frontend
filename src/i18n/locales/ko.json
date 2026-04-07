@@ -63,7 +63,7 @@
       "selectAll": "전체 선택",
       "clear": "비우기",
       "saveScheme": "Plan 저장",
-      "systemFilter": "시스템:",
+      "presetPlansFilter": "프리셋 플랜:",
       "groupLetters": "문자 그룹",
       "groupPalette": "팔레트 그룹",
       "cancel": "취소",

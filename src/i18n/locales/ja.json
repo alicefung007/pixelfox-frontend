@@ -63,7 +63,7 @@
       "selectAll": "全選択",
       "clear": "クリア",
       "saveScheme": "Plan として保存",
-      "systemFilter": "システム:",
+      "presetPlansFilter": "プリセットプラン:",
       "groupLetters": "文字グループ",
       "groupPalette": "パレット",
       "cancel": "キャンセル",

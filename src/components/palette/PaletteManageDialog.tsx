@@ -235,11 +235,11 @@ export default function PaletteManageDialog({
               </div>
 
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
-                <div className="flex items-center gap-2 min-w-0 w-full overflow-x-auto scrollbar-hide -mx-2 px-2">
-                  <span className="text-xs text-muted-foreground shrink-0">
-                    {t("palette.manageDialog.systemFilter")}
+                <div className="flex items-start gap-2 min-w-0 w-full flex-nowrap -mx-2 px-2">
+                  <span className="text-xs text-muted-foreground shrink-0 mt-0.5">
+                    {t("palette.manageDialog.presetPlansFilter")}
                   </span>
-                  <div className="flex gap-2 shrink-0">
+                  <div className="flex gap-2 flex-wrap min-w-0">
                     {SYSTEM_PALETTES.map((p) => {
                       const active = systemFilter === p.id;
                       return (
@@ -266,7 +266,7 @@ export default function PaletteManageDialog({
                   </div>
                 </div>
 
-                <Tabs
+                {/* <Tabs
                   value={groupMode}
                   onValueChange={(v) => setGroupMode(v as "letters" | "palette")}
                 >
@@ -278,7 +278,7 @@ export default function PaletteManageDialog({
                       {t("palette.manageDialog.groupPalette")}
                     </TabsTrigger>
                   </TabsList>
-                </Tabs>
+                </Tabs> */}
               </div>
 
               <div className="rounded-3xl bg-background/40 p-1">
