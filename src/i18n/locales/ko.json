@@ -90,7 +90,9 @@
       "originalImage": "Original Image",
       "resultPreview": "Result Preview",
       "cancel": "Cancel",
-      "generate": "Generate"
+      "generate": "Generate",
+      "lockAspectRatio": "가로 세비비율 잠금",
+      "unlockAspectRatio": "가로 세비비율 해제"
     }
   }
 }

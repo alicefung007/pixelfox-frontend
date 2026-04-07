@@ -90,7 +90,9 @@
       "originalImage": "原始图片",
       "resultPreview": "结果预览",
       "cancel": "取消",
-      "generate": "生成"
+      "generate": "生成",
+      "lockAspectRatio": "锁定长宽比",
+      "unlockAspectRatio": "解锁长宽比"
     }
   }
 }

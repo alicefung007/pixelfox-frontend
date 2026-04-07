@@ -90,7 +90,9 @@
       "originalImage": "Original Image",
       "resultPreview": "Result Preview",
       "cancel": "Cancel",
-      "generate": "Generate"
+      "generate": "Generate",
+      "lockAspectRatio": "Lock aspect ratio",
+      "unlockAspectRatio": "Unlock aspect ratio"
     }
   }
 }

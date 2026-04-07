@@ -90,7 +90,9 @@
       "originalImage": "Original Image",
       "resultPreview": "Result Preview",
       "cancel": "Cancel",
-      "generate": "Generate"
+      "generate": "Generate",
+      "lockAspectRatio": "アスペクト比をロック",
+      "unlockAspectRatio": "アスペクト比を解除"
     }
   }
 }
