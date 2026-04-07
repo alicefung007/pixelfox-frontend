@@ -86,8 +86,8 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[980px] p-0 overflow-hidden flex flex-col gap-0">
-        <DialogHeader className="px-6 pt-6 pb-4">
+      <DialogContent className="max-w-[980px] w-[calc(100vw-32px)] md:w-full p-0 flex flex-col gap-0 max-h-[90vh] md:max-h-[9999px]">
+        <DialogHeader className="px-3 pt-3 pb-2 md:px-6 md:pt-6 md:pb-4 shrink-0 text-left">
           <div className="flex items-start justify-between gap-4">
             <div className="space-y-1">
               <DialogTitle>{t("editor.uploadDialog.title")}</DialogTitle>
@@ -101,16 +101,16 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
           </div>
         </DialogHeader>
 
-        <Separator />
+        <Separator className="shrink-0" />
 
-        <div className="px-6 py-4 flex gap-5 overflow-auto max-h-[70vh]">
-          <div className="w-[260px] shrink-0 space-y-4">
-            <div className="space-y-2">
+        <div className="flex-1 overflow-auto px-3 pb-3 md:px-6 md:pb-6 flex flex-col md:flex-row gap-3 md:gap-5">
+          <div className="w-full md:w-[260px] md:shrink-0 space-y-3 md:space-y-4">
+            <div className="space-y-2 pt-3">
               <Label className="text-xs font-semibold">{t("editor.uploadDialog.uploadPhoto")}</Label>
-              <Input type="file" />
+              <Input type="file" className="text-base" />
             </div>
 
-            <Card className="rounded-xl py-4 gap-4">
+            <Card className="rounded-xl py-4 gap-4 shadow-none bg-muted/20">
               <CardHeader className="px-4">
                 <CardTitle className="text-sm">{t("editor.uploadDialog.gridSettings")}</CardTitle>
               </CardHeader>
@@ -128,7 +128,6 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
                           className={aspectRatioLocked ? "" : "text-muted-foreground"}
                           onClick={() => {
                             if (!aspectRatioLocked) {
-                              // Lock: set height to match width
                               setHeightBeads(widthBeads);
                             }
                             setAspectRatioLocked(!aspectRatioLocked);
@@ -251,12 +250,12 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
             </Card>
           </div>
 
-          <div className="flex-1 min-w-0 space-y-4">
-            <div className="flex items-center justify-between">
+          <div className="flex-1 min-w-0 space-y-3 md:space-y-4">
+            <div className="flex items-center justify-between pt-3">
               <h3 className="text-sm font-semibold">{t("editor.uploadDialog.originalImage")}</h3>
             </div>
 
-            <div className="rounded-xl border bg-muted/20 h-[320px] flex items-center justify-center text-sm text-muted-foreground">
+            <div className="rounded-xl border bg-muted/20 h-[140px] sm:h-[200px] md:h-[320px] flex items-center justify-center text-sm text-muted-foreground">
               {t("editor.uploadDialog.uploadPhoto")}
             </div>
 
@@ -267,17 +266,17 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
               </Button>
             </div>
 
-            <div className="rounded-xl border bg-background h-[140px]" />
+            <div className="rounded-xl border bg-background h-[80px] sm:h-[100px] md:h-[140px]" />
           </div>
         </div>
 
-        <Separator />
+        <Separator className="shrink-0" />
 
-        <div className="px-6 py-4 flex items-center justify-end gap-2">
+        <div className="px-3 py-2.5 md:px-6 md:py-4 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 shrink-0">
           <DialogClose asChild>
-            <Button variant="outline">{t("editor.uploadDialog.cancel")}</Button>
+            <Button variant="outline" className="w-full sm:w-auto">{t("editor.uploadDialog.cancel")}</Button>
           </DialogClose>
-          <Button className="gap-2 bg-gradient-to-r from-pink-500 to-violet-500 hover:opacity-90 border-none text-white font-medium">
+          <Button className="w-full sm:w-auto gap-2 bg-gradient-to-r from-pink-500 to-violet-500 hover:opacity-90 border-none text-white font-medium">
             <Sparkles className="size-4" />
             {t("editor.uploadDialog.generate")}
           </Button>
