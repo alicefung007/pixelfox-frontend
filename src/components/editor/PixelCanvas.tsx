@@ -170,9 +170,9 @@ export default function PixelCanvas() {
       ctx.fillRect(x, y, 1, 1);
     });
 
-    const gridLineWidth = CANVAS_CONFIG.GRID_LINE_WIDTH / scale;
-    const bold5LineWidth = (CANVAS_CONFIG.BOLD_LINE_WIDTH * CANVAS_CONFIG.GRID_LINE_WIDTH) / scale;
-    const bold10LineWidth = (CANVAS_CONFIG.MAJOR_LINE_WIDTH * CANVAS_CONFIG.GRID_LINE_WIDTH) / scale;
+    const gridLineWidth = CANVAS_CONFIG.GRID_LINE_WIDTH / (dpr * scale);
+    const bold5LineWidth = (CANVAS_CONFIG.BOLD_LINE_WIDTH * CANVAS_CONFIG.GRID_LINE_WIDTH) / (dpr * scale);
+    const bold10LineWidth = (CANVAS_CONFIG.MAJOR_LINE_WIDTH * CANVAS_CONFIG.GRID_LINE_WIDTH) / (dpr * scale);
     const gridColor = CANVAS_CONFIG.GRID_COLOR;
 
     ctx.strokeStyle = gridColor;
@@ -218,7 +218,7 @@ export default function PixelCanvas() {
     }
     ctx.stroke();
 
-    ctx.lineWidth = 1 / scale;
+    ctx.lineWidth = 1 / (dpr * scale);
     ctx.strokeStyle = CANVAS_CONFIG.BORDER_COLOR;
     ctx.strokeRect(0, 0, width, height);
 
