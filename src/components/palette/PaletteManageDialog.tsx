@@ -133,7 +133,7 @@ export default function PaletteManageDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[980px] w-[calc(100vw-32px)] max-h-[calc(100vh-32px)] p-0 overflow-hidden flex flex-col">
+      <DialogContent className="max-w-[980px] w-[calc(100vw-32px)] max-h-[calc(100vh-32px)] p-0 overflow-hidden flex flex-col gap-0">
         <DialogHeader className="px-6 pt-6 pb-4">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">

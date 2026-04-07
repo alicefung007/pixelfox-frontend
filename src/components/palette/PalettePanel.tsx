@@ -42,7 +42,7 @@ export default function PalettePanel() {
 
   return (
     <div className="h-full bg-background flex flex-col overflow-hidden shadow-sm">
-      <div className="flex items-center justify-between gap-2 shrink-0 px-3 sm:px-4 pt-3 sm:pt-4 overflow-x-auto">
+      <div className="flex items-center justify-between gap-2 shrink-0 px-3 sm:px-4 py-2 overflow-x-auto">
         <div className="flex items-center gap-2 shrink-0">
           <Palette size={16} className="text-muted-foreground" />
           <span className="text-sm font-medium text-muted-foreground hidden sm:inline">{t("palette.palette")}</span>
@@ -84,7 +84,7 @@ export default function PalettePanel() {
         </Tabs>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-2">
+      <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-2 mt-1">
         <div className="grid grid-cols-8 sm:grid-cols-10 md:grid-cols-[repeat(auto-fill,minmax(48px,1fr))] gap-2 sm:gap-3 py-1">
           {visibleSwatches.map((swatch, i) => (
             <div key={i} className="flex flex-col items-center gap-1 p-0.5 sm:p-1 transition-transform hover:scale-105 active:scale-95">
