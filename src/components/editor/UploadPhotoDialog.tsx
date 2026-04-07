@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
 import {
   Tooltip,
   TooltipContent,
@@ -172,30 +173,28 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
                   </div>
 
                   <div className="space-y-2 pt-1">
-                    <div className="space-y-1">
+                    <div className="space-y-1 py-2">
                       <Label className="text-[10px] text-muted-foreground">
                         {t("editor.uploadDialog.widthBeads")}
                       </Label>
-                      <input
-                        type="range"
+                      <Slider
+                        value={[Number(widthBeads) || 1]}
+                        onValueChange={([val]) => handleWidthBeadsChange(String(val))}
                         min={1}
                         max={200}
-                        value={Number(widthBeads) || 1}
-                        onChange={(e) => handleWidthBeadsChange(e.target.value)}
-                        className="w-full accent-pink-500"
+                        className="[&_[data-slot=slider-range]]:bg-pink-500"
                       />
                     </div>
-                    <div className="space-y-1">
+                    <div className="space-y-1 py-2">
                       <Label className="text-[10px] text-muted-foreground">
                         {t("editor.uploadDialog.heightBeads")}
                       </Label>
-                      <input
-                        type="range"
+                      <Slider
+                        value={[Number(heightBeads) || 1]}
+                        onValueChange={([val]) => handleHeightBeadsChange(String(val))}
                         min={1}
                         max={200}
-                        value={Number(heightBeads) || 1}
-                        onChange={(e) => handleHeightBeadsChange(e.target.value)}
-                        className="w-full accent-pink-500"
+                        className="[&_[data-slot=slider-range]]:bg-pink-500"
                       />
                     </div>
                   </div>
@@ -222,30 +221,28 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
                     </div>
                   </div>
                   <div className="space-y-2 pt-1">
-                    <div className="space-y-1">
+                    <div className="space-y-1 py-2">
                       <Label className="text-[10px] text-muted-foreground">
                         {t("editor.uploadDialog.horizontalOffset")}
                       </Label>
-                      <input
-                        type="range"
+                      <Slider
+                        value={[Number(offsetX) || 0]}
+                        onValueChange={([val]) => setOffsetX(String(val))}
                         min={-200}
                         max={200}
-                        value={Number(offsetX) || 0}
-                        onChange={(e) => setOffsetX(e.target.value)}
-                        className="w-full accent-pink-500"
+                        className="[&_[data-slot=slider-range]]:bg-pink-500"
                       />
                     </div>
-                    <div className="space-y-1">
+                    <div className="space-y-1 py-2">
                       <Label className="text-[10px] text-muted-foreground">
                         {t("editor.uploadDialog.verticalOffset")}
                       </Label>
-                      <input
-                        type="range"
+                      <Slider
+                        value={[Number(offsetY) || 0]}
+                        onValueChange={([val]) => setOffsetY(String(val))}
                         min={-200}
                         max={200}
-                        value={Number(offsetY) || 0}
-                        onChange={(e) => setOffsetY(e.target.value)}
-                        className="w-full accent-pink-500"
+                        className="[&_[data-slot=slider-range]]:bg-pink-500"
                       />
                     </div>
                   </div>
