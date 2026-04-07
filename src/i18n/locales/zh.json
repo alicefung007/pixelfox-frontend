@@ -69,5 +69,28 @@
       "cancel": "取消",
       "confirm": "确认 ({{count}})"
     }
+  },
+  "editor": {
+    "uploadDialog": {
+      "title": "上传照片",
+      "description": "把你的照片变成像素画！",
+      "uploadPhoto": "上传照片",
+      "gridSettings": "网格设置",
+      "autoDetect": "自动检测",
+      "adjustmentMode": "调整模式",
+      "cellSize": "单元大小",
+      "patternSize": "图案大小",
+      "patternSizeBeads": "图案尺寸（珠数）",
+      "widthBeads": "宽度（珠）",
+      "heightBeads": "高度（珠）",
+      "offsetPx": "偏移（px）",
+      "horizontalOffset": "水平偏移",
+      "verticalOffset": "垂直偏移",
+      "adjustAlign": "调整与对齐",
+      "originalImage": "原始图片",
+      "resultPreview": "结果预览",
+      "cancel": "取消",
+      "generate": "生成"
+    }
   }
 }

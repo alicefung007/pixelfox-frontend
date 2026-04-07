@@ -29,14 +29,15 @@ import { cn } from "@/lib/utils";
 type Props = {
   isOpen?: boolean;
   onClose?: () => void;
+  onUpload?: () => void;
 };
 
-export default function Sidebar({ isOpen = true, onClose }: Props) {
+export default function Sidebar({ isOpen = true, onClose, onUpload }: Props) {
   const { t } = useTranslation();
   const { currentTool, setTool, undo, redo, clear, width } = useEditorStore();
 
   const actionButtons = [
-    { icon: <Upload size={18} />, label: t("sidebar.upload"), shortcut: "⌘ U" },
+    { icon: <Upload size={18} />, label: t("sidebar.upload"), shortcut: "⌘ U", onClick: onUpload },
     { icon: <Save size={18} />, label: t("sidebar.save"), shortcut: "⌘ S" },
     { icon: <Share2 size={18} />, label: t("sidebar.share"), shortcut: "⌥ ⌘ S" },
     { icon: <Layers size={18} />, label: t("sidebar.assembly") },
@@ -112,7 +113,7 @@ export default function Sidebar({ isOpen = true, onClose }: Props) {
 }
 
 type SidebarContentProps = {
-  actionButtons: { icon: React.ReactNode; label: string; shortcut?: string }[];
+  actionButtons: { icon: React.ReactNode; label: string; shortcut?: string; onClick?: () => void }[];
   tools: { id: ToolType; icon: React.ReactNode; label: string; shortcut: string }[];
   currentTool: ToolType;
   onToolChange: (tool: ToolType) => void;
@@ -133,7 +134,10 @@ function SidebarContent({ actionButtons, tools, currentTool, onToolChange, width
             key={i}
             variant="ghost"
             className="w-full justify-between h-9 px-2 text-sm font-normal"
-            onClick={onAction}
+            onClick={() => {
+              btn.onClick?.();
+              onAction?.();
+            }}
           >
             <div className="flex items-center gap-2">
               {btn.icon}

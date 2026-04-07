@@ -69,5 +69,28 @@
       "cancel": "취소",
       "confirm": "확인 ({{count}})"
     }
+  },
+  "editor": {
+    "uploadDialog": {
+      "title": "Upload Photo",
+      "description": "Let's turn your photo into pixel art!",
+      "uploadPhoto": "Upload Photo",
+      "gridSettings": "Grid Settings",
+      "autoDetect": "Auto Detect",
+      "adjustmentMode": "Adjustment Mode",
+      "cellSize": "Cell Size",
+      "patternSize": "Pattern Size",
+      "patternSizeBeads": "Pattern Size (Beads)",
+      "widthBeads": "Width (Beads)",
+      "heightBeads": "Height (Beads)",
+      "offsetPx": "Offset (px)",
+      "horizontalOffset": "Horizontal Offset",
+      "verticalOffset": "Vertical Offset",
+      "adjustAlign": "Adjust & Align",
+      "originalImage": "Original Image",
+      "resultPreview": "Result Preview",
+      "cancel": "Cancel",
+      "generate": "Generate"
+    }
   }
 }
