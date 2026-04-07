@@ -17,6 +17,8 @@ export default function PixelCanvas() {
   const [isPanning, setIsPanning] = useState(false);
   const panLastRef = useRef<{ x: number; y: number } | null>(null);
   const zoomRef = useRef(zoom);
+  const isGestureRef = useRef(false);
+  const gestureStartRef = useRef<{ distance: number; midpoint: { x: number; y: number }; zoom: number; offset: { x: number; y: number } } | null>(null);
   const viewOffsetRef = useRef(viewOffset);
   const [cursorOverlay, setCursorOverlay] = useState<{ x: number; y: number; visible: boolean }>({ x: 0, y: 0, visible: false });
   const cursorRafRef = useRef<number | null>(null);
@@ -223,19 +225,33 @@ export default function PixelCanvas() {
     ctx.restore();
   }, [pixels, width, height, zoom, viewOffset.x, viewOffset.y, viewportSize.width, viewportSize.height, theme, systemTheme]);
 
-  const getCoordinates = (e: React.MouseEvent | React.TouchEvent) => {
+  const getCoordinates = (e: React.MouseEvent) => {
     const canvas = canvasRef.current;
     if (!canvas) return null;
     const rect = canvas.getBoundingClientRect();
-    
-    let clientX, clientY;
-    if ('touches' in e) {
-      clientX = e.touches[0].clientX;
-      clientY = e.touches[0].clientY;
-    } else {
-      clientX = e.clientX;
-      clientY = e.clientY;
+
+    const clientX = e.clientX;
+    const clientY = e.clientY;
+
+    const viewX = clientX - rect.left;
+    const viewY = clientY - rect.top;
+    const scale = zoom / 10;
+    const x = Math.floor((viewX - viewOffset.x) / scale);
+    const y = Math.floor((viewY - viewOffset.y) / scale);
+
+    if (x >= 0 && x < width && y >= 0 && y < height) {
+      return { x, y };
     }
+    return null;
+  };
+
+  const getCoordinatesFromTouch = (e: React.TouchEvent) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return null;
+    const rect = canvas.getBoundingClientRect();
+
+    const clientX = e.touches[0].clientX;
+    const clientY = e.touches[0].clientY;
 
     const viewX = clientX - rect.left;
     const viewY = clientY - rect.top;
@@ -277,8 +293,7 @@ export default function PixelCanvas() {
     addRecentColor(replacementColor);
   };
 
-  const handleDraw = (e: React.MouseEvent | React.TouchEvent) => {
-    const coords = getCoordinates(e);
+  const handleDraw = (coords: { x: number; y: number } | null) => {
     if (!coords) return;
 
     if (currentTool === 'brush' || currentTool === 'eraser') {
@@ -329,25 +344,157 @@ export default function PixelCanvas() {
     queueCursorOverlay({ x: e.clientX - rect.left, y: e.clientY - rect.top, visible: true });
   };
 
-  const onMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
-    if (!('touches' in e)) {
-      if ((currentTool === 'hand' && e.button === 0) || e.button === 1 || e.button === 2) {
+  const getTouchDistance = (touches: React.TouchList) => {
+    if (touches.length < 2) return 0;
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
+
+  const getTouchMidpoint = (touches: React.TouchList) => {
+    if (touches.length < 2) return { x: 0, y: 0 };
+    return {
+      x: (touches[0].clientX + touches[1].clientX) / 2,
+      y: (touches[0].clientY + touches[1].clientY) / 2,
+    };
+  };
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length >= 2) {
+      // Two-finger gesture: pinch zoom + pan
+      e.preventDefault();
+      isGestureRef.current = true;
+      setIsAutoZoom(false);
+      setIsDrawing(false);
+      setLastCoords(null);
+      const container = containerRef.current;
+      if (container) {
+        const rect = container.getBoundingClientRect();
+        gestureStartRef.current = {
+          distance: getTouchDistance(e.touches),
+          midpoint: {
+            x: getTouchMidpoint(e.touches).x - rect.left,
+            y: getTouchMidpoint(e.touches).y - rect.top,
+          },
+          zoom: zoomRef.current,
+          offset: viewOffsetRef.current,
+        };
+      }
+      return;
+    }
+
+    if (e.touches.length === 1) {
+      if (currentTool === 'hand') {
         e.preventDefault();
         setIsAutoZoom(false);
         setIsDrawing(false);
         setLastCoords(null);
         setIsPanning(true);
-        panLastRef.current = { x: e.clientX, y: e.clientY };
+        panLastRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
         queueCursorOverlay({ x: cursorPendingRef.current.x, y: cursorPendingRef.current.y, visible: false });
         return;
       }
+      setIsDrawing(true);
+      handleDraw(getCoordinatesFromTouch(e));
     }
-    setIsDrawing(true);
-    handleDraw(e);
   };
 
-  const onMouseMove = (e: React.MouseEvent | React.TouchEvent) => {
-    if (!('touches' in e) && isPanning) {
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (isGestureRef.current && e.touches.length >= 2) {
+      e.preventDefault();
+      const start = gestureStartRef.current;
+      if (!start) return;
+
+      const container = containerRef.current;
+      if (!container) return;
+
+      const rect = container.getBoundingClientRect();
+      const currentDistance = getTouchDistance(e.touches);
+      const currentMidpoint = getTouchMidpoint(e.touches);
+      const screenMidpoint = {
+        x: currentMidpoint.x - rect.left,
+        y: currentMidpoint.y - rect.top,
+      };
+
+      // Calculate zoom
+      if (currentDistance > 0 && start.distance > 0) {
+        const scale = currentDistance / start.distance;
+        const newZoom = clampZoom(Math.round(start.zoom * scale));
+        const nextScale = newZoom / 10;
+
+        // Calculate pan delta
+        const dx = screenMidpoint.x - start.midpoint.x;
+        const dy = screenMidpoint.y - start.midpoint.y;
+
+        // Convert start midpoint to world coordinates
+        const startScale = start.zoom / 10;
+        const worldX = (start.midpoint.x - start.offset.x) / startScale;
+        const worldY = (start.midpoint.y - start.offset.y) / startScale;
+
+        setZoom(newZoom);
+        setViewOffset({
+          x: screenMidpoint.x - worldX * nextScale + dx,
+          y: screenMidpoint.y - worldY * nextScale + dy,
+        });
+      }
+      return;
+    }
+
+    if (e.touches.length === 1 && isPanning) {
+      e.preventDefault();
+      const last = panLastRef.current;
+      if (!last) return;
+      const dx = e.touches[0].clientX - last.x;
+      const dy = e.touches[0].clientY - last.y;
+      panLastRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      setViewOffset(prev => ({ x: prev.x + dx, y: prev.y + dy }));
+      return;
+    }
+
+    if (isDrawing) {
+      handleDraw(getCoordinatesFromTouch(e));
+    }
+  };
+
+  const onTouchEnd = (e: React.TouchEvent) => {
+    if (e.touches.length < 2 && isGestureRef.current) {
+      isGestureRef.current = false;
+      gestureStartRef.current = null;
+    }
+    if (e.touches.length === 0) {
+      if (isGestureRef.current) {
+        isGestureRef.current = false;
+        gestureStartRef.current = null;
+      }
+      if (isPanning) {
+        setIsPanning(false);
+        panLastRef.current = null;
+      }
+      if (isDrawing) {
+        saveHistory();
+      }
+      setIsDrawing(false);
+      setLastCoords(null);
+    }
+  };
+
+  const onMouseDown = (e: React.MouseEvent) => {
+    if ((currentTool === 'hand' && e.button === 0) || e.button === 1 || e.button === 2) {
+      e.preventDefault();
+      setIsAutoZoom(false);
+      setIsDrawing(false);
+      setLastCoords(null);
+      setIsPanning(true);
+      panLastRef.current = { x: e.clientX, y: e.clientY };
+      queueCursorOverlay({ x: cursorPendingRef.current.x, y: cursorPendingRef.current.y, visible: false });
+      return;
+    }
+    setIsDrawing(true);
+    handleDraw(getCoordinates(e));
+  };
+
+  const onMouseMove = (e: React.MouseEvent) => {
+    if (isPanning) {
       e.preventDefault();
       const last = panLastRef.current;
       if (!last) return;
@@ -357,11 +504,9 @@ export default function PixelCanvas() {
       setViewOffset(prev => ({ x: prev.x + dx, y: prev.y + dy }));
       return;
     }
-    if (!('touches' in e)) {
-      updateCursorFromMouseEvent(e);
-    }
+    updateCursorFromMouseEvent(e);
     if (isDrawing) {
-      handleDraw(e);
+      handleDraw(getCoordinates(e));
     }
   };
 
@@ -512,9 +657,9 @@ export default function PixelCanvas() {
           onContextMenu={(e) => {
             if (isPanning || currentTool === 'hand') e.preventDefault();
           }}
-          onTouchStart={onMouseDown}
-          onTouchMove={onMouseMove}
-          onTouchEnd={onMouseUp}
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
         />
         {CursorIcon && cursorOverlay.visible && !isPanning && (
           <div
