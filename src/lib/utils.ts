@@ -24,8 +24,12 @@ export function isDarkColor(hex: string): boolean {
   return luminance < 0.5;
 }
 
+export function clamp(value: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, value))
+}
+
 export function clampZoom(value: number) {
-  return Math.max(EDITOR_CONFIG.MIN_ZOOM, Math.min(EDITOR_CONFIG.MAX_ZOOM, value))
+  return clamp(value, EDITOR_CONFIG.MIN_ZOOM, EDITOR_CONFIG.MAX_ZOOM)
 }
 
 export function getLinePoints(x0: number, y0: number, x1: number, y1: number) {

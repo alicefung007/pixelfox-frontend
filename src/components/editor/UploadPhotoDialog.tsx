@@ -20,6 +20,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Separator } from "@/components/ui/separator";
+import { clamp } from "@/lib/utils";
 
 type Props = {
   open: boolean;
@@ -42,7 +43,7 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
   const clampBeads = (val: string) => {
     const num = parseInt(val, 10);
     if (isNaN(num)) return "";
-    return String(Math.min(200, Math.max(1, num)));
+    return String(clamp(num, 1, 200));
   };
 
   // Clamp offset value between -200 to 200 (integers only)
@@ -50,7 +51,7 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
     if (val === "" || val === "-") return val;
     const num = parseInt(val, 10);
     if (isNaN(num)) return "";
-    return String(Math.min(200, Math.max(-200, num)));
+    return String(clamp(num, -200, 200));
   };
 
   // Aspect ratio handling (locked by width)
@@ -64,7 +65,7 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
       if (currentWidth > 0) {
         const ratio = currentHeight / currentWidth;
         const newHeight = Math.round(newWidth * ratio);
-        setHeightBeads(String(Math.min(200, Math.max(1, newHeight))));
+        setHeightBeads(String(clamp(newHeight, 1, 200)));
       }
     }
   };
@@ -79,14 +80,14 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
       if (currentHeight > 0) {
         const ratio = currentWidth / currentHeight;
         const newWidth = Math.round(newHeight * ratio);
-        setWidthBeads(String(Math.min(200, Math.max(1, newWidth))));
+        setWidthBeads(String(clamp(newWidth, 1, 200)));
       }
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[980px] w-[calc(100vw-32px)] md:w-full p-0 flex flex-col gap-0 max-h-[90vh] md:max-h-[9999px]">
+      <DialogContent className="max-w-[980px] w-[calc(100vw-32px)] md:w-full p-0 flex flex-col gap-0 max-h-[90vh] md:max-h-none">
         <DialogHeader className="px-3 pt-3 pb-2 md:px-6 md:pt-6 md:pb-4 shrink-0 text-left">
           <div className="flex items-start justify-between gap-4">
             <div className="space-y-1">
