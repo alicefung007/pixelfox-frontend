@@ -75,6 +75,7 @@
       "title": "Upload Photo",
       "description": "Let's turn your photo into pixel art!",
       "uploadPhoto": "Upload Photo",
+      "uploadHint": "Click or drop image here",
       "gridSettings": "Grid Settings",
       "autoDetect": "Auto Detect",
       "adjustmentMode": "Adjustment Mode",

@@ -75,6 +75,7 @@
       "title": "写真をアップロード",
       "description": "写真をピクセルアートに変えましょう!",
       "uploadPhoto": "写真をアップロード",
+      "uploadHint": "クリックまたはここに画像をドラッグ",
       "gridSettings": "グリッド設定",
       "autoDetect": "自動検出",
       "adjustmentMode": "調整モード",

@@ -75,6 +75,7 @@
       "title": "上传照片",
       "description": "把你的照片变成像素画！",
       "uploadPhoto": "上传照片",
+      "uploadHint": "点击或拖拽图片到这里",
       "gridSettings": "网格设置",
       "autoDetect": "自动检测",
       "adjustmentMode": "调整模式",

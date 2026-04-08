@@ -75,6 +75,7 @@
       "title": "사진 올리기",
       "description": "사진을 피아EL 아트로 만들어보세요!",
       "uploadPhoto": "사진 올리기",
+      "uploadHint": "여기를 클릭하거나 이미지를 드래그하세요",
       "gridSettings": "그리드 설정",
       "autoDetect": "자동 감지",
       "adjustmentMode": "조정 모드",

@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { X, Sparkles, Link, Unlink, Check, ChevronsUpDown } from "lucide-react";
+import { X, Sparkles, Link, Unlink, Check, ChevronsUpDown, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -52,6 +52,9 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
   const [colorMerging, setColorMerging] = useState(true);
   const [colorMergeThreshold, setColorMergeThreshold] = useState([10]);
   const [palettePopoverOpen, setPalettePopoverOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const selectedPalette = useMemo(
@@ -128,7 +131,78 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
           <div className="w-full md:w-[260px] md:shrink-0 space-y-3 md:space-y-4">
             <div className="space-y-2 pt-3">
               <h3 className="text-sm font-semibold">{t("editor.uploadDialog.uploadPhoto")}</h3>
-              <Input type="file" className="text-base" />
+              <div
+                className={cn(
+                  "relative flex flex-col items-center justify-center w-full h-24 rounded-xl border-2 border-dashed cursor-pointer transition-colors",
+                  isDragging
+                    ? "border-pink-500 bg-pink-500/10 border-solid"
+                    : selectedFile
+                    ? "border-pink-500 bg-pink-500/5"
+                    : "border-input/60 hover:border-pink-400 hover:bg-muted/30"
+                )}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setIsDragging(true);
+                }}
+                onDragLeave={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setIsDragging(false);
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setIsDragging(false);
+                  const file = e.dataTransfer.files?.[0];
+                  if (file && file.type.startsWith("image/")) {
+                    setSelectedFile(file);
+                  }
+                }}
+                onClick={() => {
+                  fileInputRef.current?.click();
+                }}
+              >
+                {selectedFile ? (
+                  <>
+                    <Check className="w-6 h-6 text-pink-500" />
+                    <span className="text-xs text-pink-600 dark:text-pink-400 font-medium text-center px-1">
+                      {selectedFile.name}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setSelectedFile(null);
+                      }}
+                      className="absolute top-1 right-1 p-1 bg-pink-500 hover:bg-pink-600 rounded-full transition-colors"
+                    >
+                      <X className="w-3 h-3 text-white" />
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-6 h-6 text-muted-foreground mb-2" />
+                    <span className="text-xs text-muted-foreground">
+                      {t("editor.uploadDialog.uploadHint")}
+                    </span>
+                  </>
+                )}
+                <input
+                  key={selectedFile ? "file-selected" : "file-empty"}
+                  ref={fileInputRef}
+                  type="file"
+                  className="hidden"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      setSelectedFile(file);
+                    }
+                  }}
+                />
+              </div>
             </div>
 
             <Separator className="shrink-0" />
