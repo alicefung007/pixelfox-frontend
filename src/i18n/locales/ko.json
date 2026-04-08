@@ -92,7 +92,15 @@
       "cancel": "Cancel",
       "generate": "Generate",
       "lockAspectRatio": "가로 세비비율 잠금",
-      "unlockAspectRatio": "가로 세비비율 해제"
+      "unlockAspectRatio": "가로 세비비율 해제",
+      "extraction": "색상 추출",
+      "qualityRecommended": "추천",
+      "qualityAverage": "보통",
+      "qualityHigh": "고품질",
+      "colorManagement": "색상 관리",
+      "currentEditorPalette": "현재 편집기 팔레트",
+      "colorMerging": "색상 병합",
+      "colorMergeThreshold": "색상 병합 임계값"
     }
   }
 }

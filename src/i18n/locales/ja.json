@@ -92,7 +92,15 @@
       "cancel": "Cancel",
       "generate": "Generate",
       "lockAspectRatio": "アスペクト比をロック",
-      "unlockAspectRatio": "アスペクト比を解除"
+      "unlockAspectRatio": "アスペクト比を解除",
+      "extraction": "色抽出",
+      "qualityRecommended": "おすすめ",
+      "qualityAverage": "普通",
+      "qualityHigh": "高品質",
+      "colorManagement": "カラー管理",
+      "currentEditorPalette": "現在のエディターパレット",
+      "colorMerging": "色のマージ",
+      "colorMergeThreshold": "色マージのしきい値"
     }
   }
 }

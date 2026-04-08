@@ -92,7 +92,15 @@
       "cancel": "取消",
       "generate": "生成",
       "lockAspectRatio": "锁定长宽比",
-      "unlockAspectRatio": "解锁长宽比"
+      "unlockAspectRatio": "解锁长宽比",
+      "extraction": "颜色提取",
+      "qualityRecommended": "推荐",
+      "qualityAverage": "普通",
+      "qualityHigh": "高质量",
+      "colorManagement": "色彩管理",
+      "currentEditorPalette": "当前编辑器调色板",
+      "colorMerging": "颜色合并",
+      "colorMergeThreshold": "颜色合并阈值"
     }
   }
 }

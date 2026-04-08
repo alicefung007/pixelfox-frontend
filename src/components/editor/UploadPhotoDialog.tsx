@@ -14,6 +14,15 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Tooltip,
   TooltipContent,
@@ -38,6 +47,12 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
   // Offset values (-200 to 200)
   const [offsetX, setOffsetX] = useState("0");
   const [offsetY, setOffsetY] = useState("0");
+
+  // Extraction settings
+  const [extractionQuality, setExtractionQuality] = useState("recommended");
+  const [colorPalette, setColorPalette] = useState("current");
+  const [colorMerging, setColorMerging] = useState(true);
+  const [colorMergeThreshold, setColorMergeThreshold] = useState([10]);
 
   // Clamp beads value between 1-200
   const clampBeads = (val: string) => {
@@ -249,6 +264,65 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
                 </div>
               </CardContent>
             </Card>
+
+            <div className="space-y-4 pt-2">
+              <h3 className="text-sm font-semibold">{t("editor.uploadDialog.extraction")}</h3>
+              
+              <Tabs value={extractionQuality} onValueChange={setExtractionQuality} className="w-full">
+                <TabsList className="w-full grid grid-cols-3 h-9 bg-muted/30 p-1 rounded-xl">
+                  <TabsTrigger value="recommended" className="text-[11px] rounded-lg data-[state=active]:shadow-sm">
+                    {t("editor.uploadDialog.qualityRecommended")}
+                  </TabsTrigger>
+                  <TabsTrigger value="average" className="text-[11px] rounded-lg data-[state=active]:shadow-sm">
+                    {t("editor.uploadDialog.qualityAverage")}
+                  </TabsTrigger>
+                  <TabsTrigger value="high" className="text-[11px] rounded-lg data-[state=active]:shadow-sm">
+                    {t("editor.uploadDialog.qualityHigh")}
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+
+              <div className="space-y-2">
+                <Label className="text-[11px] font-semibold">{t("editor.uploadDialog.colorManagement")}</Label>
+                <Select value={colorPalette} onValueChange={setColorPalette}>
+                  <SelectTrigger className="w-full rounded-xl bg-transparent border-input/60 hover:bg-muted/10 h-9">
+                    <SelectValue placeholder={t("editor.uploadDialog.currentEditorPalette")} />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    <SelectItem value="current" className="rounded-lg">{t("editor.uploadDialog.currentEditorPalette")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label className="text-[11px] font-semibold">{t("editor.uploadDialog.colorMerging")}</Label>
+                  <Switch 
+                    checked={colorMerging} 
+                    onCheckedChange={setColorMerging}
+                    className="data-[state=checked]:bg-pink-500 data-[state=checked]:border-pink-500" 
+                  />
+                </div>
+
+                {colorMerging && (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-[10px] font-medium text-muted-foreground">
+                        {t("editor.uploadDialog.colorMergeThreshold")}
+                      </Label>
+                      <span className="text-[11px] font-medium">{colorMergeThreshold[0]}</span>
+                    </div>
+                    <Slider
+                      value={colorMergeThreshold}
+                      onValueChange={setColorMergeThreshold}
+                      min={1}
+                      max={100}
+                      className="[&_[data-slot=slider-range]]:bg-pink-500"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
           <div className="flex-1 min-w-0 space-y-3 md:space-y-4">
