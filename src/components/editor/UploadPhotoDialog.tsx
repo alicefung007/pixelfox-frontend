@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { X, Sparkles, ZoomIn, Link, Unlink } from "lucide-react";
+import { X, Sparkles, Link, Unlink, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -17,19 +17,18 @@ import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Separator } from "@/components/ui/separator";
-import { clamp } from "@/lib/utils";
+import { cn, clamp } from "@/lib/utils";
+import { SYSTEM_PALETTES } from "@/lib/palettes";
 
 type Props = {
   open: boolean;
@@ -50,9 +49,15 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
 
   // Extraction settings
   const [extractionQuality, setExtractionQuality] = useState("recommended");
-  const [colorPalette, setColorPalette] = useState("current");
+  const [colorPaletteId, setColorPaletteId] = useState<string>(SYSTEM_PALETTES[0].id);
   const [colorMerging, setColorMerging] = useState(true);
   const [colorMergeThreshold, setColorMergeThreshold] = useState([10]);
+  const [palettePopoverOpen, setPalettePopoverOpen] = useState(false);
+
+  const selectedPalette = useMemo(
+    () => SYSTEM_PALETTES.find((p) => p.id === colorPaletteId) ?? SYSTEM_PALETTES[0],
+    [colorPaletteId]
+  );
 
   // Clamp beads value between 1-200
   const clampBeads = (val: string) => {
@@ -284,14 +289,87 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
 
               <div className="space-y-2">
                 <Label className="text-[11px] font-semibold">{t("editor.uploadDialog.colorManagement")}</Label>
-                <Select value={colorPalette} onValueChange={setColorPalette}>
-                  <SelectTrigger className="w-full rounded-xl bg-transparent border-input/60 hover:bg-muted/10 h-9">
-                    <SelectValue placeholder={t("editor.uploadDialog.currentEditorPalette")} />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl">
-                    <SelectItem value="current" className="rounded-lg">{t("editor.uploadDialog.currentEditorPalette")}</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Popover open={palettePopoverOpen} onOpenChange={setPalettePopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full rounded-xl bg-transparent border-input/60 hover:bg-muted/10 h-9 justify-between px-3 font-normal"
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="flex -space-x-1">
+                          {selectedPalette.swatches.slice(0, 5).map((swatch, i) => (
+                            <div
+                              key={i}
+                              className="w-4 h-4 rounded-full border border-background shadow-sm"
+                              style={{ backgroundColor: swatch.color }}
+                            />
+                          ))}
+                        </div>
+                        <span className="text-sm truncate">
+                          {selectedPalette.i18nKey ? t(selectedPalette.i18nKey) : selectedPalette.name}
+                        </span>
+                      </div>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[340px] p-0 !gap-0 flex flex-col" align="start">
+                    <div className="p-3 flex-1 min-h-0 overflow-y-auto max-h-[340px]">
+                      <div className="space-y-2">
+                        {SYSTEM_PALETTES.map((palette) => {
+                          const isSelected = palette.id === colorPaletteId;
+                          return (
+                            <button
+                              key={palette.id}
+                              type="button"
+                              onClick={() => {
+                                setColorPaletteId(palette.id);
+                                setPalettePopoverOpen(false);
+                              }}
+                              className={cn(
+                                "w-full flex items-center gap-3 p-2 rounded-xl transition-colors text-left",
+                                isSelected ? "bg-pink-500/10" : "hover:bg-muted/50"
+                              )}
+                            >
+                              <div className="shrink-0">
+                                <div
+                                  className={cn(
+                                    "w-5 h-5 rounded-full border flex items-center justify-center",
+                                    isSelected
+                                      ? "bg-pink-500 border-pink-500"
+                                      : "border-input"
+                                  )}
+                                >
+                                  {isSelected && <Check className="size-3 text-white" />}
+                                </div>
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="text-sm font-medium">
+                                  {palette.i18nKey ? t(palette.i18nKey) : palette.name}
+                                </div>
+                                <div className="flex gap-1 mt-1 flex-wrap">
+                                  {palette.swatches.slice(0, 12).map((swatch, i) => (
+                                    <div
+                                      key={i}
+                                      className="w-3 h-3 rounded-sm border border-foreground/5 shrink-0"
+                                      style={{ backgroundColor: swatch.color }}
+                                    />
+                                  ))}
+                                  {palette.swatches.length > 12 && (
+                                    <span className="text-[10px] text-muted-foreground shrink-0">
+                                      +{palette.swatches.length - 12}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="text-xs text-muted-foreground shrink-0">
+                                {palette.swatches.length}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </div>
 
               <div className="space-y-4">
