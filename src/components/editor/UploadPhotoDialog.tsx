@@ -1,6 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { X, Sparkles, Link, Unlink, Check } from "lucide-react";
+import { X, Sparkles, Link, Unlink, Check, ChevronsUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -53,6 +53,7 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
   const [colorMerging, setColorMerging] = useState(true);
   const [colorMergeThreshold, setColorMergeThreshold] = useState([10]);
   const [palettePopoverOpen, setPalettePopoverOpen] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const selectedPalette = useMemo(
     () => SYSTEM_PALETTES.find((p) => p.id === colorPaletteId) ?? SYSTEM_PALETTES[0],
@@ -225,19 +226,19 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1">
                       <Label className="text-[10px] text-muted-foreground">X</Label>
-                      <Input
-                        value={offsetX}
-                        onChange={(e) => setOffsetX(clampOffset(e.target.value))}
-                        inputMode="numeric"
-                      />
+                        <Input
+                          value={offsetX}
+                          onChange={(e) => setOffsetX(clampOffset(e.target.value))}
+                          inputMode="numeric"
+                        />
                     </div>
                     <div className="space-y-1">
                       <Label className="text-[10px] text-muted-foreground">Y</Label>
-                      <Input
-                        value={offsetY}
-                        onChange={(e) => setOffsetY(clampOffset(e.target.value))}
-                        inputMode="numeric"
-                      />
+                        <Input
+                          value={offsetY}
+                          onChange={(e) => setOffsetY(clampOffset(e.target.value))}
+                          inputMode="numeric"
+                        />
                     </div>
                   </div>
                   <div className="space-y-2 pt-1">
@@ -297,7 +298,7 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
                     >
                       <div className="flex items-center gap-2 min-w-0">
                         <div className="flex -space-x-1">
-                          {selectedPalette.swatches.slice(0, 5).map((swatch, i) => (
+                          {selectedPalette.swatches.slice(0, 10).map((swatch, i) => (
                             <div
                               key={i}
                               className="w-4 h-4 rounded-full border border-background shadow-sm"
@@ -309,11 +310,19 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
                           {selectedPalette.i18nKey ? t(selectedPalette.i18nKey) : selectedPalette.name}
                         </span>
                       </div>
+                      <ChevronsUpDown className="size-4 text-muted-foreground shrink-0" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-[340px] p-0 !gap-0 flex flex-col" align="start">
-                    <div className="p-3 flex-1 min-h-0 overflow-y-auto max-h-[340px]">
-                      <div className="space-y-2">
+                  <PopoverContent className="w-[340px] max-h-[340px] p-0 !gap-0 flex flex-col" align="start">
+                    <div
+                      ref={scrollRef}
+                      className="w-[340px] h-[340px] overflow-y-auto"
+                      onWheel={(e) => {
+                        e.preventDefault();
+                        scrollRef.current!.scrollTop += e.deltaY;
+                      }}
+                    >
+                      <div className="p-3 space-y-2">
                         {SYSTEM_PALETTES.map((palette) => {
                           const isSelected = palette.id === colorPaletteId;
                           return (
