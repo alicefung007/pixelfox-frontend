@@ -87,7 +87,7 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[980px] w-[calc(100vw-32px)] md:w-full p-0 flex flex-col gap-0 max-h-[90vh] md:max-h-none">
+      <DialogContent className="max-w-[980px] w-[calc(100vw-32px)] md:w-full p-0 flex flex-col gap-0 max-h-[90vh]">
         <DialogHeader className="px-3 pt-3 pb-2 md:px-6 md:pt-6 md:pb-4 shrink-0 text-left">
           <div className="flex items-start justify-between gap-4">
             <div className="space-y-1">
@@ -256,18 +256,15 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
               <h3 className="text-sm font-semibold">{t("editor.uploadDialog.originalImage")}</h3>
             </div>
 
-            <div className="rounded-xl border bg-muted/20 h-[140px] sm:h-[200px] md:h-[320px] flex items-center justify-center text-sm text-muted-foreground">
+            <div className="rounded-xl border bg-muted/20 aspect-video flex items-center justify-center text-sm text-muted-foreground">
               {t("editor.uploadDialog.uploadPhoto")}
             </div>
 
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold">{t("editor.uploadDialog.resultPreview")}</h3>
-              <Button variant="ghost" size="icon-xs" className="text-muted-foreground">
-                <ZoomIn className="size-3.5" />
-              </Button>
             </div>
 
-            <div className="rounded-xl border bg-background h-[80px] sm:h-[100px] md:h-[140px]" />
+            <div className="rounded-xl border bg-muted/20 aspect-video" />
           </div>
         </div>
 
