@@ -2,7 +2,6 @@ import { useState, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { X, Sparkles, Link, Unlink, Check, ChevronsUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogClose,
@@ -128,152 +127,15 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
         <div className="flex-1 overflow-auto px-3 pb-3 md:px-6 md:pb-6 flex flex-col md:flex-row gap-3 md:gap-5">
           <div className="w-full md:w-[260px] md:shrink-0 space-y-3 md:space-y-4">
             <div className="space-y-2 pt-3">
-              <Label className="text-xs font-semibold">{t("editor.uploadDialog.uploadPhoto")}</Label>
+              <h3 className="text-sm font-semibold">{t("editor.uploadDialog.uploadPhoto")}</h3>
               <Input type="file" className="text-base" />
             </div>
 
-            <Card className="rounded-xl py-4 gap-4 shadow-none bg-muted/20">
-              <CardHeader className="px-4">
-                <CardTitle className="text-sm">{t("editor.uploadDialog.gridSettings")}</CardTitle>
-              </CardHeader>
-              <CardContent className="px-4 space-y-4">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-[11px] font-semibold">
-                      {t("editor.uploadDialog.patternSizeBeads")}
-                    </Label>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant={aspectRatioLocked ? "secondary" : "ghost"}
-                          size="icon-xs"
-                          className={aspectRatioLocked ? "" : "text-muted-foreground"}
-                          onClick={() => {
-                            if (!aspectRatioLocked) {
-                              setHeightBeads(widthBeads);
-                            }
-                            setAspectRatioLocked(!aspectRatioLocked);
-                          }}
-                        >
-                          {aspectRatioLocked ? (
-                            <Link className="size-3.5" />
-                          ) : (
-                            <Unlink className="size-3.5" />
-                          )}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {aspectRatioLocked
-                          ? t("editor.uploadDialog.lockAspectRatio")
-                          : t("editor.uploadDialog.unlockAspectRatio")}
-                      </TooltipContent>
-                    </Tooltip>
-                  </div>
+            <Separator className="shrink-0" />
 
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="space-y-1">
-                      <Label className="text-[10px] text-muted-foreground">
-                        {t("editor.uploadDialog.widthBeads")}
-                      </Label>
-                      <Input
-                        value={widthBeads}
-                        onChange={(e) => handleWidthBeadsChange(e.target.value)}
-                        inputMode="numeric"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-[10px] text-muted-foreground">
-                        {t("editor.uploadDialog.heightBeads")}
-                      </Label>
-                      <Input
-                        value={heightBeads}
-                        onChange={(e) => handleHeightBeadsChange(e.target.value)}
-                        inputMode="numeric"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2 pt-1">
-                    <div className="space-y-1 py-2">
-                      <Label className="text-[10px] text-muted-foreground">
-                        {t("editor.uploadDialog.widthBeads")}
-                      </Label>
-                      <Slider
-                        value={[Number(widthBeads) || 1]}
-                        onValueChange={([val]) => handleWidthBeadsChange(String(val))}
-                        min={1}
-                        max={200}
-                        className="[&_[data-slot=slider-range]]:bg-pink-500"
-                      />
-                    </div>
-                    <div className="space-y-1 py-2">
-                      <Label className="text-[10px] text-muted-foreground">
-                        {t("editor.uploadDialog.heightBeads")}
-                      </Label>
-                      <Slider
-                        value={[Number(heightBeads) || 1]}
-                        onValueChange={([val]) => handleHeightBeadsChange(String(val))}
-                        min={1}
-                        max={200}
-                        className="[&_[data-slot=slider-range]]:bg-pink-500"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-[11px] font-semibold">{t("editor.uploadDialog.offsetPx")}</Label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="space-y-1">
-                      <Label className="text-[10px] text-muted-foreground">X</Label>
-                        <Input
-                          value={offsetX}
-                          onChange={(e) => setOffsetX(clampOffset(e.target.value))}
-                          inputMode="numeric"
-                        />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-[10px] text-muted-foreground">Y</Label>
-                        <Input
-                          value={offsetY}
-                          onChange={(e) => setOffsetY(clampOffset(e.target.value))}
-                          inputMode="numeric"
-                        />
-                    </div>
-                  </div>
-                  <div className="space-y-2 pt-1">
-                    <div className="space-y-1 py-2">
-                      <Label className="text-[10px] text-muted-foreground">
-                        {t("editor.uploadDialog.horizontalOffset")}
-                      </Label>
-                      <Slider
-                        value={[Number(offsetX) || 0]}
-                        onValueChange={([val]) => setOffsetX(String(val))}
-                        min={-200}
-                        max={200}
-                        className="[&_[data-slot=slider-range]]:bg-pink-500"
-                      />
-                    </div>
-                    <div className="space-y-1 py-2">
-                      <Label className="text-[10px] text-muted-foreground">
-                        {t("editor.uploadDialog.verticalOffset")}
-                      </Label>
-                      <Slider
-                        value={[Number(offsetY) || 0]}
-                        onValueChange={([val]) => setOffsetY(String(val))}
-                        min={-200}
-                        max={200}
-                        className="[&_[data-slot=slider-range]]:bg-pink-500"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <div className="space-y-4 pt-2">
+            <div className="space-y-4">
               <h3 className="text-sm font-semibold">{t("editor.uploadDialog.extraction")}</h3>
-              
+
               <Tabs value={extractionQuality} onValueChange={setExtractionQuality} className="w-full">
                 <TabsList className="w-full grid grid-cols-3 h-9 bg-muted/30 p-1 rounded-xl">
                   <TabsTrigger value="recommended" className="text-[11px] rounded-lg data-[state=active]:shadow-sm">
@@ -384,10 +246,10 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <Label className="text-[11px] font-semibold">{t("editor.uploadDialog.colorMerging")}</Label>
-                  <Switch 
-                    checked={colorMerging} 
+                  <Switch
+                    checked={colorMerging}
                     onCheckedChange={setColorMerging}
-                    className="data-[state=checked]:bg-pink-500 data-[state=checked]:border-pink-500" 
+                    className="data-[state=checked]:bg-pink-500 data-[state=checked]:border-pink-500"
                   />
                 </div>
 
@@ -410,9 +272,147 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
                 )}
               </div>
             </div>
+
+            <Separator className="shrink-0" />
+
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold">{t("editor.uploadDialog.gridSettings")}</h3>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-[11px] font-semibold">
+                    {t("editor.uploadDialog.patternSizeBeads")}
+                  </Label>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant={aspectRatioLocked ? "secondary" : "ghost"}
+                        size="icon-xs"
+                        className={aspectRatioLocked ? "" : "text-muted-foreground"}
+                        onClick={() => {
+                          if (!aspectRatioLocked) {
+                            setHeightBeads(widthBeads);
+                          }
+                          setAspectRatioLocked(!aspectRatioLocked);
+                        }}
+                      >
+                        {aspectRatioLocked ? (
+                          <Link className="size-3.5" />
+                        ) : (
+                          <Unlink className="size-3.5" />
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {aspectRatioLocked
+                        ? t("editor.uploadDialog.lockAspectRatio")
+                        : t("editor.uploadDialog.unlockAspectRatio")}
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <Label className="text-[10px] text-muted-foreground">
+                      {t("editor.uploadDialog.widthBeads")}
+                    </Label>
+                    <Input
+                      value={widthBeads}
+                      onChange={(e) => handleWidthBeadsChange(e.target.value)}
+                      inputMode="numeric"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-[10px] text-muted-foreground">
+                      {t("editor.uploadDialog.heightBeads")}
+                    </Label>
+                    <Input
+                      value={heightBeads}
+                      onChange={(e) => handleHeightBeadsChange(e.target.value)}
+                      inputMode="numeric"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2 pt-1">
+                  <div className="space-y-1 py-2">
+                    <Label className="text-[10px] text-muted-foreground">
+                      {t("editor.uploadDialog.widthBeads")}
+                    </Label>
+                    <Slider
+                      value={[Number(widthBeads) || 1]}
+                      onValueChange={([val]) => handleWidthBeadsChange(String(val))}
+                      min={1}
+                      max={200}
+                      className="[&_[data-slot=slider-range]]:bg-pink-500"
+                    />
+                  </div>
+                  <div className="space-y-1 py-2">
+                    <Label className="text-[10px] text-muted-foreground">
+                      {t("editor.uploadDialog.heightBeads")}
+                    </Label>
+                    <Slider
+                      value={[Number(heightBeads) || 1]}
+                      onValueChange={([val]) => handleHeightBeadsChange(String(val))}
+                      min={1}
+                      max={200}
+                      className="[&_[data-slot=slider-range]]:bg-pink-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-[11px] font-semibold">{t("editor.uploadDialog.offsetPx")}</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <Label className="text-[10px] text-muted-foreground">X</Label>
+                      <Input
+                        value={offsetX}
+                        onChange={(e) => setOffsetX(clampOffset(e.target.value))}
+                        inputMode="numeric"
+                      />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-[10px] text-muted-foreground">Y</Label>
+                      <Input
+                        value={offsetY}
+                        onChange={(e) => setOffsetY(clampOffset(e.target.value))}
+                        inputMode="numeric"
+                      />
+                  </div>
+                </div>
+                <div className="space-y-2 pt-1">
+                  <div className="space-y-1 py-2">
+                    <Label className="text-[10px] text-muted-foreground">
+                      {t("editor.uploadDialog.horizontalOffset")}
+                    </Label>
+                    <Slider
+                      value={[Number(offsetX) || 0]}
+                      onValueChange={([val]) => setOffsetX(String(val))}
+                      min={-200}
+                      max={200}
+                      className="[&_[data-slot=slider-range]]:bg-pink-500"
+                    />
+                  </div>
+                  <div className="space-y-1 py-2">
+                    <Label className="text-[10px] text-muted-foreground">
+                      {t("editor.uploadDialog.verticalOffset")}
+                    </Label>
+                    <Slider
+                      value={[Number(offsetY) || 0]}
+                      onValueChange={([val]) => setOffsetY(String(val))}
+                      min={-200}
+                      max={200}
+                      className="[&_[data-slot=slider-range]]:bg-pink-500"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div className="flex-1 min-w-0 space-y-3 md:space-y-4">
+          <div className="flex-1 min-w-0 space-y-3 md:space-y-4 pb-3 md:pb-4">
             <div className="flex items-center justify-between pt-3">
               <h3 className="text-sm font-semibold">{t("editor.uploadDialog.originalImage")}</h3>
             </div>
@@ -425,7 +425,9 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
               <h3 className="text-sm font-semibold">{t("editor.uploadDialog.resultPreview")}</h3>
             </div>
 
-            <div className="rounded-xl border bg-muted/20 aspect-video" />
+            <div className="rounded-xl border bg-muted/20 aspect-video flex items-center justify-center text-sm text-muted-foreground">
+              {t("editor.uploadDialog.resultPreviewPlaceholder")}
+            </div>
           </div>
         </div>
 

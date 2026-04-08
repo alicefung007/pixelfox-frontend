@@ -89,6 +89,7 @@
       "adjustAlign": "调整与对齐",
       "originalImage": "原始图片",
       "resultPreview": "结果预览",
+      "resultPreviewPlaceholder": "点击生成以预览",
       "cancel": "取消",
       "generate": "生成",
       "lockAspectRatio": "锁定长宽比",

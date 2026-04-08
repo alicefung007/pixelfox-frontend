@@ -89,6 +89,7 @@
       "adjustAlign": "Adjust & Align",
       "originalImage": "Original Image",
       "resultPreview": "Result Preview",
+      "resultPreviewPlaceholder": "Tap Generate to preview",
       "cancel": "Cancel",
       "generate": "Generate",
       "lockAspectRatio": "Lock aspect ratio",
