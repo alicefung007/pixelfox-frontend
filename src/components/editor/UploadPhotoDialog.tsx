@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { X, Sparkles, Link, Unlink, Check, ChevronsUpDown, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { cn, clamp } from "@/lib/utils";
 import { SYSTEM_PALETTES } from "@/lib/palettes";
+import { convertImageToDataURL, type ColorMatchResult } from "@/lib/image-processor";
 
 type Props = {
   open: boolean;
@@ -54,6 +55,9 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
   const [palettePopoverOpen, setPalettePopoverOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processedImageUrl, setProcessedImageUrl] = useState<string | null>(null);
+  const [processedResult, setProcessedResult] = useState<ColorMatchResult | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const imageContainerRef = useRef<HTMLDivElement>(null);
@@ -88,7 +92,6 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
 
   const handleTouchStart = (e: React.TouchEvent) => {
     if (e.touches.length >= 2) {
-      e.preventDefault();
       gestureRef.current = true;
       const container = imageContainerRef.current;
       if (container) {
@@ -111,7 +114,6 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (gestureRef.current && e.touches.length >= 2) {
-      e.preventDefault();
       const start = gestureStartRef.current;
       if (!start) return;
 
@@ -183,7 +185,6 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
   };
 
   const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
     const delta = e.deltaY > 0 ? -0.1 : 0.1;
     setScale((prev) => Math.max(0.5, Math.min(3, prev + delta)));
   };
@@ -202,6 +203,41 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
     () => SYSTEM_PALETTES.find((p) => p.id === colorPaletteId) ?? SYSTEM_PALETTES[0],
     [colorPaletteId]
   );
+
+  // Process image when file or palette changes
+  useEffect(() => {
+    if (!imagePreviewUrl || !selectedFile) {
+      setProcessedImageUrl(null);
+      setProcessedResult(null);
+      return;
+    }
+
+    const processImage = async () => {
+      setIsProcessing(true);
+      try {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        await new Promise<void>((resolve, reject) => {
+          img.onload = () => resolve();
+          img.onerror = reject;
+          img.src = imagePreviewUrl;
+        });
+
+        const result = await convertImageToDataURL(img, selectedPalette, {
+          width: parseInt(widthBeads, 10) || 50,
+          poolSize: 2,
+        });
+        setProcessedImageUrl(result);
+      } catch (error) {
+        console.error("Failed to process image:", error);
+        setProcessedImageUrl(null);
+      } finally {
+        setIsProcessing(false);
+      }
+    };
+
+    processImage();
+  }, [imagePreviewUrl, selectedPalette, widthBeads]);
 
   // Clamp beads value between 1-200
   const clampBeads = (val: string) => {
@@ -394,10 +430,6 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
                     <div
                       ref={scrollRef}
                       className="w-[340px] h-[340px] overflow-y-auto"
-                      onWheel={(e) => {
-                        e.preventDefault();
-                        scrollRef.current!.scrollTop += e.deltaY;
-                      }}
                     >
                       <div className="p-3 space-y-2">
                         {SYSTEM_PALETTES.map((palette) => {
@@ -696,10 +728,32 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
 
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold">{t("editor.uploadDialog.resultPreview")}</h3>
+              {processedResult && (
+                <span className="text-xs text-muted-foreground">
+                  {processedResult.width} × {processedResult.height} · {processedResult.beadCount} beads
+                </span>
+              )}
             </div>
 
-            <div className="rounded-xl border bg-[linear-gradient(45deg,#f5f5f5_25%,transparent_25%,transparent_75%,#f5f5f5_75%,#f5f5f5),linear-gradient(45deg,#f5f5f5_25%,transparent_25%,transparent_75%,#f5f5f5_75%,#f5f5f5)] bg-[length:10px_10px] bg-[position:0_0,5px_5px] bg-repeat aspect-video flex items-center justify-center text-sm text-muted-foreground">
-              {t("editor.uploadDialog.resultPreviewPlaceholder")}
+            <div className="rounded-xl border bg-[linear-gradient(45deg,#f5f5f5_25%,transparent_25%,transparent_75%,#f5f5f5_75%,#f5f5f5),linear-gradient(45deg,#f5f5f5_25%,transparent_25%,transparent_75%,#f5f5f5_75%,#f5f5f5)] bg-[length:10px_10px] bg-[position:0_0,5px_5px] bg-repeat aspect-video overflow-hidden relative">
+              {isProcessing ? (
+                <div className="w-full h-full flex items-center justify-center">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <div className="w-4 h-4 border-2 border-pink-500 border-t-transparent rounded-full animate-spin" />
+                    {t("editor.uploadDialog.processing")}
+                  </div>
+                </div>
+              ) : processedImageUrl ? (
+                <img
+                  src={processedImageUrl}
+                  alt="Processed"
+                  className="w-full h-full object-contain"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-sm text-muted-foreground">
+                  {t("editor.uploadDialog.resultPreviewPlaceholder")}
+                </div>
+              )}
             </div>
           </div>
         </div>

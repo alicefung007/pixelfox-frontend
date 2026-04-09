@@ -93,6 +93,7 @@
       "resultPreviewPlaceholder": "点击生成以预览",
       "cancel": "取消",
       "generate": "生成",
+      "processing": "处理中...",
       "lockAspectRatio": "锁定长宽比",
       "unlockAspectRatio": "解锁长宽比",
       "extraction": "颜色提取",

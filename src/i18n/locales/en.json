@@ -93,6 +93,7 @@
       "resultPreviewPlaceholder": "Tap Generate to preview",
       "cancel": "Cancel",
       "generate": "Generate",
+      "processing": "Processing...",
       "lockAspectRatio": "Lock aspect ratio",
       "unlockAspectRatio": "Unlock aspect ratio",
       "extraction": "Extraction",

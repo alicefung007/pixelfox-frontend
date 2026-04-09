@@ -93,6 +93,7 @@
       "resultPreviewPlaceholder": "生成ボタンを押してプレビュー",
       "cancel": "キャンセル",
       "generate": "生成",
+      "processing": "処理中...",
       "lockAspectRatio": "アスペクト比をロック",
       "unlockAspectRatio": "アスペクト比を解除",
       "extraction": "色抽出",

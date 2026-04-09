@@ -93,6 +93,7 @@
       "resultPreviewPlaceholder": "생성 버튼을 눌러 미리보기",
       "cancel": "취소",
       "generate": "생성",
+      "processing": "처리 중...",
       "lockAspectRatio": "가로 세비비율 잠금",
       "unlockAspectRatio": "가로 세비비율 해제",
       "extraction": "색상 추출",
