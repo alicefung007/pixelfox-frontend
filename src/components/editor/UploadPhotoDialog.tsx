@@ -56,6 +56,147 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const imageContainerRef = useRef<HTMLDivElement>(null);
+
+  // Image transform state
+  const [scale, setScale] = useState(1);
+  const [translate, setTranslate] = useState({ x: 0, y: 0 });
+  const [isDraggingImage, setIsDraggingImage] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const gestureRef = useRef(false);
+  const gestureStartRef = useRef<{
+    distance: number;
+    midpoint: { x: number; y: number };
+    scale: number;
+    translate: { x: number; y: number };
+  } | null>(null);
+
+  const getTouchDistance = (touches: React.TouchList) => {
+    if (touches.length < 2) return 0;
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
+
+  const getTouchMidpoint = (touches: React.TouchList) => {
+    if (touches.length < 2) return { x: 0, y: 0 };
+    return {
+      x: (touches[0].clientX + touches[1].clientX) / 2,
+      y: (touches[0].clientY + touches[1].clientY) / 2,
+    };
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length >= 2) {
+      e.preventDefault();
+      gestureRef.current = true;
+      const container = imageContainerRef.current;
+      if (container) {
+        const rect = container.getBoundingClientRect();
+        gestureStartRef.current = {
+          distance: getTouchDistance(e.touches),
+          midpoint: {
+            x: getTouchMidpoint(e.touches).x - rect.left,
+            y: getTouchMidpoint(e.touches).y - rect.top,
+          },
+          scale: scale,
+          translate: { x: translate.x, y: translate.y },
+        };
+      }
+      return;
+    }
+    setIsDraggingImage(true);
+    setDragStart({ x: e.touches[0].clientX - translate.x, y: e.touches[0].clientY - translate.y });
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (gestureRef.current && e.touches.length >= 2) {
+      e.preventDefault();
+      const start = gestureStartRef.current;
+      if (!start) return;
+
+      const container = imageContainerRef.current;
+      if (!container) return;
+
+      const rect = container.getBoundingClientRect();
+      const currentDistance = getTouchDistance(e.touches);
+      const currentMidpoint = getTouchMidpoint(e.touches);
+      const screenMidpoint = {
+        x: currentMidpoint.x - rect.left,
+        y: currentMidpoint.y - rect.top,
+      };
+
+      if (currentDistance > 0 && start.distance > 0) {
+        const scaleDelta = currentDistance / start.distance;
+        const newScale = Math.max(0.5, Math.min(3, start.scale * scaleDelta));
+        setScale(newScale);
+
+        const dx = screenMidpoint.x - start.midpoint.x;
+        const dy = screenMidpoint.y - start.midpoint.y;
+
+        const startScale = start.scale;
+        const worldX = (start.midpoint.x - start.translate.x) / startScale;
+        const worldY = (start.midpoint.y - start.translate.y) / startScale;
+
+        setTranslate({
+          x: screenMidpoint.x - worldX * newScale + dx,
+          y: screenMidpoint.y - worldY * newScale + dy,
+        });
+      }
+      return;
+    }
+
+    if (!isDraggingImage || e.touches.length !== 1) return;
+    setTranslate({
+      x: e.touches[0].clientX - dragStart.x,
+      y: e.touches[0].clientY - dragStart.y,
+    });
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (e.touches.length < 2) {
+      gestureRef.current = false;
+      gestureStartRef.current = null;
+    }
+    if (e.touches.length === 0) {
+      setIsDraggingImage(false);
+    }
+  };
+
+  // Mouse drag handlers
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (e.button !== 0) return;
+    setIsDraggingImage(true);
+    setDragStart({ x: e.clientX - translate.x, y: e.clientY - translate.y });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDraggingImage) return;
+    setTranslate({
+      x: e.clientX - dragStart.x,
+      y: e.clientY - dragStart.y,
+    });
+  };
+
+  const handleMouseUp = () => {
+    setIsDraggingImage(false);
+  };
+
+  const handleWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? -0.1 : 0.1;
+    setScale((prev) => Math.max(0.5, Math.min(3, prev + delta)));
+  };
+
+  const resetTransform = () => {
+    setScale(1);
+    setTranslate({ x: 0, y: 0 });
+  };
+
+  // Image preview URL
+  const imagePreviewUrl = useMemo(() => {
+    return selectedFile ? URL.createObjectURL(selectedFile) : null;
+  }, [selectedFile]);
 
   const selectedPalette = useMemo(
     () => SYSTEM_PALETTES.find((p) => p.id === colorPaletteId) ?? SYSTEM_PALETTES[0],
@@ -327,23 +468,27 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
                   />
                 </div>
 
-                {colorMerging && (
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-[10px] font-medium text-muted-foreground">
-                        {t("editor.uploadDialog.colorMergeThreshold")}
-                      </Label>
-                      <span className="text-[11px] font-medium">{colorMergeThreshold[0]}</span>
-                    </div>
-                    <Slider
-                      value={colorMergeThreshold}
-                      onValueChange={setColorMergeThreshold}
-                      min={1}
-                      max={100}
-                      className="[&_[data-slot=slider-range]]:bg-pink-500"
-                    />
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label className={cn("text-[10px] font-medium", !colorMerging && "text-muted-foreground")}>
+                      {t("editor.uploadDialog.colorMergeThreshold")}
+                    </Label>
+                    <span className={cn("text-[11px] font-medium", !colorMerging && "text-muted-foreground")}>
+                      {colorMergeThreshold[0]}
+                    </span>
                   </div>
-                )}
+                  <Slider
+                    value={colorMergeThreshold}
+                    onValueChange={setColorMergeThreshold}
+                    min={1}
+                    max={100}
+                    disabled={!colorMerging}
+                    className={cn(
+                      "[&_[data-slot=slider-range]]:bg-pink-500",
+                      !colorMerging && "[&_[data-slot=slider-range]]:bg-muted"
+                    )}
+                  />
+                </div>
               </div>
             </div>
 
@@ -491,15 +636,69 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
               <h3 className="text-sm font-semibold">{t("editor.uploadDialog.originalImage")}</h3>
             </div>
 
-            <div className="rounded-xl border bg-muted/20 aspect-video flex items-center justify-center text-sm text-muted-foreground">
-              {t("editor.uploadDialog.uploadPhoto")}
+            <div className="rounded-xl border bg-[linear-gradient(45deg,#f5f5f5_25%,transparent_25%,transparent_75%,#f5f5f5_75%,#f5f5f5),linear-gradient(45deg,#f5f5f5_25%,transparent_25%,transparent_75%,#f5f5f5_75%,#f5f5f5)] bg-[length:10px_10px] bg-[position:0_0,5px_5px] bg-repeat aspect-video overflow-hidden relative select-none">
+              {imagePreviewUrl ? (
+                <div
+                  ref={imageContainerRef}
+                  className="absolute inset-0 cursor-move touch-none"
+                  onMouseDown={handleMouseDown}
+                  onMouseMove={handleMouseMove}
+                  onMouseUp={handleMouseUp}
+                  onMouseLeave={handleMouseUp}
+                  onTouchStart={handleTouchStart}
+                  onTouchMove={handleTouchMove}
+                  onTouchEnd={handleTouchEnd}
+                  onWheel={handleWheel}
+                >
+                  <img
+                    src={imagePreviewUrl}
+                    alt="Original"
+                    className="w-full h-full object-contain pointer-events-none"
+                    style={{
+                      transform: `translate(${translate.x}px, ${translate.y}px) scale(${scale})`,
+                      transformOrigin: 'center center',
+                    }}
+                    draggable={false}
+                  />
+                </div>
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-sm text-muted-foreground">
+                  {t("editor.uploadDialog.uploadPhoto")}
+                </div>
+              )}
+              {imagePreviewUrl && (
+                <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-background/80 backdrop-blur-sm rounded-lg p-1">
+                  <button
+                    type="button"
+                    onClick={() => setScale((s) => Math.max(0.5, s - 0.2))}
+                    className="w-6 h-6 flex items-center justify-center rounded hover:bg-muted text-xs font-medium"
+                  >
+                    −
+                  </button>
+                  <span className="text-xs min-w-[3ch] text-center">{Math.round(scale * 100)}%</span>
+                  <button
+                    type="button"
+                    onClick={() => setScale((s) => Math.min(3, s + 0.2))}
+                    className="w-6 h-6 flex items-center justify-center rounded hover:bg-muted text-xs font-medium"
+                  >
+                    +
+                  </button>
+                  <button
+                    type="button"
+                    onClick={resetTransform}
+                    className="w-6 h-6 flex items-center justify-center rounded hover:bg-muted text-sm"
+                  >
+                    ↺
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold">{t("editor.uploadDialog.resultPreview")}</h3>
             </div>
 
-            <div className="rounded-xl border bg-muted/20 aspect-video flex items-center justify-center text-sm text-muted-foreground">
+            <div className="rounded-xl border bg-[linear-gradient(45deg,#f5f5f5_25%,transparent_25%,transparent_75%,#f5f5f5_75%,#f5f5f5),linear-gradient(45deg,#f5f5f5_25%,transparent_25%,transparent_75%,#f5f5f5_75%,#f5f5f5)] bg-[length:10px_10px] bg-[position:0_0,5px_5px] bg-repeat aspect-video flex items-center justify-center text-sm text-muted-foreground">
               {t("editor.uploadDialog.resultPreviewPlaceholder")}
             </div>
           </div>
