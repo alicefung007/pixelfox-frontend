@@ -51,7 +51,7 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
   const [extractionQuality, setExtractionQuality] = useState("recommended");
   const [colorPaletteId, setColorPaletteId] = useState<string>(SYSTEM_PALETTES[0].id);
   const [colorMerging, setColorMerging] = useState(true);
-  const [colorMergeThreshold, setColorMergeThreshold] = useState([10]);
+  const [colorMergeThreshold, setColorMergeThreshold] = useState([4]);
   const [palettePopoverOpen, setPalettePopoverOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -226,6 +226,7 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
         const result = await convertImageToDataURL(img, selectedPalette, {
           width: parseInt(widthBeads, 10) || 50,
           poolSize: 2,
+          ciede2000Threshold: colorMerging ? colorMergeThreshold[0] : 0,
         });
         setProcessedImageUrl(result);
       } catch (error) {
@@ -237,7 +238,7 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
     };
 
     processImage();
-  }, [imagePreviewUrl, selectedPalette, widthBeads]);
+  }, [imagePreviewUrl, selectedPalette, widthBeads, colorMergeThreshold]);
 
   // Clamp beads value between 1-200
   const clampBeads = (val: string) => {
@@ -513,7 +514,7 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
                     value={colorMergeThreshold}
                     onValueChange={setColorMergeThreshold}
                     min={1}
-                    max={100}
+                    max={20}
                     disabled={!colorMerging}
                     className={cn(
                       "[&_[data-slot=slider-range]]:bg-pink-500",

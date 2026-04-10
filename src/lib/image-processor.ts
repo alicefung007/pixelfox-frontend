@@ -1,6 +1,6 @@
 import type { PaletteDefinition } from "@/lib/palettes/types";
 
-// ===================== 1. 预计算常量 =====================
+// ===================== 1. Precomputed Constants =====================
 const PI = Math.PI;
 const PI180 = PI / 180;
 const POW25_7 = Math.pow(25, 7);
@@ -8,7 +8,7 @@ const D65_Xn = 0.95047;
 const D65_Yn = 1.0;
 const D65_Zn = 1.08883;
 
-// ===================== 2. 类型定义 =====================
+// ===================== 2. Type Definitions =====================
 export interface ColorMatchResult {
   imageData: ImageData;
   width: number;
@@ -18,15 +18,15 @@ export interface ColorMatchResult {
 }
 
 export interface ConvertOptions {
-  width?: number; // 目标宽度（像素数），默认 50
-  poolSize?: number; // 池化大小，默认 2
-  ciede2000Threshold?: number; // 色差合并阈值，默认 5
-  excludeColorCodes?: string[]; // 排除的色号
-  bgColorTolerance?: number; // 背景色容差，默认 3
-  bgOutputMode?: "TRANSPARENT" | "WHITE" | "BLACK"; // 背景输出模式
+  width?: number; // Target width in beads, default 50
+  poolSize?: number; // Pooling size, default 2
+  ciede2000Threshold?: number; // Color merge threshold, default 5
+  excludeColorCodes?: string[]; // Color codes to exclude
+  bgColorTolerance?: number; // Background color tolerance, default 3
+  bgOutputMode?: "TRANSPARENT" | "WHITE" | "BLACK"; // Background output mode
 }
 
-// ===================== 3. 色彩转换函数 =====================
+// ===================== 3. Color Conversion Functions =====================
 function hexToRgb(hex: string): { r: number; g: number; b: number } {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   if (!result) {
@@ -63,7 +63,7 @@ function rgbToLab(r: number, g: number, b: number): { L: number; a: number; b: n
   };
 }
 
-// CIEDE2000 色差计算
+// CIEDE2000 color difference calculation
 function getCIEDE2000(
   L1: number,
   a1: number,
@@ -124,7 +124,7 @@ function getCIEDE2000(
   );
 }
 
-// ===================== 4. k-d 树构建与查找 =====================
+// ===================== 4. K-d Tree Build & Search =====================
 interface KdNode {
   point: [number, number, number];
   index: number;
@@ -196,9 +196,9 @@ function findNearestKdTree(
   return best;
 }
 
-// ===================== 5. 核心转换逻辑 =====================
+// ===================== 5. Core Conversion Logic =====================
 export function createColorMatcher(palette: PaletteDefinition) {
-  // 从 palette 构建色珠数据
+  // Build bead palette from palette definition
   const beadPalette: PaletteBead[] = palette.swatches.map((swatch, index) => {
     const { r, g, b } = hexToRgb(swatch.color);
     const lab = rgbToLab(r, g, b);
@@ -213,15 +213,15 @@ export function createColorMatcher(palette: PaletteDefinition) {
     };
   });
 
-  // 色号 → 索引映射
+  // Label to index mapping
   const labelToIndex = new Map(beadPalette.map((bead) => [bead.label, bead.index]));
 
-  // 构建 k-d 树
+  // Build k-d tree
   const kdTreeRoot = buildKdTree(
     beadPalette.map((bead) => ({ lab: bead.lab, index: bead.index }))
   );
 
-  // 找到最近的颜色（简化版，无背景移除）
+  // Find nearest color (simplified, no background removal)
   function findNearestColor(
     r: number,
     g: number,
@@ -255,7 +255,7 @@ export async function convertImageToPixelArt(
     bgOutputMode = "WHITE",
   } = options;
 
-  // 加载图片
+  // Load image
   let img: HTMLImageElement;
   if (typeof imageSource === "string") {
     img = new Image();
@@ -269,16 +269,16 @@ export async function convertImageToPixelArt(
     img = imageSource;
   }
 
-  // 创建 Canvas 并绘制缩放后的图片
+  // Create canvas and draw resized image
   const srcWidth = img.naturalWidth || img.width;
   const srcHeight = img.naturalHeight || img.height;
 
-  // 计算目标尺寸，保持宽高比
+  // Calculate target dimensions, maintaining aspect ratio
   const aspectRatio = srcHeight / srcWidth;
   const dstWidth = Math.max(1, Math.floor(width));
   const dstHeight = Math.max(1, Math.floor(width * aspectRatio));
 
-  // 使用 poolSize 进行池化
+  // Apply pooling
   const pooledWidth = Math.floor(dstWidth / poolSize);
   const pooledHeight = Math.floor(dstHeight / poolSize);
 
@@ -290,28 +290,27 @@ export async function convertImageToPixelArt(
 
   const srcImageData = ctx.getImageData(0, 0, dstWidth, dstHeight);
 
-  // 创建颜色匹配器
+  // Create color matcher
   const { beadPalette, findNearestColor } = createColorMatcher(palette);
 
-  // 处理排除的颜色
+  // Handle excluded colors
   const excludeSet = new Set<number>();
   excludeColorCodes.forEach((code) => {
     const idx = labelToIndexMap(beadPalette, code);
     if (idx !== undefined) excludeSet.add(idx);
   });
 
-  // 执行颜色匹配
+  // Perform color matching
   const resultCanvas = document.createElement("canvas");
   resultCanvas.width = pooledWidth;
   resultCanvas.height = pooledHeight;
   const resultCtx = resultCanvas.getContext("2d")!;
   const resultImageData = resultCtx.createImageData(pooledWidth, pooledHeight);
 
-  let beadCount = 0;
-
+  // First pass: match colors
   for (let py = 0; py < pooledHeight; py++) {
     for (let px = 0; px < pooledWidth; px++) {
-      // 收集窗口内的像素
+      // Collect pixels in window
       const pixels: { r: number; g: number; b: number }[] = [];
 
       for (let wy = 0; wy < poolSize; wy++) {
@@ -329,7 +328,7 @@ export async function convertImageToPixelArt(
         }
       }
 
-      // 取最常见颜色或平均值
+      // Get most common color
       const colorCounts = new Map<string, number>();
       for (const p of pixels) {
         const key = `${p.r},${p.g},${p.b}`;
@@ -347,21 +346,100 @@ export async function convertImageToPixelArt(
         }
       });
 
-      // 匹配到最近的颜色
+      // Match to nearest color
       const matchedBead = findNearestColor(targetR, targetG, targetB, excludeSet);
 
-      // 写入结果
+      // Write result
       const resultOffset = (py * pooledWidth + px) * 4;
       resultImageData.data[resultOffset] = matchedBead.r;
       resultImageData.data[resultOffset + 1] = matchedBead.g;
       resultImageData.data[resultOffset + 2] = matchedBead.b;
       resultImageData.data[resultOffset + 3] = 255;
+    }
+  }
 
-      beadCount++;
+  // Second pass: region merging using BFS
+  if (ciede2000Threshold > 0) {
+    const visited = new Uint8Array(pooledWidth * pooledHeight);
+    const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+
+    for (let i = 0; i < pooledWidth * pooledHeight; i++) {
+      if (visited[i]) continue;
+
+      // BFS to find connected region
+      const queue: number[] = [i];
+      const region: number[] = [];
+      visited[i] = 1;
+      region.push(i);
+
+      const baseOffset = i * 4;
+      const baseLab = rgbToLab(
+        resultImageData.data[baseOffset],
+        resultImageData.data[baseOffset + 1],
+        resultImageData.data[baseOffset + 2]
+      );
+
+      let head = 0;
+      while (head < queue.length) {
+        const currIdx = queue[head++];
+        const cx = currIdx % pooledWidth;
+        const cy = Math.floor(currIdx / pooledWidth);
+
+        for (const [dx, dy] of directions) {
+          const nx = cx + dx;
+          const ny = cy + dy;
+          if (nx < 0 || nx >= pooledWidth || ny < 0 || ny >= pooledHeight) continue;
+
+          const neighborIdx = ny * pooledWidth + nx;
+          if (visited[neighborIdx]) continue;
+
+          const neighborOffset = neighborIdx * 4;
+          const neighborLab = rgbToLab(
+            resultImageData.data[neighborOffset],
+            resultImageData.data[neighborOffset + 1],
+            resultImageData.data[neighborOffset + 2]
+          );
+
+          const distance = getCIEDE2000(baseLab.L, baseLab.a, baseLab.b, neighborLab.L, neighborLab.a, neighborLab.b);
+          if (distance < ciede2000Threshold) {
+            visited[neighborIdx] = 1;
+            queue.push(neighborIdx);
+            region.push(neighborIdx);
+          }
+        }
+      }
+
+      // Find most common color in region
+      const regionColorCounts = new Map<string, number>();
+      for (const idx of region) {
+        const offset = idx * 4;
+        const key = `${resultImageData.data[offset]},${resultImageData.data[offset + 1]},${resultImageData.data[offset + 2]}`;
+        regionColorCounts.set(key, (regionColorCounts.get(key) || 0) + 1);
+      }
+
+      let maxCount = 0;
+      let dominantColor = "";
+      regionColorCounts.forEach((count, key) => {
+        if (count > maxCount) {
+          maxCount = count;
+          dominantColor = key;
+        }
+      });
+
+      // Apply dominant color to all pixels in region
+      const [dr, dg, db] = dominantColor.split(",").map(Number);
+      for (const idx of region) {
+        const offset = idx * 4;
+        resultImageData.data[offset] = dr;
+        resultImageData.data[offset + 1] = dg;
+        resultImageData.data[offset + 2] = db;
+      }
     }
   }
 
   resultCtx.putImageData(resultImageData, 0, 0);
+
+  const beadCount = pooledWidth * pooledHeight;
 
   return {
     imageData: resultImageData,
@@ -372,7 +450,7 @@ export async function convertImageToPixelArt(
   };
 }
 
-// 辅助函数：标签转索引映射
+// Helper function: label to index mapping
 function labelToIndexMap(beadPalette: PaletteBead[], label: string): number | undefined {
   for (let i = 0; i < beadPalette.length; i++) {
     if (beadPalette[i].label === label) return i;
@@ -380,7 +458,7 @@ function labelToIndexMap(beadPalette: PaletteBead[], label: string): number | un
   return undefined;
 }
 
-// 简化版：直接返回 ImageData URL
+// Simplified version: returns ImageData URL directly
 export async function convertImageToDataURL(
   imageSource: string | HTMLImageElement,
   palette: PaletteDefinition,
