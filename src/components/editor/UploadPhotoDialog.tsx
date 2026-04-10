@@ -28,7 +28,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { cn, clamp } from "@/lib/utils";
 import { SYSTEM_PALETTES } from "@/lib/palettes";
-import { convertImageToDataURL, type ColorMatchResult } from "@/lib/image-processor";
+import { convertImageToPixelArt, type ColorMatchResult } from "@/lib/image-processor";
 
 type Props = {
   open: boolean;
@@ -56,11 +56,11 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [processedImageUrl, setProcessedImageUrl] = useState<string | null>(null);
   const [processedResult, setProcessedResult] = useState<ColorMatchResult | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const imageContainerRef = useRef<HTMLDivElement>(null);
+  const resultCanvasRef = useRef<HTMLCanvasElement>(null);
 
   // Image transform state
   const [scale, setScale] = useState(1);
@@ -207,7 +207,6 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
   // Process image when file or palette changes
   useEffect(() => {
     if (!imagePreviewUrl || !selectedFile) {
-      setProcessedImageUrl(null);
       setProcessedResult(null);
       return;
     }
@@ -223,15 +222,15 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
           img.src = imagePreviewUrl;
         });
 
-        const result = await convertImageToDataURL(img, selectedPalette, {
+        const result = await convertImageToPixelArt(img, selectedPalette, {
           width: parseInt(widthBeads, 10) || 50,
           poolSize: 2,
           ciede2000Threshold: colorMerging ? colorMergeThreshold[0] : 0,
         });
-        setProcessedImageUrl(result);
+        setProcessedResult(result);
       } catch (error) {
         console.error("Failed to process image:", error);
-        setProcessedImageUrl(null);
+        setProcessedResult(null);
       } finally {
         setIsProcessing(false);
       }
@@ -239,6 +238,20 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
 
     processImage();
   }, [imagePreviewUrl, selectedPalette, widthBeads, colorMergeThreshold]);
+
+  // Draw to canvas when result changes
+  useEffect(() => {
+    if (!processedResult) return;
+    const canvas = resultCanvasRef.current;
+    if (!canvas) return;
+
+    canvas.width = processedResult.width;
+    canvas.height = processedResult.height;
+    const ctx = canvas.getContext("2d");
+    if (ctx) {
+      ctx.putImageData(processedResult.imageData, 0, 0);
+    }
+  }, [processedResult]);
 
   // Clamp beads value between 1-200
   const clampBeads = (val: string) => {
@@ -744,12 +757,16 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
                     {t("editor.uploadDialog.processing")}
                   </div>
                 </div>
-              ) : processedImageUrl ? (
-                <img
-                  src={processedImageUrl}
-                  alt="Processed"
-                  className="w-full h-full object-contain"
-                />
+              ) : processedResult ? (
+                <div className="w-full h-full flex items-center justify-center">
+                  <canvas
+                    ref={resultCanvasRef}
+                    className="h-full w-auto"
+                    style={{
+                      imageRendering: "pixelated",
+                    }}
+                  />
+                </div>
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-sm text-muted-foreground">
                   {t("editor.uploadDialog.resultPreviewPlaceholder")}
