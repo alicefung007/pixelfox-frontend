@@ -253,7 +253,7 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
     };
 
     processImage();
-  }, [imagePreviewUrl, selectedPalette, widthBeads, colorMergeThreshold]);
+  }, [imagePreviewUrl, selectedPalette, widthBeads, heightBeads, colorMergeThreshold]);
 
   useEffect(() => {
     if (!processedResult) return;
@@ -316,7 +316,7 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[980px] w-[calc(100vw-32px)] md:w-full p-0 flex flex-col gap-0 max-h-[90vh]">
+      <DialogContent className="max-w-[980px] w-[calc(100vw-32px)] md:w-full p-0 flex flex-col gap-0 max-h-[95vh]">
         <DialogHeader className="px-3 pt-3 pb-2 md:px-6 md:pt-6 md:pb-4 shrink-0 text-left">
           <div className="flex items-start justify-between gap-4">
             <div className="space-y-1">
@@ -339,7 +339,7 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
               <h3 className="text-sm font-semibold">{t("editor.uploadDialog.uploadPhoto")}</h3>
               <div
                 className={cn(
-                  "relative flex flex-col items-center justify-center w-full h-24 rounded-xl border-2 border-dashed cursor-pointer transition-colors",
+                  "relative flex flex-col items-center justify-center w-full h-20 rounded-xl border-2 border-dashed cursor-pointer transition-colors",
                   isDragging
                     ? "border-pink-500 bg-pink-500/10 border-solid"
                     : selectedFile
