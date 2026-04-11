@@ -194,6 +194,13 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
     setTranslate({ x: 0, y: 0 });
   };
 
+  // Truncate filename with ellipsis in the middle
+  const truncateFilename = (name: string) => {
+    if (name.length <= 100) return name;
+    const half = Math.floor((100 - 3) / 2);
+    return `${name.slice(0, half)}...${name.slice(-half)}`;
+  };
+
   // Image preview URL
   const imagePreviewUrl = useMemo(() => {
     return selectedFile ? URL.createObjectURL(selectedFile) : null;
@@ -362,8 +369,8 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
                 {selectedFile ? (
                   <>
                     <Check className="w-6 h-6 text-pink-500" />
-                    <span className="text-xs text-pink-600 dark:text-pink-400 font-medium text-center px-1">
-                      {selectedFile.name}
+                    <span className="text-xs text-pink-600 dark:text-pink-400 font-medium text-left px-1 break-all">
+                      {truncateFilename(selectedFile.name)}
                     </span>
                     <button
                       type="button"
@@ -690,6 +697,36 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
 
           <div className="flex-1 min-w-0 space-y-3 md:space-y-4 pb-3 md:pb-4">
             <div className="flex items-center justify-between pt-3">
+              <h3 className="text-sm font-semibold">{t("editor.uploadDialog.patternPreview")}</h3>
+              {processedResult && (
+                <span className="text-xs text-muted-foreground">
+                  {processedResult.width} × {processedResult.height} · {processedResult.beadCount} beads
+                </span>
+              )}
+            </div>
+
+            <div className="rounded-xl border bg-[linear-gradient(45deg,#f5f5f5_25%,transparent_25%,transparent_75%,#f5f5f5_75%,#f5f5f5),linear-gradient(45deg,#f5f5f5_25%,transparent_25%,transparent_75%,#f5f5f5_75%,#f5f5f5)] bg-[length:10px_10px] bg-[position:0_0,5px_5px] bg-repeat aspect-video overflow-hidden relative flex items-center justify-center">
+              {isProcessing ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <div className="w-4 h-4 border-2 border-pink-500 border-t-transparent rounded-full animate-spin" />
+                  {t("editor.uploadDialog.processing")}
+                </div>
+              ) : processedResult ? (
+                <canvas
+                  ref={resultCanvasRef}
+                  className="h-full w-auto"
+                  style={{
+                    imageRendering: "pixelated",
+                  }}
+                />
+              ) : (
+                <span className="text-sm text-muted-foreground">
+                  {t("editor.uploadDialog.patternPreviewPlaceholder")}
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold">{t("editor.uploadDialog.originalImage")}</h3>
             </div>
 
@@ -749,36 +786,6 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
                   </button>
                 </div>
               )}*/}
-            </div>
-
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold">{t("editor.uploadDialog.resultPreview")}</h3>
-              {processedResult && (
-                <span className="text-xs text-muted-foreground">
-                  {processedResult.width} × {processedResult.height} · {processedResult.beadCount} beads
-                </span>
-              )}
-            </div>
-
-            <div className="rounded-xl border bg-[linear-gradient(45deg,#f5f5f5_25%,transparent_25%,transparent_75%,#f5f5f5_75%,#f5f5f5),linear-gradient(45deg,#f5f5f5_25%,transparent_25%,transparent_75%,#f5f5f5_75%,#f5f5f5)] bg-[length:10px_10px] bg-[position:0_0,5px_5px] bg-repeat aspect-video overflow-hidden relative flex items-center justify-center">
-              {isProcessing ? (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <div className="w-4 h-4 border-2 border-pink-500 border-t-transparent rounded-full animate-spin" />
-                  {t("editor.uploadDialog.processing")}
-                </div>
-              ) : processedResult ? (
-                <canvas
-                  ref={resultCanvasRef}
-                  className="h-full w-auto"
-                  style={{
-                    imageRendering: "pixelated",
-                  }}
-                />
-              ) : (
-                <span className="text-sm text-muted-foreground">
-                  {t("editor.uploadDialog.resultPreviewPlaceholder")}
-                </span>
-              )}
             </div>
           </div>
         </div>
