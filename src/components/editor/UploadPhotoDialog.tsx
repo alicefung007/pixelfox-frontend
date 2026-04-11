@@ -39,8 +39,8 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
   const { t } = useTranslation();
   
   // Pattern size beads (1-200)
-  const [widthBeads, setWidthBeads] = useState("50");
-  const [heightBeads, setHeightBeads] = useState("50");
+  const [widthBeads, setWidthBeads] = useState("60");
+  const [heightBeads, setHeightBeads] = useState("60");
   const [aspectRatioLocked, setAspectRatioLocked] = useState(true);
 
   // Offset values (-200 to 200)
@@ -235,9 +235,12 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
           img.src = imagePreviewUrl;
         });
 
+        const poolSize = colorMerging ? colorMergeThreshold[0] : 1;
+
         const result = await convertImageToPixelArt(img, selectedPalette, {
-          width: parseInt(widthBeads, 10) || 50,
-          poolSize: 2,
+          width: (parseInt(widthBeads, 10) || 60) * poolSize,
+          height: (parseInt(heightBeads, 10) || 60) * poolSize,
+          poolSize,
           ciede2000Threshold: colorMerging ? colorMergeThreshold[0] : 0,
         });
         setProcessedResult(result);

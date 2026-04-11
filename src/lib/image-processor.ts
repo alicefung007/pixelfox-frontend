@@ -19,6 +19,7 @@ export interface ColorMatchResult {
 
 export interface ConvertOptions {
   width?: number; // Target width in beads, default 50
+  height?: number; // Target height in beads (if not set, derived from aspect ratio)
   poolSize?: number; // Pooling size, default 2
   ciede2000Threshold?: number; // Color merge threshold, default 5
   excludeColorCodes?: string[]; // Color codes to exclude
@@ -248,6 +249,7 @@ export async function convertImageToPixelArt(
 ): Promise<ColorMatchResult> {
   const {
     width = 50,
+    height,
     poolSize = 2,
     ciede2000Threshold = 5,
     excludeColorCodes = [],
@@ -273,10 +275,11 @@ export async function convertImageToPixelArt(
   const srcWidth = img.naturalWidth || img.width;
   const srcHeight = img.naturalHeight || img.height;
 
-  // Calculate target dimensions, maintaining aspect ratio
-  const aspectRatio = srcHeight / srcWidth;
+  // Calculate target dimensions, maintaining aspect ratio if height not specified
   const dstWidth = Math.max(1, Math.floor(width));
-  const dstHeight = Math.max(1, Math.floor(width * aspectRatio));
+  const dstHeight = height !== undefined
+    ? Math.max(1, Math.floor(height))
+    : Math.max(1, Math.floor(width * (srcHeight / srcWidth)));
 
   // Apply pooling
   const pooledWidth = Math.floor(dstWidth / poolSize);
