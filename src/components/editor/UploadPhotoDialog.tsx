@@ -33,9 +33,10 @@ import { convertImageToPixelArt, type ColorMatchResult } from "@/lib/image-proce
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onGenerate: (result: ColorMatchResult) => void;
 };
 
-export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
+export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Props) {
   const { t } = useTranslation();
   
   // Pattern size beads (1-200)
@@ -799,7 +800,15 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
           <DialogClose asChild>
             <Button variant="outline" className="w-full sm:w-auto">{t("editor.uploadDialog.cancel")}</Button>
           </DialogClose>
-          <Button className="w-full sm:w-auto gap-2 bg-gradient-to-r from-pink-500 to-violet-500 hover:opacity-90 border-none text-white font-medium">
+          <Button
+            className="w-full sm:w-auto gap-2 bg-gradient-to-r from-pink-500 to-violet-500 hover:opacity-90 border-none text-white font-medium"
+            onClick={() => {
+              if (processedResult) {
+                onGenerate(processedResult);
+                onOpenChange(false);
+              }
+            }}
+          >
             <Sparkles className="size-4" />
             {t("editor.uploadDialog.generate")}
           </Button>

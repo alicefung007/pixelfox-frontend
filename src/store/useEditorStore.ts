@@ -18,6 +18,7 @@ interface EditorState {
   clearPixel: (x: number, y: number) => void;
   saveHistory: () => void;
   setPixels: (pixels: Record<string, string>) => void;
+  setSize: (width: number, height: number) => void;
   setTool: (tool: ToolType) => void;
   setColor: (color: string) => void;
   setZoom: (zoom: number) => void;
@@ -53,6 +54,8 @@ export const useEditorStore = create<EditorState>((set) => ({
   }),
 
   setPixels: (newPixels) => set({ pixels: newPixels }),
+
+  setSize: (width, height) => set({ width, height }),
 
   saveHistory: () => set((state) => {
     const currentPixels = state.pixels;
