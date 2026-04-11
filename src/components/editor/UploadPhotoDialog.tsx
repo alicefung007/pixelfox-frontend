@@ -199,6 +199,12 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
     return selectedFile ? URL.createObjectURL(selectedFile) : null;
   }, [selectedFile]);
 
+  useEffect(() => {
+    return () => {
+      if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
+    };
+  }, [imagePreviewUrl]);
+
   const selectedPalette = useMemo(
     () => SYSTEM_PALETTES.find((p) => p.id === colorPaletteId) ?? SYSTEM_PALETTES[0],
     [colorPaletteId]
@@ -239,7 +245,6 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
     processImage();
   }, [imagePreviewUrl, selectedPalette, widthBeads, colorMergeThreshold]);
 
-  // Draw to canvas when result changes
   useEffect(() => {
     if (!processedResult) return;
     const canvas = resultCanvasRef.current;
@@ -417,91 +422,97 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
 
               <div className="space-y-2">
                 <Label className="text-[11px] font-semibold">{t("editor.uploadDialog.colorManagement")}</Label>
-                <Popover open={palettePopoverOpen} onOpenChange={setPalettePopoverOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="w-full rounded-xl bg-transparent border-input/60 hover:bg-muted/10 h-9 justify-between px-3 font-normal"
-                    >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <div className="flex -space-x-1">
-                          {selectedPalette.swatches.slice(0, 10).map((swatch, i) => (
-                            <div
-                              key={i}
-                              className="w-4 h-4 rounded-full border border-background shadow-sm"
-                              style={{ backgroundColor: swatch.color }}
-                            />
-                          ))}
+                <div>
+                  <Popover open={palettePopoverOpen} onOpenChange={setPalettePopoverOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full rounded-xl bg-transparent border-input/60 hover:bg-muted/10 h-9 justify-between px-3 font-normal"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="flex -space-x-1">
+                            {selectedPalette.swatches.slice(0, 10).map((swatch, i) => (
+                              <div
+                                key={i}
+                                className="w-4 h-4 rounded-full border border-background shadow-sm"
+                                style={{ backgroundColor: swatch.color }}
+                              />
+                            ))}
+                          </div>
+                          <span className="text-sm truncate">
+                            {selectedPalette.i18nKey ? t(selectedPalette.i18nKey) : selectedPalette.name}
+                          </span>
                         </div>
-                        <span className="text-sm truncate">
-                          {selectedPalette.i18nKey ? t(selectedPalette.i18nKey) : selectedPalette.name}
-                        </span>
-                      </div>
-                      <ChevronsUpDown className="size-4 text-muted-foreground shrink-0" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[340px] max-h-[340px] p-0 !gap-0 flex flex-col" align="start">
-                    <div
-                      ref={scrollRef}
-                      className="w-[340px] h-[340px] overflow-y-auto"
+                        <ChevronsUpDown className="size-4 text-muted-foreground shrink-0" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      portalled={false}
+                      className="w-[340px] max-h-[340px] p-0 !gap-0 flex flex-col"
+                      align="start"
                     >
-                      <div className="p-3 space-y-2">
-                        {SYSTEM_PALETTES.map((palette) => {
-                          const isSelected = palette.id === colorPaletteId;
-                          return (
-                            <button
-                              key={palette.id}
-                              type="button"
-                              onClick={() => {
-                                setColorPaletteId(palette.id);
-                                setPalettePopoverOpen(false);
-                              }}
-                              className={cn(
-                                "w-full flex items-center gap-3 p-2 rounded-xl transition-colors text-left",
-                                isSelected ? "bg-pink-500/10" : "hover:bg-muted/50"
-                              )}
-                            >
-                              <div className="shrink-0">
-                                <div
-                                  className={cn(
-                                    "w-5 h-5 rounded-full border flex items-center justify-center",
-                                    isSelected
-                                      ? "bg-pink-500 border-pink-500"
-                                      : "border-input"
-                                  )}
-                                >
-                                  {isSelected && <Check className="size-3 text-white" />}
+                      <div
+                        ref={scrollRef}
+                        className="w-[340px] max-h-[340px] overflow-y-auto overscroll-contain touch-pan-y"
+                      >
+                        <div className="p-3 space-y-2">
+                          {SYSTEM_PALETTES.map((palette) => {
+                            const isSelected = palette.id === colorPaletteId;
+                            return (
+                              <button
+                                key={palette.id}
+                                type="button"
+                                onClick={() => {
+                                  setColorPaletteId(palette.id);
+                                  setPalettePopoverOpen(false);
+                                }}
+                                className={cn(
+                                  "w-full flex items-center gap-3 p-2 rounded-xl transition-colors text-left",
+                                  isSelected ? "bg-pink-500/10" : "hover:bg-muted/50"
+                                )}
+                              >
+                                <div className="shrink-0">
+                                  <div
+                                    className={cn(
+                                      "w-5 h-5 rounded-full border flex items-center justify-center",
+                                      isSelected
+                                        ? "bg-pink-500 border-pink-500"
+                                        : "border-input"
+                                    )}
+                                  >
+                                    {isSelected && <Check className="size-3 text-white" />}
+                                  </div>
                                 </div>
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="text-sm font-medium">
-                                  {palette.i18nKey ? t(palette.i18nKey) : palette.name}
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-sm font-medium">
+                                    {palette.i18nKey ? t(palette.i18nKey) : palette.name}
+                                  </div>
+                                  <div className="flex gap-1 mt-1 flex-wrap">
+                                    {palette.swatches.slice(0, 12).map((swatch, i) => (
+                                      <div
+                                        key={i}
+                                        className="w-3 h-3 rounded-sm border border-foreground/5 shrink-0"
+                                        style={{ backgroundColor: swatch.color }}
+                                      />
+                                    ))}
+                                    {palette.swatches.length > 12 && (
+                                      <span className="text-[10px] text-muted-foreground shrink-0">
+                                        +{palette.swatches.length - 12}
+                                      </span>
+                                    )}
+                                  </div>
                                 </div>
-                                <div className="flex gap-1 mt-1 flex-wrap">
-                                  {palette.swatches.slice(0, 12).map((swatch, i) => (
-                                    <div
-                                      key={i}
-                                      className="w-3 h-3 rounded-sm border border-foreground/5 shrink-0"
-                                      style={{ backgroundColor: swatch.color }}
-                                    />
-                                  ))}
-                                  {palette.swatches.length > 12 && (
-                                    <span className="text-[10px] text-muted-foreground shrink-0">
-                                      +{palette.swatches.length - 12}
-                                    </span>
-                                  )}
+                                <div className="text-xs text-muted-foreground shrink-0">
+                                  {palette.swatches.length}
                                 </div>
-                              </div>
-                              <div className="text-xs text-muted-foreground shrink-0">
-                                {palette.swatches.length}
-                              </div>
-                            </button>
-                          );
-                        })}
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
-                  </PopoverContent>
-                </Popover>
+                    </PopoverContent>
+                  </Popover>
+                </div>
               </div>
 
               <div className="space-y-4">
@@ -686,24 +697,24 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
               {imagePreviewUrl ? (
                 <div
                   ref={imageContainerRef}
-                  className="absolute inset-0 cursor-move touch-none"
-                  onMouseDown={handleMouseDown}
+                  className="absolute inset-0"
+                  /* onMouseDown={handleMouseDown}
                   onMouseMove={handleMouseMove}
                   onMouseUp={handleMouseUp}
                   onMouseLeave={handleMouseUp}
                   onTouchStart={handleTouchStart}
                   onTouchMove={handleTouchMove}
                   onTouchEnd={handleTouchEnd}
-                  onWheel={handleWheel}
+                  onWheel={handleWheel} */
                 >
                   <img
                     src={imagePreviewUrl}
                     alt="Original"
                     className="w-full h-full object-contain pointer-events-none"
-                    style={{
+                    /* style={{
                       transform: `translate(${translate.x}px, ${translate.y}px) scale(${scale})`,
                       transformOrigin: 'center center',
-                    }}
+                    }} */
                     draggable={false}
                   />
                 </div>
@@ -712,7 +723,7 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
                   {t("editor.uploadDialog.uploadPhoto")}
                 </div>
               )}
-              {imagePreviewUrl && (
+              {/*{imagePreviewUrl && (
                 <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-background/80 backdrop-blur-sm rounded-lg p-1">
                   <button
                     type="button"
@@ -737,7 +748,7 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
                     ↺
                   </button>
                 </div>
-              )}
+              )}*/}
             </div>
 
             <div className="flex items-center justify-between">
@@ -749,28 +760,24 @@ export default function UploadPhotoDialog({ open, onOpenChange }: Props) {
               )}
             </div>
 
-            <div className="rounded-xl border bg-[linear-gradient(45deg,#f5f5f5_25%,transparent_25%,transparent_75%,#f5f5f5_75%,#f5f5f5),linear-gradient(45deg,#f5f5f5_25%,transparent_25%,transparent_75%,#f5f5f5_75%,#f5f5f5)] bg-[length:10px_10px] bg-[position:0_0,5px_5px] bg-repeat aspect-video overflow-hidden relative">
+            <div className="rounded-xl border bg-[linear-gradient(45deg,#f5f5f5_25%,transparent_25%,transparent_75%,#f5f5f5_75%,#f5f5f5),linear-gradient(45deg,#f5f5f5_25%,transparent_25%,transparent_75%,#f5f5f5_75%,#f5f5f5)] bg-[length:10px_10px] bg-[position:0_0,5px_5px] bg-repeat aspect-video overflow-hidden relative flex items-center justify-center">
               {isProcessing ? (
-                <div className="w-full h-full flex items-center justify-center">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <div className="w-4 h-4 border-2 border-pink-500 border-t-transparent rounded-full animate-spin" />
-                    {t("editor.uploadDialog.processing")}
-                  </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <div className="w-4 h-4 border-2 border-pink-500 border-t-transparent rounded-full animate-spin" />
+                  {t("editor.uploadDialog.processing")}
                 </div>
               ) : processedResult ? (
-                <div className="w-full h-full flex items-center justify-center">
-                  <canvas
-                    ref={resultCanvasRef}
-                    className="h-full w-auto"
-                    style={{
-                      imageRendering: "pixelated",
-                    }}
-                  />
-                </div>
+                <canvas
+                  ref={resultCanvasRef}
+                  className="h-full w-auto"
+                  style={{
+                    imageRendering: "pixelated",
+                  }}
+                />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-sm text-muted-foreground">
+                <span className="text-sm text-muted-foreground">
                   {t("editor.uploadDialog.resultPreviewPlaceholder")}
-                </div>
+                </span>
               )}
             </div>
           </div>
