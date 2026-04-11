@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { X, Sparkles, Link, Unlink, Check, ChevronsUpDown, Upload } from "lucide-react";
+import { X, Sparkles, Link, Unlink, Check, ChevronsUpDown, Upload, FlipHorizontal, FlipVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -52,7 +52,7 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
   const [extractionQuality, setExtractionQuality] = useState("recommended");
   const [colorPaletteId, setColorPaletteId] = useState<string>(SYSTEM_PALETTES[0].id);
   const [colorMerging, setColorMerging] = useState(true);
-  const [colorMergeThreshold, setColorMergeThreshold] = useState([4]);
+  const [colorMergeThreshold, setColorMergeThreshold] = useState([2]);
   const [palettePopoverOpen, setPalettePopoverOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -75,6 +75,13 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
     scale: number;
     translate: { x: number; y: number };
   } | null>(null);
+
+  // Image flip state
+  const [flipHorizontal, setFlipHorizontal] = useState(false);
+  const [flipVertical, setFlipVertical] = useState(false);
+
+  // Image rotation state (0, 90, 180, 270)
+  const [rotation, setRotation] = useState(0);
 
   const getTouchDistance = (touches: React.TouchList) => {
     if (touches.length < 2) return 0;
@@ -202,10 +209,12 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
     return `${name.slice(0, half)}...${name.slice(-half)}`;
   };
 
-  // Image preview URL
+  // Image preview URL - recreate when dialog opens with existing selectedFile
   const imagePreviewUrl = useMemo(() => {
-    return selectedFile ? URL.createObjectURL(selectedFile) : null;
-  }, [selectedFile]);
+    if (!selectedFile) return null;
+    const url = URL.createObjectURL(selectedFile);
+    return url;
+  }, [selectedFile, open]);
 
   useEffect(() => {
     return () => {
@@ -236,9 +245,46 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
           img.src = imagePreviewUrl;
         });
 
+        // Apply flip transformations using canvas
+        let processedImg = img;
+        const needsTransform = flipHorizontal || flipVertical || rotation !== 0;
+
+        if (needsTransform) {
+          // Determine final dimensions after rotation
+          let finalWidth = img.width;
+          let finalHeight = img.height;
+          if (rotation === 90 || rotation === 270) {
+            finalWidth = img.height;
+            finalHeight = img.width;
+          }
+
+          const transformCanvas = document.createElement("canvas");
+          transformCanvas.width = finalWidth;
+          transformCanvas.height = finalHeight;
+          const ctx = transformCanvas.getContext("2d");
+          if (ctx) {
+            if (rotation !== 0) {
+              ctx.translate(finalWidth / 2, finalHeight / 2);
+              ctx.rotate((rotation * Math.PI) / 180);
+              ctx.translate(-img.width / 2, -img.height / 2);
+            } else {
+              // No rotation, just flip
+              ctx.translate(flipHorizontal ? img.width : 0, flipVertical ? img.height : 0);
+              ctx.scale(flipHorizontal ? -1 : 1, flipVertical ? -1 : 1);
+            }
+            ctx.drawImage(img, 0, 0);
+            processedImg = new Image();
+            processedImg.src = transformCanvas.toDataURL();
+            await new Promise<void>((resolve, reject) => {
+              processedImg.onload = () => resolve();
+              processedImg.onerror = reject;
+            });
+          }
+        }
+
         const poolSize = colorMerging ? colorMergeThreshold[0] : 1;
 
-        const result = await convertImageToPixelArt(img, selectedPalette, {
+        const result = await convertImageToPixelArt(processedImg, selectedPalette, {
           width: (parseInt(widthBeads, 10) || 60) * poolSize,
           height: (parseInt(heightBeads, 10) || 60) * poolSize,
           poolSize,
@@ -254,7 +300,7 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
     };
 
     processImage();
-  }, [imagePreviewUrl, selectedPalette, widthBeads, heightBeads, colorMergeThreshold]);
+  }, [imagePreviewUrl, selectedPalette, widthBeads, heightBeads, colorMergeThreshold, flipHorizontal, flipVertical, rotation]);
 
   useEffect(() => {
     if (!processedResult) return;
@@ -702,11 +748,53 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
           <div className="flex-1 min-w-0 space-y-3 md:space-y-4 pb-3 md:pb-4">
             <div className="flex items-center justify-between pt-3">
               <h3 className="text-sm font-semibold">{t("editor.uploadDialog.patternPreview")}</h3>
-              {processedResult && (
-                <span className="text-xs text-muted-foreground">
-                  {processedResult.width} × {processedResult.height} · {processedResult.beadCount} beads
-                </span>
-              )}
+              <div className="inline-flex items-center rounded-lg border bg-muted/30 p-0.5 gap-1">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className={cn(
+                        "size-7 rounded-md min-w-[2.5rem] px-1.5",
+                        rotation !== 0 && "bg-pink-500 text-white hover:bg-pink-600 hover:text-white"
+                      )}
+                      onClick={() => setRotation((r) => (r + 90) % 360)}
+                    >
+                      <span className="text-xs font-medium">R{rotation}°</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{t("editor.uploadDialog.rotate")}</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className={cn(
+                        "size-7 rounded-md",
+                        flipHorizontal && "bg-pink-500 text-white hover:bg-pink-600 hover:text-white"
+                      )}
+                      onClick={() => setFlipHorizontal(!flipHorizontal)}
+                    >
+                      <FlipHorizontal className="size-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{t("editor.uploadDialog.flipHorizontal")}</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className={cn(
+                        "size-7 rounded-md",
+                        flipVertical && "bg-pink-500 text-white hover:bg-pink-600 hover:text-white"
+                      )}
+                      onClick={() => setFlipVertical(!flipVertical)}
+                    >
+                      <FlipVertical className="size-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{t("editor.uploadDialog.flipVertical")}</TooltipContent>
+                </Tooltip>
+              </div>
             </div>
 
             <div className="rounded-xl border bg-[linear-gradient(45deg,#f5f5f5_25%,transparent_25%,transparent_75%,#f5f5f5_75%,#f5f5f5),linear-gradient(45deg,#f5f5f5_25%,transparent_25%,transparent_75%,#f5f5f5_75%,#f5f5f5)] bg-[length:10px_10px] bg-[position:0_0,5px_5px] bg-repeat aspect-video overflow-hidden relative flex items-center justify-center">
