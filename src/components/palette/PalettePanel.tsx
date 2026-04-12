@@ -1,12 +1,11 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { 
-  Palette, 
-  Settings, 
-  Grid, 
-  History, 
+import {
+  Palette,
+  Settings,
+  Grid,
+  History,
   Shapes,
-  Star
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,7 +15,7 @@ import PaletteManageDialog from "@/components/palette/PaletteManageDialog";
 import { getSystemPalette, type PaletteSwatch } from "@/lib/palettes";
 import { cn, normalizeHex, hexLabel, isDarkColor } from "@/lib/utils";
 
-type TabId = "used" | "recent" | "all" | "custom";
+type TabId = "used" | "recent" | "all";
 
 function getLabelFromColor(hex: string, paletteSwatches: PaletteSwatch[]): string {
   const normalizedHex = normalizeHex(hex);
@@ -27,7 +26,7 @@ function getLabelFromColor(hex: string, paletteSwatches: PaletteSwatch[]): strin
 export default function PalettePanel() {
   const { t } = useTranslation();
   const { primaryColor, setColor } = useEditorStore();
-  const { currentPaletteId, recentColors, usedColors, customPalette, setCustomPalette, setCurrentPaletteId } = usePaletteStore();
+  const { currentPaletteId, recentColors, usedColors, setCurrentPaletteId } = usePaletteStore();
   const [isManageOpen, setIsManageOpen] = useState(false);
   const [tab, setTab] = useState<TabId>("all");
 
@@ -36,9 +35,8 @@ export default function PalettePanel() {
   const visibleSwatches = useMemo((): PaletteSwatch[] => {
     if (tab === "all") return palette.swatches;
     if (tab === "used") return usedColors.map((c) => ({ label: getLabelFromColor(c, palette.swatches), color: c }));
-    if (tab === "custom") return customPalette.map((c) => ({ label: getLabelFromColor(c, palette.swatches), color: c }));
     return recentColors.map((c) => ({ label: getLabelFromColor(c, palette.swatches), color: c }));
-  }, [palette.swatches, recentColors, usedColors, customPalette, tab]);
+  }, [palette.swatches, recentColors, usedColors, tab]);
 
   return (
     <div className="h-full bg-background flex flex-col overflow-hidden shadow-sm">
@@ -74,12 +72,6 @@ export default function PalettePanel() {
               <Shapes size={12} />
               <span className="hidden sm:inline">{t("palette.allColors")}</span>
             </TabsTrigger>
-            {customPalette.length > 0 && (
-              <TabsTrigger value="custom" className="text-[10px] h-6 px-2 sm:px-3 gap-1">
-                <Star size={12} />
-                <span className="hidden sm:inline">{t("palette.custom")}</span>
-              </TabsTrigger>
-            )}
           </TabsList>
         </Tabs>
       </div>
@@ -121,9 +113,8 @@ export default function PalettePanel() {
         onPaletteChange={(paletteId) => {
           setCurrentPaletteId(paletteId);
         }}
-        onConfirm={(selectedColors) => {
-          setCustomPalette(selectedColors);
-          setTab("custom");
+        onConfirm={() => {
+          setTab("all");
         }}
       />
     </div>

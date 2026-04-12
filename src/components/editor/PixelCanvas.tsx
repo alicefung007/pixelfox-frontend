@@ -682,7 +682,7 @@ export default function PixelCanvas() {
                 return (
                   <Brush
                     size={CURSOR_CONFIG.ICON_SIZE}
-                    strokeWidth={1.5}
+                    strokeWidth={2}
                     style={{ color: primaryColor, filter: `drop-shadow(0 0 1px ${shadowColor}) drop-shadow(0 0 1px ${shadowColor})` }}
                   />
                 );
