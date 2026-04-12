@@ -11,7 +11,6 @@ import {
   Trash2,
   Settings,
   ChevronRight,
-  Pencil,
   Brush,
   PaintBucket,
   Hand,

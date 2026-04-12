@@ -57,9 +57,12 @@ export default function PixelCanvas() {
 
     const updateZoomToFit = () => {
       if (!isAutoZoom) return;
+      if (container.offsetParent === null) return;
+      if (container.clientWidth === 0 || container.clientHeight === 0) return;
       
       const availableWidth = container.clientWidth - EDITOR_CONFIG.AUTO_FIT_PADDING;
       const availableHeight = container.clientHeight - EDITOR_CONFIG.AUTO_FIT_PADDING;
+      if (availableWidth <= 0 || availableHeight <= 0) return;
       
       const scaleX = availableWidth / width;
       const scaleY = availableHeight / height;

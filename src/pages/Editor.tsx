@@ -1,91 +1,52 @@
-import { useState, useEffect, useRef } from "react";
 import PixelCanvas from "@/components/editor/PixelCanvas";
 import PalettePanel from "@/components/palette/PalettePanel";
-import { PANEL_CONFIG } from "@/lib/constants";
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable";
 
 export default function Editor() {
-  const [paletteHeight, setPaletteHeight] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem(PANEL_CONFIG.STORAGE_KEY);
-      return saved ? parseInt(saved, 10) : PANEL_CONFIG.DEFAULT_HEIGHT;
-    }
-    return PANEL_CONFIG.DEFAULT_HEIGHT;
-  });
-  const isResizing = useRef(false);
-  const lastTouchY = useRef(0);
-  const handleMouseMoveRef = useRef<((e: MouseEvent) => void) | null>(null);
-  const handleMouseUpRef = useRef<(() => void) | null>(null);
-
-  useEffect(() => {
-    localStorage.setItem(PANEL_CONFIG.STORAGE_KEY, paletteHeight.toString());
-  }, [paletteHeight]);
-
-  useEffect(() => {
-    handleMouseMoveRef.current = (e: MouseEvent) => {
-      if (!isResizing.current) return;
-      const newHeight = window.innerHeight - e.clientY;
-      if (newHeight >= PANEL_CONFIG.MIN_HEIGHT && newHeight <= PANEL_CONFIG.MAX_HEIGHT) {
-        setPaletteHeight(newHeight);
-      }
-    };
-
-    handleMouseUpRef.current = () => {
-      isResizing.current = false;
-      if (handleMouseMoveRef.current) {
-        document.removeEventListener("mousemove", handleMouseMoveRef.current);
-      }
-      if (handleMouseUpRef.current) {
-        document.removeEventListener("mouseup", handleMouseUpRef.current);
-      }
-    };
-  }, []);
-
-  const handleMouseDown = () => {
-    isResizing.current = true;
-    document.addEventListener("mousemove", handleMouseMoveRef.current!);
-    document.addEventListener("mouseup", handleMouseUpRef.current!);
-  };
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    isResizing.current = true;
-    lastTouchY.current = e.touches[0].clientY;
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isResizing.current) return;
-    const currentY = e.touches[0].clientY;
-    const deltaY = lastTouchY.current - currentY;
-    lastTouchY.current = currentY;
-    
-    setPaletteHeight((prev) => {
-      const newHeight = prev + deltaY;
-      if (newHeight >= PANEL_CONFIG.MIN_HEIGHT && newHeight <= PANEL_CONFIG.MAX_HEIGHT) {
-        return newHeight;
-      }
-      return prev;
-    });
-  };
-
-  const handleTouchEnd = () => {
-    isResizing.current = false;
-  };
-
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex-1 relative overflow-hidden">
-        <PixelCanvas />
+    <div className="h-full">
+      <div className="hidden h-full md:block">
+        <ResizablePanelGroup
+          direction="horizontal"
+          autoSaveId="pixelfox-editor-layout-desktop-right-palette"
+          className="h-full"
+        >
+          <ResizablePanel defaultSize="72%" minSize="40%" className="relative overflow-hidden">
+            <PixelCanvas />
+          </ResizablePanel>
+          <ResizableHandle
+            withHandle
+            className="aria-[orientation=vertical]:w-2 sm:aria-[orientation=vertical]:w-1"
+          />
+          <ResizablePanel
+            defaultSize="28%"
+            minSize="18%"
+            maxSize="45%"
+            className="overflow-hidden bg-background"
+          >
+            <PalettePanel />
+          </ResizablePanel>
+        </ResizablePanelGroup>
       </div>
-      
-      <div 
-        className="h-2 sm:h-1 w-full cursor-ns-resize hover:bg-pink-500/50 active:bg-pink-500 transition-colors z-10 touch-none select-none"
-        onMouseDown={handleMouseDown}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-      />
 
-      <div style={{ height: `${paletteHeight}px` }} className="shrink-0 overflow-hidden bg-background">
-        <PalettePanel />
+      <div className="h-full md:hidden">
+        <ResizablePanelGroup
+          direction="vertical"
+          autoSaveId="pixelfox-editor-layout-mobile-bottom-palette"
+          className="h-full"
+        >
+          <ResizablePanel defaultSize="68%" minSize="45%" className="relative overflow-hidden">
+            <PixelCanvas />
+          </ResizablePanel>
+          <ResizableHandle withHandle className="aria-[orientation=horizontal]:h-2" />
+          <ResizablePanel defaultSize="32%" minSize="20%" maxSize="55%" className="overflow-hidden bg-background">
+            <PalettePanel />
+          </ResizablePanel>
+        </ResizablePanelGroup>
       </div>
     </div>
   );

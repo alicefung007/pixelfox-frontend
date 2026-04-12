@@ -4,7 +4,6 @@ import { Bookmark, Check, Save, Search, Settings2, Trash2, X } from "lucide-reac
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogClose,
@@ -49,7 +48,6 @@ export default function PaletteManageDialog({
   const [scheme, setScheme] = useState<SchemeId>("all");
   const [search, setSearch] = useState("");
   const [systemFilter, setSystemFilter] = useState<SystemPaletteId>(currentPaletteId);
-  const [groupMode, setGroupMode] = useState<"letters" | "palette">("letters");
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
 
   useLayoutEffect(() => {
