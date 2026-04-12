@@ -29,8 +29,8 @@ export const CANVAS_CONFIG = {
 } as const;
 
 export const CURSOR_CONFIG = {
-  ICON_SIZE: 18,
-  BRUSH_HOTSPOT: { x: 3, y: 15 },
+  ICON_SIZE: 24,
+  BRUSH_HOTSPOT: { x: 4, y: 20 },
   EYEDROPPER_HOTSPOT: { x: 4, y: 16 },
 } as const;
 

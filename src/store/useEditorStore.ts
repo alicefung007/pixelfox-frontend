@@ -4,6 +4,12 @@ import { clampZoom } from '@/lib/utils';
 
 export type ToolType = 'brush' | 'bucket' | 'hand' | 'eraser' | 'eyedropper' | 'text';
 
+interface HistoryEntry {
+  pixels: Record<string, string>;
+  width: number;
+  height: number;
+}
+
 interface EditorState {
   pixels: Record<string, string>; // key: "x,y", value: hex color
   width: number;
@@ -11,7 +17,7 @@ interface EditorState {
   currentTool: ToolType;
   primaryColor: string;
   zoom: number;
-  history: Record<string, string>[];
+  history: HistoryEntry[];
   historyIndex: number;
 
   setPixel: (x: number, y: number, color: string) => void;
@@ -34,7 +40,7 @@ export const useEditorStore = create<EditorState>((set) => ({
   currentTool: 'brush',
   primaryColor: EDITOR_CONFIG.DEFAULT_PRIMARY_COLOR,
   zoom: EDITOR_CONFIG.DEFAULT_ZOOM,
-  history: [{}],
+  history: [{ pixels: {}, width: EDITOR_CONFIG.DEFAULT_WIDTH, height: EDITOR_CONFIG.DEFAULT_HEIGHT }],
   historyIndex: 0,
 
   setPixel: (x, y, color) => set((state) => {
@@ -60,13 +66,17 @@ export const useEditorStore = create<EditorState>((set) => ({
   saveHistory: () => set((state) => {
     const currentPixels = state.pixels;
     const lastHistoryEntry = state.history[state.historyIndex];
-    
-    if (JSON.stringify(currentPixels) === JSON.stringify(lastHistoryEntry)) {
+
+    if (
+      JSON.stringify(currentPixels) === JSON.stringify(lastHistoryEntry.pixels) &&
+      state.width === lastHistoryEntry.width &&
+      state.height === lastHistoryEntry.height
+    ) {
       return state;
     }
 
     const newHistory = state.history.slice(0, state.historyIndex + 1);
-    newHistory.push({ ...currentPixels });
+    newHistory.push({ pixels: { ...currentPixels }, width: state.width, height: state.height });
     return {
       history: newHistory,
       historyIndex: newHistory.length - 1,
@@ -74,17 +84,20 @@ export const useEditorStore = create<EditorState>((set) => ({
   }),
 
   setTool: (tool) => set({ currentTool: tool }),
-  
+
   setColor: (color) => set({ primaryColor: color }),
-  
+
   setZoom: (zoom) => set({ zoom: clampZoom(zoom) }),
 
   undo: () => set((state) => {
     if (state.historyIndex > 0) {
       const newIndex = state.historyIndex - 1;
+      const entry = state.history[newIndex];
       return {
         historyIndex: newIndex,
-        pixels: state.history[newIndex],
+        pixels: entry.pixels,
+        width: entry.width,
+        height: entry.height,
       };
     }
     return state;
@@ -93,9 +106,12 @@ export const useEditorStore = create<EditorState>((set) => ({
   redo: () => set((state) => {
     if (state.historyIndex < state.history.length - 1) {
       const newIndex = state.historyIndex + 1;
+      const entry = state.history[newIndex];
       return {
         historyIndex: newIndex,
-        pixels: state.history[newIndex],
+        pixels: entry.pixels,
+        width: entry.width,
+        height: entry.height,
       };
     }
     return state;
@@ -103,7 +119,7 @@ export const useEditorStore = create<EditorState>((set) => ({
 
   clear: () => set((state) => {
     const newHistory = state.history.slice(0, state.historyIndex + 1);
-    newHistory.push({});
+    newHistory.push({ pixels: {}, width: state.width, height: state.height });
     return {
       pixels: {},
       history: newHistory,

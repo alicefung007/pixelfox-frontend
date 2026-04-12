@@ -1,17 +1,18 @@
 import { useTranslation } from "react-i18next";
-import { 
-  Upload, 
-  Save, 
-  Share2, 
-  Layers, 
-  Box, 
-  Undo2, 
-  Redo2, 
-  Download, 
-  Trash2, 
+import {
+  Upload,
+  Save,
+  Share2,
+  Layers,
+  Box,
+  Undo2,
+  Redo2,
+  Download,
+  Trash2,
   Settings,
   ChevronRight,
   Pencil,
+  Brush,
   PaintBucket,
   Hand,
   Eraser,
@@ -45,7 +46,7 @@ export default function Sidebar({ isOpen = true, onClose, onUpload }: Props) {
   ];
 
   const tools: { id: ToolType; icon: React.ReactNode; label: string; shortcut: string }[] = [
-    { id: 'brush', icon: <Pencil size={18} />, label: t("sidebar.brush"), shortcut: "B" },
+    { id: 'brush', icon: <Brush size={18} />, label: t("sidebar.brush"), shortcut: "B" },
     { id: 'bucket', icon: <PaintBucket size={18} />, label: t("sidebar.bucket"), shortcut: "G" },
     { id: 'hand', icon: <Hand size={18} />, label: t("sidebar.hand"), shortcut: "H" },
     { id: 'eraser', icon: <Eraser size={18} />, label: t("sidebar.eraser"), shortcut: "E" },

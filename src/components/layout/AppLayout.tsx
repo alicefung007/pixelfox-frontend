@@ -9,7 +9,7 @@ import type { ColorMatchResult } from "@/lib/image-processor";
 export default function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [uploadOpen, setUploadOpen] = useState(false);
-  const { setPixels, setSize } = useEditorStore();
+  const { setPixels, setSize, saveHistory } = useEditorStore();
 
   const handleGenerate = (result: ColorMatchResult) => {
     const pixels: Record<string, string> = {};
@@ -28,6 +28,7 @@ export default function AppLayout() {
 
     setSize(width, height);
     setPixels(pixels);
+    saveHistory();
   };
 
   return (
