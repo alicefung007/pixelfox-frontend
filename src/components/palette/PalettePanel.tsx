@@ -77,12 +77,12 @@ export default function PalettePanel() {
       </div>
 
       <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-2 mt-1">
-        <div className="grid grid-cols-8 sm:grid-cols-10 md:grid-cols-[repeat(auto-fill,minmax(48px,1fr))] gap-2 sm:gap-3 py-1">
+        <div className="grid gap-2 sm:gap-3 py-1" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(52px, 1fr))" }}>
           {visibleSwatches.map((swatch, i) => (
             <div key={i} className="flex flex-col items-center gap-1 p-0.5 sm:p-1 transition-transform hover:scale-105 active:scale-95">
               <button
                 className={cn(
-                  "w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-md shadow-sm relative flex items-center justify-center",
+                  "w-full aspect-square rounded-md shadow-sm relative flex items-center justify-center",
                   primaryColor === swatch.color ? "ring-2 ring-pink-500" : ""
                 )}
                 style={{ backgroundColor: swatch.color }}
@@ -90,7 +90,7 @@ export default function PalettePanel() {
               >
                 <span className={cn(
                   "text-[8px] sm:text-[9px] md:text-[10px] font-bold transition-colors",
-                  isDarkColor(swatch.color) ? "text-white" : "text-black/70"
+                  isDarkColor(swatch.color) ? "text-white" : "text-black/60"
                 )}>
                   {swatch.label}
                 </span>

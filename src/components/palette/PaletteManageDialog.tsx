@@ -300,7 +300,7 @@ export default function PaletteManageDialog({
                       >
                         <span className={cn(
                           "text-[8px] sm:text-[9px] md:text-[10px] font-bold transition-colors",
-                          isDarkColor(swatch.color) ? "text-white" : "text-black/70"
+                          isDarkColor(swatch.color) ? "text-white" : "text-black/60"
                         )}>
                           {swatch.label}
                         </span>
