@@ -4,15 +4,19 @@ import type { SystemPaletteId } from '@/lib/palettes';
 import { normalizeHex } from '@/lib/utils';
 import { PALETTE_CONFIG } from '@/lib/constants';
 
+export type PaletteTabId = "used" | "recent" | "all";
+
 interface PaletteState {
   currentPaletteId: SystemPaletteId;
   recentColors: string[];
   usedColors: string[];
   customPalette: string[];
+  activeTab: PaletteTabId;
   setCurrentPaletteId: (id: SystemPaletteId) => void;
   addRecentColor: (color: string) => void;
   addUsedColor: (color: string) => void;
   setCustomPalette: (colors: string[]) => void;
+  setActiveTab: (tab: PaletteTabId) => void;
 }
 
 export const usePaletteStore = create<PaletteState>()(
@@ -22,6 +26,8 @@ export const usePaletteStore = create<PaletteState>()(
       recentColors: [],
       usedColors: [],
       customPalette: [],
+      activeTab: "all",
+      setActiveTab: (tab) => set({ activeTab: tab }),
       setCurrentPaletteId: (id) => set({ currentPaletteId: id }),
       addRecentColor: (color) => set((state) => {
         const normalizedColor = normalizeHex(color);
@@ -45,6 +51,12 @@ export const usePaletteStore = create<PaletteState>()(
     }),
     {
       name: PALETTE_CONFIG.STORAGE_KEY,
+      partialize: (state) => ({
+        currentPaletteId: state.currentPaletteId,
+        recentColors: state.recentColors,
+        usedColors: state.usedColors,
+        customPalette: state.customPalette,
+      }),
     }
   )
 );

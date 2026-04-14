@@ -4,14 +4,17 @@ import Navbar from "./Navbar";
 import Sidebar from "./Sidebar";
 import UploadPhotoDialog from "@/components/editor/UploadPhotoDialog";
 import { useEditorStore } from "@/store/useEditorStore";
+import { usePaletteStore } from "@/store/usePaletteStore";
 import type { ColorMatchResult } from "@/lib/image-processor";
+import type { SystemPaletteId } from "@/lib/palettes";
 
 export default function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [uploadOpen, setUploadOpen] = useState(false);
   const { setPixels, setSize, saveHistory } = useEditorStore();
+  const { setCurrentPaletteId, setActiveTab } = usePaletteStore();
 
-  const handleGenerate = (result: ColorMatchResult) => {
+  const handleGenerate = (result: ColorMatchResult, paletteId: SystemPaletteId) => {
     const pixels: Record<string, string> = {};
     const { imageData, width, height } = result;
 
@@ -28,6 +31,8 @@ export default function AppLayout() {
 
     setSize(width, height);
     setPixels(pixels);
+    setCurrentPaletteId(paletteId);
+    setActiveTab("used");
     saveHistory();
   };
 

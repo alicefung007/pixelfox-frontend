@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import type { PaletteTabId } from "@/store/usePaletteStore";
 import { useTranslation } from "react-i18next";
 import {
   Palette,
@@ -15,8 +16,6 @@ import PaletteManageDialog from "@/components/palette/PaletteManageDialog";
 import { getSystemPalette, type PaletteSwatch } from "@/lib/palettes";
 import { cn, normalizeHex, hexLabel, isDarkColor } from "@/lib/utils";
 
-type TabId = "used" | "recent" | "all";
-
 function getLabelFromColor(hex: string, paletteSwatches: PaletteSwatch[]): string {
   const normalizedHex = normalizeHex(hex);
   const found = paletteSwatches.find((s) => normalizeHex(s.color) === normalizedHex);
@@ -25,18 +24,29 @@ function getLabelFromColor(hex: string, paletteSwatches: PaletteSwatch[]): strin
 
 export default function PalettePanel() {
   const { t } = useTranslation();
-  const { primaryColor, setColor } = useEditorStore();
-  const { currentPaletteId, recentColors, usedColors, setCurrentPaletteId } = usePaletteStore();
+  const { primaryColor, setColor, pixels } = useEditorStore();
+  const { currentPaletteId, recentColors, setCurrentPaletteId, activeTab: tab, setActiveTab: setTab } = usePaletteStore();
   const [isManageOpen, setIsManageOpen] = useState(false);
-  const [tab, setTab] = useState<TabId>("all");
 
   const palette = getSystemPalette(currentPaletteId)!;
 
+  const canvasUsedColors = useMemo(() => {
+    const seen = new Set<string>();
+    const ordered: string[] = [];
+    for (const color of Object.values(pixels)) {
+      const n = normalizeHex(color);
+      if (seen.has(n)) continue;
+      seen.add(n);
+      ordered.push(`#${n}`);
+    }
+    return ordered;
+  }, [pixels]);
+
   const visibleSwatches = useMemo((): PaletteSwatch[] => {
     if (tab === "all") return palette.swatches;
-    if (tab === "used") return usedColors.map((c) => ({ label: getLabelFromColor(c, palette.swatches), color: c }));
+    if (tab === "used") return canvasUsedColors.map((c) => ({ label: getLabelFromColor(c, palette.swatches), color: c }));
     return recentColors.map((c) => ({ label: getLabelFromColor(c, palette.swatches), color: c }));
-  }, [palette.swatches, recentColors, usedColors, tab]);
+  }, [palette.swatches, recentColors, canvasUsedColors, tab]);
 
   return (
     <div className="h-full bg-background flex flex-col overflow-hidden shadow-sm">
@@ -58,17 +68,17 @@ export default function PalettePanel() {
           </div>
         </div>
 
-        <Tabs value={tab} onValueChange={(v) => setTab(v as TabId)}>
+        <Tabs value={tab} onValueChange={(v) => setTab(v as PaletteTabId)}>
           <TabsList className="h-8 bg-muted/50 p-1">
-            <TabsTrigger value="used" className="text-[10px] h-6 px-2 sm:px-3 gap-1">
+            <TabsTrigger value="used" className="text-[10px] h-6 px-2 sm:px-3 gap-1 cursor-pointer">
               <Grid size={12} />
               <span className="hidden sm:inline">{t("palette.usedColors")}</span>
             </TabsTrigger>
-            <TabsTrigger value="recent" className="text-[10px] h-6 px-2 sm:px-3 gap-1">
+            <TabsTrigger value="recent" className="text-[10px] h-6 px-2 sm:px-3 gap-1 cursor-pointer">
               <History size={12} />
               <span className="hidden sm:inline">{t("palette.recent")}</span>
             </TabsTrigger>
-            <TabsTrigger value="all" className="text-[10px] h-6 px-2 sm:px-3 gap-1">
+            <TabsTrigger value="all" className="text-[10px] h-6 px-2 sm:px-3 gap-1 cursor-pointer">
               <Shapes size={12} />
               <span className="hidden sm:inline">{t("palette.allColors")}</span>
             </TabsTrigger>
@@ -77,7 +87,7 @@ export default function PalettePanel() {
       </div>
 
       <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-2 mt-1">
-        <div className="grid gap-2 sm:gap-3 py-1" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(52px, 1fr))" }}>
+        <div className="grid grid-cols-7 gap-2 sm:gap-3 py-1 sm:[grid-template-columns:repeat(auto-fill,minmax(52px,1fr))]">
           {visibleSwatches.map((swatch, i) => (
             <div key={i} className="flex flex-col items-center gap-1 p-0.5 sm:p-1 transition-transform hover:scale-105 active:scale-95">
               <button

@@ -27,13 +27,13 @@ import {
 } from "@/components/ui/tooltip";
 import { Separator } from "@/components/ui/separator";
 import { cn, clamp } from "@/lib/utils";
-import { SYSTEM_PALETTES } from "@/lib/palettes";
+import { SYSTEM_PALETTES, type SystemPaletteId } from "@/lib/palettes";
 import { convertImageToPixelArt, type ColorMatchResult } from "@/lib/image-processor";
 
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onGenerate: (result: ColorMatchResult) => void;
+  onGenerate: (result: ColorMatchResult, paletteId: SystemPaletteId) => void;
 };
 
 export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Props) {
@@ -50,7 +50,7 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
 
   // Extraction settings
   const [extractionQuality, setExtractionQuality] = useState("recommended");
-  const [colorPaletteId, setColorPaletteId] = useState<string>(SYSTEM_PALETTES[0].id);
+  const [colorPaletteId, setColorPaletteId] = useState<SystemPaletteId>(SYSTEM_PALETTES[0].id);
   const [colorMerging, setColorMerging] = useState(true);
   const [colorMergeThreshold, setColorMergeThreshold] = useState([2]);
   const [palettePopoverOpen, setPalettePopoverOpen] = useState(false);
@@ -892,7 +892,7 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
             className="w-full sm:w-auto gap-2 bg-gradient-to-r from-pink-500 to-violet-500 hover:opacity-90 border-none text-white font-medium"
             onClick={() => {
               if (processedResult) {
-                onGenerate(processedResult);
+                onGenerate(processedResult, colorPaletteId);
                 onOpenChange(false);
               }
             }}
