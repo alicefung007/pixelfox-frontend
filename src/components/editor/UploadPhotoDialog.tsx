@@ -484,7 +484,7 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
-                        className="w-full rounded-xl bg-transparent border-input/60 hover:bg-muted/10 h-9 justify-between px-3 font-normal"
+                        className="w-full rounded-md bg-transparent border-input/60 hover:bg-muted/10 h-9 justify-between px-3 font-normal"
                       >
                         <div className="flex items-center gap-2 min-w-0">
                           <div className="flex -space-x-1">
@@ -524,7 +524,7 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
                                   setPalettePopoverOpen(false);
                                 }}
                                 className={cn(
-                                  "w-full flex items-center gap-3 p-2 rounded-xl transition-colors text-left",
+                                  "w-full flex items-center gap-3 p-2 rounded-lg transition-colors text-left",
                                   isSelected ? "bg-pink-500/10" : "hover:bg-muted/50"
                                 )}
                               >

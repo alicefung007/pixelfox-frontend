@@ -251,7 +251,7 @@ export default function PaletteManageDialog({
                             setSelected(new Set(allColors));
                           }}
                           className={cn(
-                            "h-7 rounded-full px-3 text-xs font-semibold transition-colors border shrink-0",
+                            "h-7 rounded-md px-3 text-xs font-semibold transition-colors border shrink-0",
                             active
                               ? "bg-pink-500 text-white border-pink-500"
                               : "bg-muted/40 text-muted-foreground border-border hover:bg-muted"
