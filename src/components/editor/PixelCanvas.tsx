@@ -7,6 +7,31 @@ import { useTheme } from '@/components/theme-provider';
 import { clampZoom, getLinePoints } from '@/lib/utils';
 import { EDITOR_CONFIG, CANVAS_CONFIG, CURSOR_CONFIG } from '@/lib/constants';
 
+function registerGlobalKeyboardHandler() {
+  const handler = (e: KeyboardEvent) => {
+    const isZ = e.key.toLowerCase() === 'z';
+    const isY = e.key.toLowerCase() === 'y';
+    const isCtrlOrCmd = e.ctrlKey || e.metaKey;
+    const isShift = e.shiftKey;
+
+    if (isCtrlOrCmd && isZ) {
+      e.preventDefault();
+      const { undo, redo } = useEditorStore.getState();
+      if (isShift) {
+        redo();
+      } else {
+        undo();
+      }
+    } else if (isCtrlOrCmd && isY) {
+      e.preventDefault();
+      useEditorStore.getState().redo();
+    }
+  };
+  window.addEventListener('keydown', handler);
+}
+
+let globalKeyboardHandlerRegistered = false;
+
 export default function PixelCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -106,28 +131,10 @@ export default function PixelCanvas() {
   }, [isAutoZoom, viewportSize.width, viewportSize.height, zoom, width, height]);
 
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const isZ = e.key.toLowerCase() === 'z';
-      const isY = e.key.toLowerCase() === 'y';
-      const isCtrlOrCmd = e.ctrlKey || e.metaKey;
-      const isShift = e.shiftKey;
-
-      if (isCtrlOrCmd && isZ) {
-        e.preventDefault();
-        if (isShift) {
-          redo();
-        } else {
-          undo();
-        }
-      } else if (isCtrlOrCmd && isY) {
-        e.preventDefault();
-        redo();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [undo, redo]);
+    if (globalKeyboardHandlerRegistered) return;
+    globalKeyboardHandlerRegistered = true;
+    registerGlobalKeyboardHandler();
+  }, []);
 
   const { addUsedColor, addRecentColor } = usePaletteStore();
   const [isDrawing, setIsDrawing] = useState(false);
