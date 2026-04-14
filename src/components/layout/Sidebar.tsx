@@ -30,9 +30,10 @@ type Props = {
   isOpen?: boolean;
   onClose?: () => void;
   onUpload?: () => void;
+  onPreview3D?: () => void;
 };
 
-export default function Sidebar({ isOpen = true, onClose, onUpload }: Props) {
+export default function Sidebar({ isOpen = true, onClose, onUpload, onPreview3D }: Props) {
   const { t } = useTranslation();
   const { currentTool, setTool, undo, redo, clear, width } = useEditorStore();
 
@@ -41,7 +42,7 @@ export default function Sidebar({ isOpen = true, onClose, onUpload }: Props) {
     { icon: <Save size={18} />, label: t("sidebar.save"), shortcut: "⌘ S" },
     { icon: <Share2 size={18} />, label: t("sidebar.share"), shortcut: "⌥ ⌘ S" },
     { icon: <Layers size={18} />, label: t("sidebar.assembly") },
-    { icon: <Box size={18} />, label: t("sidebar.preview3d") },
+    { icon: <Box size={18} />, label: t("sidebar.preview3d"), onClick: onPreview3D },
   ];
 
   const tools: { id: ToolType; icon: React.ReactNode; label: string; shortcut: string }[] = [

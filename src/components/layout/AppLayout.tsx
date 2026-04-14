@@ -3,6 +3,7 @@ import { Outlet } from "react-router-dom";
 import Navbar from "./Navbar";
 import Sidebar from "./Sidebar";
 import UploadPhotoDialog from "@/components/editor/UploadPhotoDialog";
+import Preview3DDialog from "@/components/editor/Preview3DDialog";
 import { useEditorStore } from "@/store/useEditorStore";
 import { usePaletteStore } from "@/store/usePaletteStore";
 import type { ColorMatchResult } from "@/lib/image-processor";
@@ -11,6 +12,7 @@ import type { SystemPaletteId } from "@/lib/palettes";
 export default function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [preview3DOpen, setPreview3DOpen] = useState(false);
   const { setPixels, setSize, saveHistory } = useEditorStore();
   const { setCurrentPaletteId, setActiveTab, flashUsedTab } = usePaletteStore();
 
@@ -47,12 +49,14 @@ export default function AppLayout() {
           isOpen={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
           onUpload={() => setUploadOpen(true)}
+          onPreview3D={() => setPreview3DOpen(true)}
         />
         <main className="flex-1 flex flex-col relative overflow-hidden">
           <Outlet />
         </main>
       </div>
       <UploadPhotoDialog open={uploadOpen} onOpenChange={setUploadOpen} onGenerate={handleGenerate} />
+      <Preview3DDialog open={preview3DOpen} onOpenChange={setPreview3DOpen} />
     </div>
   );
 }
