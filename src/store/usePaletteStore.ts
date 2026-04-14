@@ -12,11 +12,13 @@ interface PaletteState {
   usedColors: string[];
   customPalette: string[];
   activeTab: PaletteTabId;
+  usedTabFlashAt: number;
   setCurrentPaletteId: (id: SystemPaletteId) => void;
   addRecentColor: (color: string) => void;
   addUsedColor: (color: string) => void;
   setCustomPalette: (colors: string[]) => void;
   setActiveTab: (tab: PaletteTabId) => void;
+  flashUsedTab: () => void;
 }
 
 export const usePaletteStore = create<PaletteState>()(
@@ -27,7 +29,9 @@ export const usePaletteStore = create<PaletteState>()(
       usedColors: [],
       customPalette: [],
       activeTab: "all",
+      usedTabFlashAt: 0,
       setActiveTab: (tab) => set({ activeTab: tab }),
+      flashUsedTab: () => set({ usedTabFlashAt: Date.now() }),
       setCurrentPaletteId: (id) => set({ currentPaletteId: id }),
       addRecentColor: (color) => set((state) => {
         const normalizedColor = normalizeHex(color);

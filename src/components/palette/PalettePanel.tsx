@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { PaletteTabId } from "@/store/usePaletteStore";
 import { useTranslation } from "react-i18next";
 import {
@@ -24,23 +24,37 @@ function getLabelFromColor(hex: string, paletteSwatches: PaletteSwatch[]): strin
 
 export default function PalettePanel() {
   const { t } = useTranslation();
-  const { primaryColor, setColor, pixels } = useEditorStore();
-  const { currentPaletteId, recentColors, setCurrentPaletteId, activeTab: tab, setActiveTab: setTab } = usePaletteStore();
+  const { primaryColor, setColor } = useEditorStore();
+  const committedPixels = useEditorStore((s) => s.history[s.historyIndex]?.pixels ?? s.pixels);
+  const { currentPaletteId, recentColors, setCurrentPaletteId, activeTab: tab, setActiveTab: setTab, usedTabFlashAt } = usePaletteStore();
   const [isManageOpen, setIsManageOpen] = useState(false);
+  const [isUsedFlashing, setIsUsedFlashing] = useState(false);
+
+  useEffect(() => {
+    if (!usedTabFlashAt) return;
+    setIsUsedFlashing(true);
+    const timer = setTimeout(() => setIsUsedFlashing(false), 900);
+    return () => clearTimeout(timer);
+  }, [usedTabFlashAt]);
 
   const palette = getSystemPalette(currentPaletteId)!;
 
-  const canvasUsedColors = useMemo(() => {
-    const seen = new Set<string>();
-    const ordered: string[] = [];
-    for (const color of Object.values(pixels)) {
-      const n = normalizeHex(color);
-      if (seen.has(n)) continue;
-      seen.add(n);
-      ordered.push(`#${n}`);
+  const usedOrderRef = useRef<string[]>([]);
+  const { canvasUsedColors, usedCounts } = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const color of Object.values(committedPixels)) {
+      const key = `#${normalizeHex(color)}`;
+      counts.set(key, (counts.get(key) ?? 0) + 1);
     }
-    return ordered;
-  }, [pixels]);
+    const prev = usedOrderRef.current;
+    const kept = prev.filter((c) => counts.has(c));
+    const keptSet = new Set(kept);
+    for (const c of counts.keys()) {
+      if (!keptSet.has(c)) kept.push(c);
+    }
+    usedOrderRef.current = kept;
+    return { canvasUsedColors: kept, usedCounts: counts };
+  }, [committedPixels]);
 
   const visibleSwatches = useMemo((): PaletteSwatch[] => {
     if (tab === "all") return palette.swatches;
@@ -70,7 +84,13 @@ export default function PalettePanel() {
 
         <Tabs value={tab} onValueChange={(v) => setTab(v as PaletteTabId)}>
           <TabsList className="h-8 bg-muted/50 p-1">
-            <TabsTrigger value="used" className="text-[10px] h-6 px-2 sm:px-3 gap-1 cursor-pointer">
+            <TabsTrigger
+              value="used"
+              className={cn(
+                "text-[10px] h-6 px-2 sm:px-3 gap-1 cursor-pointer transition-all",
+                isUsedFlashing && "ring-2 ring-pink-500 ring-offset-1 ring-offset-background scale-110"
+              )}
+            >
               <Grid size={12} />
               <span className="hidden sm:inline">{t("palette.usedColors")}</span>
             </TabsTrigger>
@@ -87,7 +107,10 @@ export default function PalettePanel() {
       </div>
 
       <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-2 mt-1">
-        <div className="grid grid-cols-7 gap-2 sm:gap-3 py-1 sm:[grid-template-columns:repeat(auto-fill,minmax(52px,1fr))]">
+        <div
+          key={tab}
+          className="grid grid-cols-7 gap-2 sm:gap-3 py-1 sm:[grid-template-columns:repeat(auto-fill,minmax(52px,1fr))] animate-in fade-in-50 slide-in-from-bottom-2 duration-300"
+        >
           {visibleSwatches.map((swatch, i) => (
             <div key={i} className="flex flex-col items-center gap-1 p-0.5 sm:p-1 transition-transform hover:scale-105 active:scale-95">
               <button
@@ -110,6 +133,11 @@ export default function PalettePanel() {
                       <polyline points="20 6 9 17 4 12" />
                     </svg>
                   </div>
+                )}
+                {tab === "used" && (
+                  <span className="absolute -bottom-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-foreground/80 text-background text-[9px] font-semibold leading-none flex items-center justify-center shadow-sm tabular-nums">
+                    {usedCounts.get(swatch.color) ?? 0}
+                  </span>
                 )}
               </button>
             </div>

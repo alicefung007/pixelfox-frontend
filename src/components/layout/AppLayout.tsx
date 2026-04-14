@@ -12,7 +12,7 @@ export default function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [uploadOpen, setUploadOpen] = useState(false);
   const { setPixels, setSize, saveHistory } = useEditorStore();
-  const { setCurrentPaletteId, setActiveTab } = usePaletteStore();
+  const { setCurrentPaletteId, setActiveTab, flashUsedTab } = usePaletteStore();
 
   const handleGenerate = (result: ColorMatchResult, paletteId: SystemPaletteId) => {
     const pixels: Record<string, string> = {};
@@ -32,8 +32,11 @@ export default function AppLayout() {
     setSize(width, height);
     setPixels(pixels);
     setCurrentPaletteId(paletteId);
-    setActiveTab("used");
     saveHistory();
+    setTimeout(() => {
+      setActiveTab("used");
+      flashUsedTab();
+    }, 350);
   };
 
   return (
