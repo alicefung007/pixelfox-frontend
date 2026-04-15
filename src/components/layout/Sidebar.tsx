@@ -2,7 +2,6 @@ import { useTranslation } from "react-i18next";
 import {
   Upload,
   Save,
-  Share2,
   Layers,
   Box,
   Undo2,
@@ -40,7 +39,6 @@ export default function Sidebar({ isOpen = true, onClose, onUpload, onPreview3D 
   const actionButtons = [
     { icon: <Upload size={18} />, label: t("sidebar.upload"), shortcut: "⌘ U", onClick: onUpload },
     { icon: <Save size={18} />, label: t("sidebar.save"), shortcut: "⌘ S" },
-    { icon: <Share2 size={18} />, label: t("sidebar.share"), shortcut: "⌥ ⌘ S" },
     { icon: <Layers size={18} />, label: t("sidebar.assembly") },
     { icon: <Box size={18} />, label: t("sidebar.preview3d"), onClick: onPreview3D },
   ];

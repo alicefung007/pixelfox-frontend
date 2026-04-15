@@ -9,6 +9,7 @@ pixelfox is a pixel art editor web application (pixelfox.art) built with React 1
 ## Commands
 
 ```bash
+npm install      # Install dependencies (run once after cloning)
 npm run dev      # Start development server
 npm run build    # Build for production (typecheck + vite build)
 npm run lint      # Run ESLint

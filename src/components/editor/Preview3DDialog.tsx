@@ -26,14 +26,33 @@ type PixelEntry = { x: number; y: number; color: string };
 function PixelMesh({ entries, width, height }: { entries: PixelEntry[]; width: number; height: number }) {
   const meshRef = useRef<THREE.InstancedMesh>(null);
   const count = entries.length;
-  const depth = 0.7;
+  const depth = 0.9;
 
   const dummy = useMemo(() => new THREE.Object3D(), []);
   const tmpColor = useMemo(() => new THREE.Color(), []);
 
   const beadGeometry = useMemo(() => {
-    const geo = new THREE.CylinderGeometry(0.46, 0.46, depth, 32, 1, false);
-    geo.rotateX(Math.PI / 2);
+    // Create hollow cylinder (perler bead shape) using extrude geometry
+    const shape = new THREE.Shape();
+    // Outer circle (radius 0.47 + bevel 0.02 = total 0.49)
+    shape.moveTo(0.47, 0);
+    shape.absarc(0, 0, 0.47, 0, Math.PI * 2, false);
+    // Inner hole (radius 0.2)
+    const hole = new THREE.Path();
+    hole.moveTo(0.2, 0);
+    hole.absarc(0, 0, 0.2, 0, Math.PI * 2, true);
+    shape.holes.push(hole);
+    // Extrude to depth with subtle bevel on edges
+    const geo = new THREE.ExtrudeGeometry(shape, {
+      depth: depth,
+      bevelEnabled: true,
+      bevelSize: 0.02,
+      bevelThickness: 0.02,
+      bevelSegments: 2,
+      curveSegments: 32,
+    });
+    // Center the geometry on Z axis (extrude goes from 0 to depth by default)
+    geo.translate(0, 0, -depth / 2);
     return geo;
   }, [depth]);
 
@@ -75,7 +94,7 @@ function Scene({ entries, width, height }: { entries: PixelEntry[]; width: numbe
       <directionalLight position={[dist, dist, dist]} intensity={1.1} castShadow />
       <directionalLight position={[-dist, dist * 0.5, dist * 0.5]} intensity={0.3} />
       <PixelMesh entries={entries} width={width} height={height} />
-      <OrbitControls enableDamping makeDefault />
+      <OrbitControls enableDamping makeDefault minDistance={dist * 0.3} maxDistance={dist * 4} />
     </>
   );
 }
