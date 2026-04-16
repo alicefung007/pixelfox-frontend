@@ -21,6 +21,7 @@ interface EditorState {
   zoom: number;
   history: HistoryEntry[];
   historyIndex: number;
+  uploadOpen: boolean;
 
   setPixel: (x: number, y: number, color: string) => void;
   clearPixel: (x: number, y: number) => void;
@@ -34,6 +35,7 @@ interface EditorState {
   undo: () => void;
   redo: () => void;
   clear: () => void;
+  setUploadOpen: (open: boolean) => void;
 }
 
 export const useEditorStore = create<EditorState>()(
@@ -48,6 +50,7 @@ export const useEditorStore = create<EditorState>()(
   zoom: EDITOR_CONFIG.DEFAULT_ZOOM,
   history: [{ pixels: {}, width: EDITOR_CONFIG.DEFAULT_WIDTH, height: EDITOR_CONFIG.DEFAULT_HEIGHT }],
   historyIndex: 0,
+  uploadOpen: false,
 
   setPixel: (x, y, color) => set((state) => {
     const key = `${x},${y}`;
@@ -152,6 +155,8 @@ export const useEditorStore = create<EditorState>()(
       historyIndex: newHistory.length - 1,
     };
   }),
+
+  setUploadOpen: (open) => set({ uploadOpen: open }),
 }),
 {
   name: 'pixelfox-editor-storage',

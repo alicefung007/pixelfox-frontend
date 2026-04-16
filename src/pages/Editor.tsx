@@ -1,5 +1,6 @@
 import PixelCanvas from "@/components/editor/PixelCanvas";
 import PalettePanel from "@/components/palette/PalettePanel";
+import { useToolShortcuts } from "@/hooks/useToolShortcuts";
 import {
   ResizableHandle,
   ResizablePanel,
@@ -7,6 +8,7 @@ import {
 } from "@/components/ui/resizable";
 
 export default function Editor() {
+  useToolShortcuts();
   return (
     <div className="h-full">
       <div className="hidden h-full md:block">

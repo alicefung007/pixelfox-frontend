@@ -11,9 +11,8 @@ import type { SystemPaletteId } from "@/lib/palettes";
 
 export default function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [uploadOpen, setUploadOpen] = useState(false);
   const [preview3DOpen, setPreview3DOpen] = useState(false);
-  const { setPixels, setSize, saveHistory } = useEditorStore();
+  const { setPixels, setSize, saveHistory, uploadOpen, setUploadOpen } = useEditorStore();
   const { setCurrentPaletteId, setActiveTab, flashUsedTab } = usePaletteStore();
 
   const handleGenerate = (result: ColorMatchResult, paletteId: SystemPaletteId) => {
