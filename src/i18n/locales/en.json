@@ -29,7 +29,9 @@
     "text": "Text",
     "canvasSize": "Canvas Size",
     "width": "Width",
-    "height": "Height"
+    "height": "Height",
+    "backgroundColor": "Background Color",
+    "transparent": "Transparent"
   },
   "palette": {
     "palette": "Palette",

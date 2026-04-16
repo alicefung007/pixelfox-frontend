@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { EDITOR_CONFIG } from '@/lib/constants';
 import { clampZoom } from '@/lib/utils';
 
@@ -16,6 +17,7 @@ interface EditorState {
   height: number;
   currentTool: ToolType;
   primaryColor: string;
+  backgroundColor: string | null;
   zoom: number;
   history: HistoryEntry[];
   historyIndex: number;
@@ -27,18 +29,22 @@ interface EditorState {
   setSize: (width: number, height: number) => void;
   setTool: (tool: ToolType) => void;
   setColor: (color: string) => void;
+  setBackgroundColor: (color: string | null) => void;
   setZoom: (zoom: number) => void;
   undo: () => void;
   redo: () => void;
   clear: () => void;
 }
 
-export const useEditorStore = create<EditorState>((set) => ({
+export const useEditorStore = create<EditorState>()(
+  persist(
+    (set) => ({
   pixels: {},
   width: EDITOR_CONFIG.DEFAULT_WIDTH,
   height: EDITOR_CONFIG.DEFAULT_HEIGHT,
   currentTool: 'brush',
   primaryColor: EDITOR_CONFIG.DEFAULT_PRIMARY_COLOR,
+  backgroundColor: null,
   zoom: EDITOR_CONFIG.DEFAULT_ZOOM,
   history: [{ pixels: {}, width: EDITOR_CONFIG.DEFAULT_WIDTH, height: EDITOR_CONFIG.DEFAULT_HEIGHT }],
   historyIndex: 0,
@@ -61,7 +67,25 @@ export const useEditorStore = create<EditorState>((set) => ({
 
   setPixels: (newPixels) => set({ pixels: newPixels }),
 
-  setSize: (width, height) => set({ width, height }),
+  setSize: (nextWidth, nextHeight) => set((state) => {
+    const width = Math.max(1, Math.min(200, Math.floor(nextWidth)));
+    const height = Math.max(1, Math.min(200, Math.floor(nextHeight)));
+    if (state.width === width && state.height === height) return state;
+
+    let pixels = state.pixels;
+    if (width < state.width || height < state.height) {
+      const cropped: Record<string, string> = {};
+      for (const [key, color] of Object.entries(state.pixels)) {
+        const [x, y] = key.split(',').map(Number);
+        if (x >= 0 && y >= 0 && x < width && y < height) {
+          cropped[key] = color;
+        }
+      }
+      pixels = cropped;
+    }
+
+    return { width, height, pixels };
+  }),
 
   saveHistory: () => set((state) => {
     const currentPixels = state.pixels;
@@ -86,6 +110,8 @@ export const useEditorStore = create<EditorState>((set) => ({
   setTool: (tool) => set({ currentTool: tool }),
 
   setColor: (color) => set({ primaryColor: color }),
+
+  setBackgroundColor: (color) => set({ backgroundColor: color }),
 
   setZoom: (zoom) => set({ zoom: clampZoom(zoom) }),
 
@@ -126,4 +152,15 @@ export const useEditorStore = create<EditorState>((set) => ({
       historyIndex: newHistory.length - 1,
     };
   }),
-}));
+}),
+{
+  name: 'pixelfox-editor-storage',
+  storage: createJSONStorage(() => localStorage),
+  partialize: (state) => ({
+    backgroundColor: state.backgroundColor,
+    primaryColor: state.primaryColor,
+    currentTool: state.currentTool,
+    zoom: state.zoom,
+  }),
+}
+));

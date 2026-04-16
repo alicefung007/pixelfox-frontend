@@ -29,7 +29,9 @@
     "text": "テキスト",
     "canvasSize": "キャンバスサイズ",
     "width": "幅",
-    "height": "高さ"
+    "height": "高さ",
+    "backgroundColor": "背景色",
+    "transparent": "透明"
   },
   "palette": {
     "palette": "パレット",

@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Upload,
@@ -16,11 +17,14 @@ import {
   Eraser,
   Pipette,
   Type,
-  X
+  X,
+  Link,
+  Unlink
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Slider } from "@/components/ui/slider";
 import { useEditorStore } from "@/store/useEditorStore";
 import type { ToolType } from "@/store/useEditorStore";
 import { cn } from "@/lib/utils";
@@ -34,7 +38,7 @@ type Props = {
 
 export default function Sidebar({ isOpen = true, onClose, onUpload, onPreview3D }: Props) {
   const { t } = useTranslation();
-  const { currentTool, setTool, undo, redo, clear, width } = useEditorStore();
+  const { currentTool, setTool, undo, redo, clear, width, height, setSize, saveHistory, backgroundColor, setBackgroundColor } = useEditorStore();
 
   const actionButtons = [
     { icon: <Upload size={18} />, label: t("sidebar.upload"), shortcut: "⌘ U", onClick: onUpload },
@@ -65,6 +69,11 @@ export default function Sidebar({ isOpen = true, onClose, onUpload, onPreview3D 
             currentTool={currentTool}
             onToolChange={setTool}
             width={width}
+            height={height}
+            onSizeChange={setSize}
+            onSizeCommit={saveHistory}
+            backgroundColor={backgroundColor}
+            onBackgroundColorChange={setBackgroundColor}
             undo={undo}
             redo={redo}
             clear={clear}
@@ -99,6 +108,11 @@ export default function Sidebar({ isOpen = true, onClose, onUpload, onPreview3D 
             currentTool={currentTool}
             onToolChange={setTool}
             width={width}
+            height={height}
+            onSizeChange={setSize}
+            onSizeCommit={saveHistory}
+            backgroundColor={backgroundColor}
+            onBackgroundColorChange={setBackgroundColor}
             undo={undo}
             redo={redo}
             clear={clear}
@@ -117,6 +131,11 @@ type SidebarContentProps = {
   currentTool: ToolType;
   onToolChange: (tool: ToolType) => void;
   width: number;
+  height: number;
+  onSizeChange: (width: number, height: number) => void;
+  onSizeCommit: () => void;
+  backgroundColor: string | null;
+  onBackgroundColorChange: (color: string | null) => void;
   undo: () => void;
   redo: () => void;
   clear: () => void;
@@ -124,7 +143,54 @@ type SidebarContentProps = {
   onAction?: () => void;
 };
 
-function SidebarContent({ actionButtons, tools, currentTool, onToolChange, width, undo, redo, clear, t, onAction }: SidebarContentProps) {
+function SidebarContent({
+  actionButtons,
+  tools,
+  currentTool,
+  onToolChange,
+  width,
+  height,
+  onSizeChange,
+  onSizeCommit,
+  backgroundColor,
+  onBackgroundColorChange,
+  undo,
+  redo,
+  clear,
+  t,
+  onAction
+}: SidebarContentProps) {
+  const [draftWidth, setDraftWidth] = useState(width);
+  const [draftHeight, setDraftHeight] = useState(height);
+  const [aspectRatioLocked, setAspectRatioLocked] = useState(true);
+  const [aspectRatio, setAspectRatio] = useState(width / height);
+
+  useEffect(() => {
+    setDraftWidth(width);
+  }, [width]);
+
+  useEffect(() => {
+    setDraftHeight(height);
+  }, [height]);
+
+  useEffect(() => {
+    if (aspectRatioLocked) {
+      setAspectRatio(draftWidth / draftHeight);
+    }
+  }, [aspectRatioLocked, draftWidth, draftHeight]);
+
+  const backgroundOptions = useMemo(() => {
+    return [
+      { key: "transparent", color: null as string | null },
+      { key: "white", color: "#FFFFFF" },
+      { key: "gray", color: "#9CA3AF" },
+      { key: "beige", color: "#FEF3C7" },
+      { key: "pink", color: "#FBCFE8" },
+      { key: "blue", color: "#DBEAFE" },
+      { key: "green", color: "#D1FAE5" },
+    ];
+  }, []);
+
   return (
     <div className="p-3 space-y-4">
       <div className="space-y-1">
@@ -214,13 +280,118 @@ function SidebarContent({ actionButtons, tools, currentTool, onToolChange, width
 
       <Separator />
 
-      <div className="space-y-2 px-2 pb-4">
-         <span className="text-[10px] font-bold text-muted-foreground uppercase block">
-          {t("sidebar.canvasSize")}
-        </span>
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-muted-foreground">{t("sidebar.width")}</span>
-          <span className="text-xs font-medium">{width}</span>
+      <div className="space-y-4 px-2 pb-4">
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold text-muted-foreground uppercase block">
+              {t("sidebar.canvasSize")}
+            </span>
+            <Button
+              variant={aspectRatioLocked ? "secondary" : "ghost"}
+              size="icon-xs"
+              className={aspectRatioLocked ? "" : "text-muted-foreground"}
+              onClick={() => {
+                if (!aspectRatioLocked) {
+                  setDraftHeight(draftWidth);
+                  onSizeChange(draftWidth, draftWidth);
+                  onSizeCommit();
+                }
+                setAspectRatioLocked(!aspectRatioLocked);
+              }}
+              title={aspectRatioLocked ? t("editor.uploadDialog.unlockAspectRatio") : t("editor.uploadDialog.lockAspectRatio")}
+            >
+              {aspectRatioLocked ? <Link className="size-3.5" /> : <Unlink className="size-3.5" />}
+            </Button>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">{t("sidebar.width")}</span>
+              <span className="text-xs font-medium tabular-nums">{draftWidth}</span>
+            </div>
+            <Slider
+              value={[draftWidth]}
+              onValueChange={([val]) => {
+                setDraftWidth(val);
+                if (aspectRatioLocked) {
+                  setDraftHeight(Math.round(val / aspectRatio));
+                }
+              }}
+              onValueCommit={([val]) => {
+                const newWidth = val;
+                const newHeight = aspectRatioLocked ? Math.round(newWidth / aspectRatio) : draftHeight;
+                setDraftWidth(newWidth);
+                setDraftHeight(newHeight);
+                onSizeChange(newWidth, newHeight);
+                onSizeCommit();
+              }}
+              min={1}
+              max={200}
+              className="[&_[data-slot=slider-range]]:bg-pink-500"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">{t("sidebar.height")}</span>
+              <span className="text-xs font-medium tabular-nums">{draftHeight}</span>
+            </div>
+            <Slider
+              value={[draftHeight]}
+              onValueChange={([val]) => {
+                setDraftHeight(val);
+                if (aspectRatioLocked) {
+                  setDraftWidth(Math.round(val * aspectRatio));
+                }
+              }}
+              onValueCommit={([val]) => {
+                const newHeight = val;
+                const newWidth = aspectRatioLocked ? Math.round(newHeight * aspectRatio) : draftWidth;
+                setDraftHeight(newHeight);
+                setDraftWidth(newWidth);
+                onSizeChange(newWidth, newHeight);
+                onSizeCommit();
+              }}
+              min={1}
+              max={200}
+              className="[&_[data-slot=slider-range]]:bg-pink-500"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <span className="text-[10px] font-bold text-muted-foreground uppercase block">
+            {t("sidebar.backgroundColor")}
+          </span>
+          <div className="flex flex-wrap gap-2">
+            {backgroundOptions.map((opt) => {
+              const selected = backgroundColor === opt.color;
+              const isTransparent = opt.color === null;
+              return (
+                <button
+                  key={opt.key}
+                  type="button"
+                  onClick={() => onBackgroundColorChange(opt.color)}
+                  className={cn(
+                    "h-9 w-9 rounded-md border ring-offset-background transition",
+                    selected ? "ring-2 ring-pink-500 border-pink-500" : "hover:ring-2 hover:ring-ring/30"
+                  )}
+                  style={
+                    isTransparent
+                      ? {
+                          backgroundColor: "#FFFFFF",
+                          backgroundImage:
+                            "linear-gradient(45deg, #E5E7EB 25%, transparent 25%), linear-gradient(-45deg, #E5E7EB 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #E5E7EB 75%), linear-gradient(-45deg, transparent 75%, #E5E7EB 75%)",
+                          backgroundSize: "10px 10px",
+                          backgroundPosition: "0 0, 0 5px, 5px -5px, -5px 0px",
+                        }
+                      : { backgroundColor: opt.color ?? undefined }
+                  }
+                  aria-label={isTransparent ? t("sidebar.transparent") : opt.color ?? ""}
+                />
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>

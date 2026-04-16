@@ -29,7 +29,9 @@
     "text": "文本",
     "canvasSize": "画布尺寸",
     "width": "宽度",
-    "height": "高度"
+    "height": "高度",
+    "backgroundColor": "背景颜色",
+    "transparent": "透明"
   },
   "palette": {
     "palette": "调色盘",

@@ -35,7 +35,7 @@ let globalKeyboardHandlerRegistered = false;
 export default function PixelCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const { pixels, width, height, zoom, setPixel, clearPixel, setPixels, currentTool, primaryColor, setZoom, saveHistory, undo, redo } = useEditorStore();
+  const { pixels, width, height, backgroundColor, zoom, setPixel, clearPixel, setPixels, currentTool, primaryColor, setZoom, saveHistory, undo, redo } = useEditorStore();
   const [isAutoZoom, setIsAutoZoom] = useState(true);
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
   const [viewOffset, setViewOffset] = useState({ x: 0, y: 0 });
@@ -167,10 +167,15 @@ export default function PixelCanvas() {
     ctx.scale(scale, scale);
     ctx.imageSmoothingEnabled = false;
 
-    for (let x = 0; x < width; x++) {
-      for (let y = 0; y < height; y++) {
-        ctx.fillStyle = (x + y) % 2 === 0 ? CANVAS_CONFIG.CHECKER_LIGHT : CANVAS_CONFIG.CHECKER_DARK;
-        ctx.fillRect(x, y, 1, 1);
+    if (backgroundColor) {
+      ctx.fillStyle = backgroundColor;
+      ctx.fillRect(0, 0, width, height);
+    } else {
+      for (let x = 0; x < width; x++) {
+        for (let y = 0; y < height; y++) {
+          ctx.fillStyle = (x + y) % 2 === 0 ? CANVAS_CONFIG.CHECKER_LIGHT : CANVAS_CONFIG.CHECKER_DARK;
+          ctx.fillRect(x, y, 1, 1);
+        }
       }
     }
 
@@ -234,7 +239,7 @@ export default function PixelCanvas() {
     ctx.strokeRect(0, 0, width, height);
 
     ctx.restore();
-  }, [pixels, width, height, zoom, viewOffset.x, viewOffset.y, viewportSize.width, viewportSize.height, theme, systemTheme]);
+  }, [pixels, width, height, zoom, viewOffset.x, viewOffset.y, viewportSize.width, viewportSize.height, theme, systemTheme, backgroundColor]);
 
   const getCoordinates = (e: React.MouseEvent) => {
     const canvas = canvasRef.current;

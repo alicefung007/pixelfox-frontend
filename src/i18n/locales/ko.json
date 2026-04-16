@@ -29,7 +29,9 @@
     "text": "텍스트",
     "canvasSize": "캔버스 크기",
     "width": "너비",
-    "height": "높이"
+    "height": "높이",
+    "backgroundColor": "배경색",
+    "transparent": "투명"
   },
   "palette": {
     "palette": "팔레트",
