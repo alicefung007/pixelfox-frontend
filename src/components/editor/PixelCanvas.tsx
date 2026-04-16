@@ -648,12 +648,18 @@ export default function PixelCanvas() {
             : null;
 
   const cursorClass = isPanning ? 'cursor-grabbing' : currentTool === 'hand' ? 'cursor-grab' : currentTool === 'text' ? 'cursor-text' : isOverlayTool ? 'cursor-none' : 'cursor-crosshair';
+  const scale = zoom / 10;
   const cursorHotspot =
     currentTool === 'brush'
       ? CURSOR_CONFIG.BRUSH_HOTSPOT
       : currentTool === 'eyedropper'
         ? CURSOR_CONFIG.EYEDROPPER_HOTSPOT
         : { x: CURSOR_CONFIG.ICON_SIZE / 2, y: CURSOR_CONFIG.ICON_SIZE / 2 };
+  const cursorIconSize = currentTool === 'eraser' || currentTool === 'bucket' ? scale : CURSOR_CONFIG.ICON_SIZE;
+  const cursorHotspotScaled =
+    currentTool === 'eraser' || currentTool === 'bucket'
+      ? { x: cursorIconSize / 2, y: cursorIconSize / 2 }
+      : cursorHotspot;
 
   const onCanvasLeave = () => {
     if (!isPanning) onMouseUp();
@@ -681,8 +687,8 @@ export default function PixelCanvas() {
           <div
             className="pointer-events-none absolute z-10 text-foreground"
             style={{
-              left: cursorOverlay.x - cursorHotspot.x,
-              top: cursorOverlay.y - cursorHotspot.y,
+              left: cursorOverlay.x - cursorHotspotScaled.x,
+              top: cursorOverlay.y - cursorHotspotScaled.y,
               color: currentTool === 'brush' ? primaryColor : undefined,
             }}
           >
@@ -703,7 +709,14 @@ export default function PixelCanvas() {
                 );
               })()
             ) : (
-              <CursorIcon size={CURSOR_CONFIG.ICON_SIZE} />
+              <CursorIcon
+                size={cursorIconSize}
+                style={
+                  currentTool === 'eraser' || currentTool === 'bucket' || currentTool === 'eyedropper'
+                    ? { filter: 'drop-shadow(0 0 1px white) drop-shadow(0 0 1px white)' }
+                    : undefined
+                }
+              />
             )}
           </div>
         )}
