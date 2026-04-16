@@ -136,7 +136,7 @@ export default function PaletteManageDialog({
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
               <DialogTitle className="flex items-center gap-2">
-                <span className="inline-flex size-7 items-center justify-center rounded-full bg-pink-500/10 text-pink-500">
+                <span className="inline-flex size-7 items-center justify-center rounded-full bg-primary/10 text-primary">
                   <Settings2 className="size-4" />
                 </span>
                 <span>{t("palette.manageDialog.title")}</span>
@@ -224,7 +224,7 @@ export default function PaletteManageDialog({
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-9 gap-1 sm:gap-2 text-pink-600 border-pink-300/60 hover:bg-pink-500/10"
+                    className="h-9 gap-1 sm:gap-2 text-primary border-primary/60 hover:bg-primary/10"
                   >
                     <Save className="size-4" />
                     <span className="hidden sm:inline">{t("palette.manageDialog.saveScheme")}</span>
@@ -253,7 +253,7 @@ export default function PaletteManageDialog({
                           className={cn(
                             "h-7 rounded-md px-3 text-xs font-semibold transition-colors border shrink-0",
                             active
-                              ? "bg-pink-500 text-white border-pink-500"
+                              ? "bg-primary text-white border-primary"
                               : "bg-muted/40 text-muted-foreground border-border hover:bg-muted"
                           )}
                         >
@@ -294,7 +294,7 @@ export default function PaletteManageDialog({
                       <div
                         className={cn(
                           "relative w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-md shadow-sm ring-1 ring-foreground/5 transition-shadow flex items-center justify-center",
-                          isSelected ? "ring-2 ring-pink-500" : ""
+                          isSelected ? "ring-2 ring-primary" : ""
                         )}
                         style={{ backgroundColor: swatch.color }}
                       >
@@ -305,7 +305,7 @@ export default function PaletteManageDialog({
                           {swatch.label}
                         </span>
                         {isSelected && (
-                          <div className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 size-3 sm:size-4 rounded-full bg-pink-500 text-white flex items-center justify-center shadow-sm">
+                          <div className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 size-3 sm:size-4 rounded-full bg-primary text-white flex items-center justify-center shadow-sm">
                             <Check className="size-2 sm:size-2.5" />
                           </div>
                         )}

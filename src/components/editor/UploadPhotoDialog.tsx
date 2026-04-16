@@ -388,10 +388,10 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
                 className={cn(
                   "relative flex flex-col items-center justify-center w-full h-20 rounded-xl border-2 border-dashed cursor-pointer transition-colors",
                   isDragging
-                    ? "border-pink-500 bg-pink-500/10 border-solid"
+                    ? "border-primary bg-primary/10 border-solid"
                     : selectedFile
-                    ? "border-pink-500 bg-pink-500/5"
-                    : "border-input/60 hover:border-pink-400 hover:bg-muted/30"
+                    ? "border-primary bg-primary/5"
+                    : "border-input/60 hover:border-primary hover:bg-muted/30"
                 )}
                 onDragOver={(e) => {
                   e.preventDefault();
@@ -418,8 +418,8 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
               >
                 {selectedFile ? (
                   <>
-                    <Check className="w-6 h-6 text-pink-500" />
-                    <span className="text-xs text-pink-600 dark:text-pink-400 font-medium text-left px-1 break-all">
+                    <Check className="w-6 h-6 text-primary" />
+                    <span className="text-xs text-primary dark:text-primary/80 font-medium text-left px-1 break-all">
                       {truncateFilename(selectedFile.name)}
                     </span>
                     <button
@@ -429,7 +429,7 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
                         e.stopPropagation();
                         setSelectedFile(null);
                       }}
-                      className="absolute top-1 right-1 p-1 bg-pink-500 hover:bg-pink-600 rounded-full transition-colors"
+                      className="absolute top-1 right-1 p-1 bg-primary hover:bg-primary/80 rounded-full transition-colors"
                     >
                       <X className="w-3 h-3 text-white" />
                     </button>
@@ -525,7 +525,7 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
                                 }}
                                 className={cn(
                                   "w-full flex items-center gap-3 p-2 rounded-lg transition-colors text-left",
-                                  isSelected ? "bg-pink-500/10" : "hover:bg-muted/50"
+                                  isSelected ? "bg-primary/10" : "hover:bg-muted/50"
                                 )}
                               >
                                 <div className="shrink-0">
@@ -533,7 +533,7 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
                                     className={cn(
                                       "w-5 h-5 rounded-full border flex items-center justify-center",
                                       isSelected
-                                        ? "bg-pink-500 border-pink-500"
+                                        ? "bg-primary border-primary"
                                         : "border-input"
                                     )}
                                   >
@@ -578,7 +578,7 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
                   <Switch
                     checked={colorMerging}
                     onCheckedChange={setColorMerging}
-                    className="data-[state=checked]:bg-pink-500 data-[state=checked]:border-pink-500"
+                    className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                   />
                 </div>
 
@@ -598,7 +598,7 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
                     max={20}
                     disabled={!colorMerging}
                     className={cn(
-                      "[&_[data-slot=slider-range]]:bg-pink-500",
+                      "[&_[data-slot=slider-range]]:bg-primary",
                       !colorMerging && "[&_[data-slot=slider-range]]:bg-muted"
                     )}
                   />
@@ -677,7 +677,7 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
                       onValueChange={([val]) => handleWidthBeadsChange(String(val))}
                       min={1}
                       max={200}
-                      className="[&_[data-slot=slider-range]]:bg-pink-500"
+                      className="[&_[data-slot=slider-range]]:bg-primary"
                     />
                   </div>
                   <div className="space-y-1 py-2">
@@ -689,7 +689,7 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
                       onValueChange={([val]) => handleHeightBeadsChange(String(val))}
                       min={1}
                       max={200}
-                      className="[&_[data-slot=slider-range]]:bg-pink-500"
+                      className="[&_[data-slot=slider-range]]:bg-primary"
                     />
                   </div>
                 </div>
@@ -725,7 +725,7 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
                       onValueChange={([val]) => setOffsetX(String(val))}
                       min={-200}
                       max={200}
-                      className="[&_[data-slot=slider-range]]:bg-pink-500"
+                      className="[&_[data-slot=slider-range]]:bg-primary"
                     />
                   </div>
                   <div className="space-y-1 py-2">
@@ -737,7 +737,7 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
                       onValueChange={([val]) => setOffsetY(String(val))}
                       min={-200}
                       max={200}
-                      className="[&_[data-slot=slider-range]]:bg-pink-500"
+                      className="[&_[data-slot=slider-range]]:bg-primary"
                     />
                   </div>
                 </div>
@@ -755,7 +755,7 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
                       variant="ghost"
                       className={cn(
                         "size-7 rounded-md min-w-[2.5rem] px-1.5",
-                        rotation !== 0 && "bg-pink-500 text-white hover:bg-pink-600 hover:text-white"
+                        rotation !== 0 && "bg-primary text-white hover:bg-primary/80 hover:text-white"
                       )}
                       onClick={() => setRotation((r) => (r + 90) % 360)}
                     >
@@ -770,7 +770,7 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
                       variant="ghost"
                       className={cn(
                         "size-7 rounded-md",
-                        flipHorizontal && "bg-pink-500 text-white hover:bg-pink-600 hover:text-white"
+                        flipHorizontal && "bg-primary text-white hover:bg-primary/80 hover:text-white"
                       )}
                       onClick={() => setFlipHorizontal(!flipHorizontal)}
                     >
@@ -785,7 +785,7 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
                       variant="ghost"
                       className={cn(
                         "size-7 rounded-md",
-                        flipVertical && "bg-pink-500 text-white hover:bg-pink-600 hover:text-white"
+                        flipVertical && "bg-primary text-white hover:bg-primary/80 hover:text-white"
                       )}
                       onClick={() => setFlipVertical(!flipVertical)}
                     >
@@ -800,7 +800,7 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
             <div className="rounded-xl border bg-[linear-gradient(45deg,#f5f5f5_25%,transparent_25%,transparent_75%,#f5f5f5_75%,#f5f5f5),linear-gradient(45deg,#f5f5f5_25%,transparent_25%,transparent_75%,#f5f5f5_75%,#f5f5f5)] bg-[length:10px_10px] bg-[position:0_0,5px_5px] bg-repeat aspect-video overflow-hidden relative flex items-center justify-center">
               {isProcessing ? (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <div className="w-4 h-4 border-2 border-pink-500 border-t-transparent rounded-full animate-spin" />
+                  <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                   {t("editor.uploadDialog.processing")}
                 </div>
               ) : processedResult ? (
@@ -889,7 +889,7 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
             <Button variant="outline" className="w-full sm:w-auto">{t("editor.uploadDialog.cancel")}</Button>
           </DialogClose>
           <Button
-            className="w-full sm:w-auto gap-2 bg-gradient-to-r from-pink-500 to-violet-500 hover:opacity-90 border-none text-white font-medium"
+            className="w-full sm:w-auto gap-2 bg-gradient-to-r from-primary to-primary/80 hover:opacity-90 border-none text-white font-medium"
             onClick={() => {
               if (processedResult) {
                 onGenerate(processedResult, colorPaletteId);

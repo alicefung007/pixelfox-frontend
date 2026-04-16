@@ -737,7 +737,7 @@ export default function PixelCanvas() {
         <Button 
           variant="ghost" 
           size="icon" 
-          className={`h-8 w-8 ${isAutoZoom ? 'text-pink-500' : 'text-muted-foreground'}`}
+          className={`h-8 w-8 ${isAutoZoom ? 'text-primary' : 'text-muted-foreground'}`}
           onClick={() => setIsAutoZoom(true)}
           title="Fit to Screen"
         >

@@ -77,7 +77,7 @@ export default function PalettePanel() {
             <Settings size={14} />
             <span className="text-xs">{t("palette.manage")}</span>
           </Button>
-          <div className="bg-pink-100 dark:bg-pink-900/30 text-pink-500 text-[10px] font-bold px-2 py-0.5 rounded border border-pink-200 dark:border-pink-800 uppercase tracking-wider shrink-0">
+          <div className="bg-primary/10 dark:bg-primary/20 text-primary text-[10px] font-bold px-2 py-0.5 rounded border border-primary/20 uppercase tracking-wider shrink-0">
             {palette.i18nKey ? t(palette.i18nKey) : palette.name}
           </div>
         </div>
@@ -88,7 +88,7 @@ export default function PalettePanel() {
               value="used"
               className={cn(
                 "text-[10px] h-6 px-2 sm:px-3 gap-1 cursor-pointer transition-all",
-                isUsedFlashing && "ring-2 ring-pink-500 ring-offset-1 ring-offset-background scale-110"
+                isUsedFlashing && "ring-2 ring-primary ring-offset-1 ring-offset-background scale-110"
               )}
             >
               <Grid size={12} />
@@ -116,7 +116,7 @@ export default function PalettePanel() {
               <button
                 className={cn(
                   "w-full aspect-square rounded-md shadow-sm relative flex items-center justify-center",
-                  primaryColor === swatch.color ? "ring-2 ring-pink-500" : ""
+                  primaryColor === swatch.color ? "ring-2 ring-primary" : ""
                 )}
                 style={{ backgroundColor: swatch.color }}
                 onClick={() => setColor(swatch.color)}
@@ -128,7 +128,7 @@ export default function PalettePanel() {
                   {swatch.label}
                 </span>
                 {primaryColor === swatch.color && (
-                  <div className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 size-3 sm:size-4 rounded-full bg-pink-500 text-white flex items-center justify-center shadow-sm">
+                  <div className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 size-3 sm:size-4 rounded-full bg-primary text-white flex items-center justify-center shadow-sm">
                     <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                       <polyline points="20 6 9 17 4 12" />
                     </svg>

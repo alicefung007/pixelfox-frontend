@@ -126,7 +126,7 @@ export default function Preview3DDialog({ open, onOpenChange }: Props) {
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
               <DialogTitle className="flex items-center gap-2">
-                <span className="inline-flex size-7 items-center justify-center rounded-full bg-pink-500/10 text-pink-500">
+                <span className="inline-flex size-7 items-center justify-center rounded-full bg-primary/10 text-primary">
                   <Box className="size-4" />
                 </span>
                 <span>{t("sidebar.preview3d")}</span>

@@ -9,8 +9,6 @@ import {
   Redo2,
   Download,
   Trash2,
-  Settings,
-  ChevronRight,
   Brush,
   PaintBucket,
   Hand,
@@ -227,7 +225,7 @@ function SidebarContent({
       </div>
 
       <div className="space-y-2">
-        <Button className="w-full justify-between h-10 bg-gradient-to-r from-pink-500 to-violet-500 hover:opacity-90 border-none text-white font-medium" onClick={onAction}>
+        <Button className="w-full justify-between h-10 bg-gradient-to-r from-primary to-primary/80 hover:opacity-90 border-none text-white font-medium" onClick={onAction}>
           <div className="flex items-center gap-2">
             <Download size={18} />
             <span>{t("sidebar.export")}</span>
@@ -245,14 +243,6 @@ function SidebarContent({
 
       <Separator />
 
-      <Button variant="ghost" className="w-full justify-between h-9 px-2 text-sm font-normal" onClick={onAction}>
-        <div className="flex items-center gap-2">
-          <Settings size={18} />
-          <span>{t("sidebar.settings")}</span>
-        </div>
-        <ChevronRight size={16} className="text-muted-foreground" />
-      </Button>
-
       <div className="space-y-1">
         <span className="text-[10px] font-bold text-muted-foreground uppercase px-2 mb-1 block">
           {t("sidebar.tools")}
@@ -266,7 +256,7 @@ function SidebarContent({
               onAction?.();
             }}
             className={`w-full justify-between h-9 px-2 text-sm font-normal ${
-              currentTool === tool.id ? "bg-pink-500/10 text-pink-500 hover:bg-pink-500/20 hover:text-pink-500" : ""
+              currentTool === tool.id ? "bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary" : ""
             }`}
           >
             <div className="flex items-center gap-2">
@@ -307,7 +297,7 @@ function SidebarContent({
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-xs text-muted-foreground">{t("sidebar.width")}</span>
-              <span className="text-xs font-medium tabular-nums">{draftWidth}</span>
+              <span className="text-xs font-medium tabular-nums text-muted-foreground/90">{draftWidth}</span>
             </div>
             <Slider
               value={[draftWidth]}
@@ -327,14 +317,14 @@ function SidebarContent({
               }}
               min={1}
               max={200}
-              className="[&_[data-slot=slider-range]]:bg-pink-500"
+              className="[&_[data-slot=slider-range]]:bg-primary"
             />
           </div>
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-xs text-muted-foreground">{t("sidebar.height")}</span>
-              <span className="text-xs font-medium tabular-nums">{draftHeight}</span>
+              <span className="text-xs font-medium tabular-nums text-muted-foreground/90">{draftHeight}</span>
             </div>
             <Slider
               value={[draftHeight]}
@@ -354,7 +344,7 @@ function SidebarContent({
               }}
               min={1}
               max={200}
-              className="[&_[data-slot=slider-range]]:bg-pink-500"
+              className="[&_[data-slot=slider-range]]:bg-primary"
             />
           </div>
         </div>
@@ -374,7 +364,7 @@ function SidebarContent({
                   onClick={() => onBackgroundColorChange(opt.color)}
                   className={cn(
                     "h-9 w-9 rounded-md border ring-offset-background transition",
-                    selected ? "ring-2 ring-pink-500 border-pink-500" : "hover:ring-2 hover:ring-ring/30"
+                    selected ? "ring-2 ring-primary border-primary" : "hover:ring-2 hover:ring-ring/30"
                   )}
                   style={
                     isTransparent
