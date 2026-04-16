@@ -1,9 +1,9 @@
-import { useMemo, useRef, useEffect } from "react";
+import { useMemo, useRef, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
-import { Box, X } from "lucide-react";
+import { Box, X, CircleDot, Square, Play, Pause } from "lucide-react";
 import {
   Dialog,
   DialogClose,
@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useEditorStore } from "@/store/useEditorStore";
+import { PREVIEW_3D_CONFIG, type BeadShape } from "@/lib/constants";
 
 type Props = {
   open: boolean;
@@ -23,38 +24,78 @@ type Props = {
 
 type PixelEntry = { x: number; y: number; color: string };
 
-function PixelMesh({ entries, width, height }: { entries: PixelEntry[]; width: number; height: number }) {
+function createCylinderGeometry(depth: number): THREE.ExtrudeGeometry {
+  const cfg = PREVIEW_3D_CONFIG.CYLINDER;
+  const shape = new THREE.Shape();
+  shape.moveTo(cfg.OUTER_RADIUS, 0);
+  shape.absarc(0, 0, cfg.OUTER_RADIUS, 0, Math.PI * 2, false);
+  const hole = new THREE.Path();
+  hole.moveTo(cfg.INNER_RADIUS, 0);
+  hole.absarc(0, 0, cfg.INNER_RADIUS, 0, Math.PI * 2, true);
+  shape.holes.push(hole);
+  const geo = new THREE.ExtrudeGeometry(shape, {
+    depth: depth,
+    bevelEnabled: true,
+    bevelSize: cfg.BEVEL_SIZE,
+    bevelThickness: cfg.BEVEL_THICKNESS,
+    bevelSegments: cfg.BEVEL_SEGMENTS,
+    curveSegments: cfg.CURVE_SEGMENTS,
+  });
+  geo.translate(0, 0, -depth / 2);
+  return geo;
+}
+
+function createRoundedCubeGeometry(depth: number): THREE.ExtrudeGeometry {
+  const cfg = PREVIEW_3D_CONFIG.ROUNDED_CUBE;
+  const half = cfg.SIZE / 2;
+  const r = cfg.CORNER_RADIUS;
+
+  const shape = new THREE.Shape();
+  shape.moveTo(-half + r, -half);
+  shape.lineTo(half - r, -half);
+  shape.quadraticCurveTo(half, -half, half, -half + r);
+  shape.lineTo(half, half - r);
+  shape.quadraticCurveTo(half, half, half - r, half);
+  shape.lineTo(-half + r, half);
+  shape.quadraticCurveTo(-half, half, -half, half - r);
+  shape.lineTo(-half, -half + r);
+  shape.quadraticCurveTo(-half, -half, -half + r, -half);
+
+  const geo = new THREE.ExtrudeGeometry(shape, {
+    depth: depth,
+    bevelEnabled: true,
+    bevelSize: r,
+    bevelThickness: r,
+    bevelSegments: cfg.CORNER_SEGMENTS,
+  });
+  geo.translate(0, 0, -depth / 2);
+  return geo;
+}
+
+function PixelMesh({
+  entries,
+  width,
+  height,
+  beadShape,
+}: {
+  entries: PixelEntry[];
+  width: number;
+  height: number;
+  beadShape: BeadShape;
+}) {
   const meshRef = useRef<THREE.InstancedMesh>(null);
   const count = entries.length;
-  const depth = 0.9;
+  const depth = PREVIEW_3D_CONFIG.BEAD_DEPTH;
 
   const dummy = useMemo(() => new THREE.Object3D(), []);
   const tmpColor = useMemo(() => new THREE.Color(), []);
 
   const beadGeometry = useMemo(() => {
-    // Create hollow cylinder (perler bead shape) using extrude geometry
-    const shape = new THREE.Shape();
-    // Outer circle (radius 0.47 + bevel 0.02 = total 0.49)
-    shape.moveTo(0.47, 0);
-    shape.absarc(0, 0, 0.47, 0, Math.PI * 2, false);
-    // Inner hole (radius 0.2)
-    const hole = new THREE.Path();
-    hole.moveTo(0.2, 0);
-    hole.absarc(0, 0, 0.2, 0, Math.PI * 2, true);
-    shape.holes.push(hole);
-    // Extrude to depth with subtle bevel on edges
-    const geo = new THREE.ExtrudeGeometry(shape, {
-      depth: depth,
-      bevelEnabled: true,
-      bevelSize: 0.02,
-      bevelThickness: 0.02,
-      bevelSegments: 2,
-      curveSegments: 32,
-    });
-    // Center the geometry on Z axis (extrude goes from 0 to depth by default)
-    geo.translate(0, 0, -depth / 2);
-    return geo;
-  }, [depth]);
+    if (beadShape === "cylinder") {
+      return createCylinderGeometry(depth);
+    }
+    return createRoundedCubeGeometry(depth);
+  }, [beadShape, depth]);
 
   useEffect(() => {
     return () => {
@@ -81,20 +122,36 @@ function PixelMesh({ entries, width, height }: { entries: PixelEntry[]; width: n
 
   return (
     <instancedMesh ref={meshRef} args={[beadGeometry, undefined, count]} castShadow receiveShadow>
-      <meshStandardMaterial roughness={0.45} metalness={0.05} />
+      <meshStandardMaterial roughness={0.3} metalness={0.05} />
     </instancedMesh>
   );
 }
 
-function Scene({ entries, width, height }: { entries: PixelEntry[]; width: number; height: number }) {
+function Scene({
+  entries,
+  width,
+  height,
+  beadShape,
+  autoRotate,
+}: {
+  entries: PixelEntry[];
+  width: number;
+  height: number;
+  beadShape: BeadShape;
+  autoRotate: boolean;
+}) {
   const dist = Math.max(width, height) * 1.3;
   return (
     <>
-      <ambientLight intensity={0.55} />
-      <directionalLight position={[dist, dist, dist]} intensity={1.1} castShadow />
-      <directionalLight position={[-dist, dist * 0.5, dist * 0.5]} intensity={0.3} />
-      <PixelMesh entries={entries} width={width} height={height} />
-      <OrbitControls enableDamping makeDefault minDistance={dist * 0.3} maxDistance={dist * 4} />
+      <ambientLight intensity={0.9} />
+      <hemisphereLight intensity={0.6} groundColor="#ffffff" />
+      <directionalLight position={[dist, dist, dist]} intensity={1.3} castShadow />
+      <directionalLight position={[-dist, dist * 0.5, dist * 0.5]} intensity={0.7} />
+      <directionalLight position={[0, dist * 0.5, -dist]} intensity={0.8} />
+      <directionalLight position={[dist, 0, -dist * 0.5]} intensity={0.5} />
+      <directionalLight position={[-dist, 0, -dist * 0.5]} intensity={0.5} />
+      <PixelMesh entries={entries} width={width} height={height} beadShape={beadShape} />
+      <OrbitControls enableDamping makeDefault minDistance={dist * 0.3} maxDistance={dist * 4} autoRotate={autoRotate} autoRotateSpeed={3.5} zoomToCursor={true} />
     </>
   );
 }
@@ -104,6 +161,8 @@ export default function Preview3DDialog({ open, onOpenChange }: Props) {
   const pixels = useEditorStore((s) => s.pixels);
   const width = useEditorStore((s) => s.width);
   const height = useEditorStore((s) => s.height);
+  const [beadShape, setBeadShape] = useState<BeadShape>("cylinder");
+  const [autoRotate, setAutoRotate] = useState(true);
 
   const entries = useMemo<PixelEntry[]>(() => {
     const list: PixelEntry[] = [];
@@ -117,7 +176,7 @@ export default function Preview3DDialog({ open, onOpenChange }: Props) {
     return list;
   }, [pixels]);
 
-  const cameraDist = Math.max(width, height) * 1.4;
+  const cameraDist = Math.max(width, height) * 2;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -132,7 +191,7 @@ export default function Preview3DDialog({ open, onOpenChange }: Props) {
                 <span>{t("sidebar.preview3d")}</span>
               </DialogTitle>
               <DialogDescription className="mt-1">
-                {t("editor.preview3d.description", { defaultValue: "Rotate, zoom and inspect your pattern in 3D." })}
+                {t("editor.preview3d.description")}
               </DialogDescription>
             </div>
             <DialogClose asChild>
@@ -145,21 +204,56 @@ export default function Preview3DDialog({ open, onOpenChange }: Props) {
 
         <Separator />
 
-        <div className="flex-1 min-h-0 relative bg-white p-4 sm:p-6">
+        <div className="flex-1 min-h-0 relative bg-white">
           {entries.length === 0 ? (
             <div className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">
-              {t("editor.preview3d.empty", { defaultValue: "Canvas is empty" })}
+              {t("editor.preview3d.empty")}
             </div>
           ) : (
-            <Canvas
+            <>
+              <div className="absolute top-4 left-1/2 z-10 flex -translate-x-1/2 items-center gap-2">
+                <div className="flex items-center rounded-lg border bg-background/80 p-0.5 shadow-sm backdrop-blur-sm">
+                  <Button
+                    variant={beadShape === "cylinder" ? "secondary" : "ghost"}
+                    size="sm"
+                    className="h-7 gap-1.5 rounded-md px-2.5 text-xs"
+                    onClick={() => setBeadShape("cylinder")}
+                  >
+                    <CircleDot className="size-3.5" />
+                    {t("editor.preview3d.shapeCylinder")}
+                  </Button>
+                  <Button
+                    variant={beadShape === "roundedCube" ? "secondary" : "ghost"}
+                    size="sm"
+                    className="h-7 gap-1.5 rounded-md px-2.5 text-xs"
+                    onClick={() => setBeadShape("roundedCube")}
+                  >
+                    <Square className="size-3.5" />
+                    {t("editor.preview3d.shapeRoundedCube")}
+                  </Button>
+                </div>
+                <div className="flex items-center rounded-lg border bg-background/80 p-0.5 shadow-sm backdrop-blur-sm">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-[76px] justify-center gap-1.5 rounded-md px-2.5 text-xs"
+                    onClick={() => setAutoRotate((v) => !v)}
+                  >
+                    {autoRotate ? <Pause className="size-3.5" /> : <Play className="size-3.5" />}
+                    {t(autoRotate ? "editor.preview3d.pauseRotation" : "editor.preview3d.resumeRotation")}
+                  </Button>
+                </div>
+              </div>
+              <Canvas
               shadows
               gl={{ alpha: true }}
               camera={{ position: [0, 0, cameraDist], fov: 40, near: 0.1, far: cameraDist * 10 }}
               dpr={[1, 2]}
               style={{ background: "transparent" }}
             >
-              <Scene entries={entries} width={width} height={height} />
+              <Scene entries={entries} width={width} height={height} beadShape={beadShape} autoRotate={autoRotate} />
             </Canvas>
+            </>
           )}
         </div>
       </DialogContent>

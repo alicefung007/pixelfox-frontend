@@ -110,6 +110,14 @@
       "currentEditorPalette": "現在のエディターパレット",
       "colorMerging": "色のマージ",
       "colorMergeThreshold": "色マージのしきい値"
+    },
+    "preview3d": {
+      "description": "3Dでパターンを回転、ズーム、検査します。",
+      "empty": "キャンバスが空です",
+      "shapeCylinder": "円柱",
+      "shapeRoundedCube": "角丸キューブ",
+      "pauseRotation": "一時停止",
+      "resumeRotation": "回転"
     }
   }
 }

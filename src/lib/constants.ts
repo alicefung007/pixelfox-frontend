@@ -34,6 +34,25 @@ export const CURSOR_CONFIG = {
   EYEDROPPER_HOTSPOT: { x: 4, y: 16 },
 } as const;
 
+export const PREVIEW_3D_CONFIG = {
+  BEAD_DEPTH: 0.9,
+  CYLINDER: {
+    OUTER_RADIUS: 0.47,
+    INNER_RADIUS: 0.2,
+    BEVEL_SIZE: 0.02,
+    BEVEL_THICKNESS: 0.02,
+    BEVEL_SEGMENTS: 2,
+    CURVE_SEGMENTS: 32,
+  },
+  ROUNDED_CUBE: {
+    SIZE: 0.9,
+    CORNER_RADIUS: 0.08,
+    CORNER_SEGMENTS: 4,
+  },
+} as const;
+
+export type BeadShape = 'cylinder' | 'roundedCube';
+
 export const PANEL_CONFIG = {
   DEFAULT_HEIGHT: 280,
   MIN_HEIGHT: 100,

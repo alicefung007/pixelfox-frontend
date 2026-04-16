@@ -110,6 +110,14 @@
       "currentEditorPalette": "현재 편집기 팔레트",
       "colorMerging": "색상 병합",
       "colorMergeThreshold": "색상 병합 임계값"
+    },
+    "preview3d": {
+      "description": "3D에서 패턴을 회전, 확대/축소하고 검사합니다.",
+      "empty": "캔버스가 비어 있습니다",
+      "shapeCylinder": "원기둥",
+      "shapeRoundedCube": "둥근 큐브",
+      "pauseRotation": "일시정지",
+      "resumeRotation": "회전"
     }
   }
 }

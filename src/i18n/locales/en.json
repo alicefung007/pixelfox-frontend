@@ -110,6 +110,14 @@
       "currentEditorPalette": "Current Editor Palette",
       "colorMerging": "Color Merging",
       "colorMergeThreshold": "Color Merge Threshold"
+    },
+    "preview3d": {
+      "description": "Rotate, zoom and inspect your pattern in 3D.",
+      "empty": "Canvas is empty",
+      "shapeCylinder": "Cylinder",
+      "shapeRoundedCube": "Rounded Cube",
+      "pauseRotation": "Pause",
+      "resumeRotation": "Rotate"
     }
   }
 }

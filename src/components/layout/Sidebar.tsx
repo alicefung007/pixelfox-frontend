@@ -57,7 +57,7 @@ export default function Sidebar({ isOpen = true, onClose, onUpload, onPreview3D 
   return (
     <>
       <aside className={cn(
-        "w-64 border-r bg-background flex flex-col h-[calc(100vh-56px)] md:h-[calc(100vh-64px)] overflow-hidden shrink-0",
+        "w-64 border-r bg-background flex flex-col h-full overflow-hidden shrink-0",
         "hidden md:flex"
       )}>
         <ScrollArea className="flex-1">
@@ -214,13 +214,19 @@ function SidebarContent({
       <Separator />
 
       <div className="grid grid-cols-2 gap-2">
-        <Button variant="outline" size="sm" className="h-9 gap-1 sm:gap-2" onClick={undo}>
-          <Undo2 size={16} />
-          <span className="hidden sm:inline text-xs">{t("sidebar.undo")}</span>
+        <Button variant="outline" size="sm" className="h-auto py-2 flex flex-col gap-1 items-center" onClick={undo}>
+          <div className="flex items-center gap-1">
+            <Undo2 size={16} />
+            <span className="text-xs">{t("sidebar.undo")}</span>
+          </div>
+          <div className="text-[9px] text-muted-foreground uppercase text-center w-full">⌘ Z</div>
         </Button>
-        <Button variant="outline" size="sm" className="h-9 gap-1 sm:gap-2" onClick={redo}>
-          <Redo2 size={16} />
-          <span className="hidden sm:inline text-xs">{t("sidebar.redo")}</span>
+        <Button variant="outline" size="sm" className="h-auto py-2 flex flex-col gap-1 items-center" onClick={redo}>
+          <div className="flex items-center gap-1">
+            <Redo2 size={16} />
+            <span className="text-xs">{t("sidebar.redo")}</span>
+          </div>
+          <div className="text-[9px] text-muted-foreground uppercase text-center w-full">⌘ ⇧ Z / ⌘ Y</div>
         </Button>
       </div>
 

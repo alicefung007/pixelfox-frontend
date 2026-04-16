@@ -1,21 +1,20 @@
-import { useState } from "react";
-import { Outlet } from "react-router-dom";
+import { useState, useCallback } from "react";
+import { Outlet, useLocation } from "react-router-dom";
 import Navbar from "./Navbar";
-import Sidebar from "./Sidebar";
-import UploadPhotoDialog from "@/components/editor/UploadPhotoDialog";
-import Preview3DDialog from "@/components/editor/Preview3DDialog";
 import { useEditorStore } from "@/store/useEditorStore";
 import { usePaletteStore } from "@/store/usePaletteStore";
 import type { ColorMatchResult } from "@/lib/image-processor";
 import type { SystemPaletteId } from "@/lib/palettes";
 
 export default function AppLayout() {
+  const location = useLocation();
+  const isEditorPage = location.pathname === "/";
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [preview3DOpen, setPreview3DOpen] = useState(false);
+
   const { setPixels, setSize, saveHistory, uploadOpen, setUploadOpen } = useEditorStore();
   const { setCurrentPaletteId, setActiveTab, flashUsedTab } = usePaletteStore();
 
-  const handleGenerate = (result: ColorMatchResult, paletteId: SystemPaletteId) => {
+  const handleGenerate = useCallback((result: ColorMatchResult, paletteId: SystemPaletteId) => {
     const pixels: Record<string, string> = {};
     const { imageData, width, height } = result;
 
@@ -38,24 +37,20 @@ export default function AppLayout() {
       setActiveTab("used");
       flashUsedTab();
     }, 350);
-  };
+  }, [setPixels, setSize, saveHistory, setCurrentPaletteId, setActiveTab, flashUsedTab]);
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-background">
-      <Navbar onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar
-          isOpen={sidebarOpen}
-          onClose={() => setSidebarOpen(false)}
-          onUpload={() => setUploadOpen(true)}
-          onPreview3D={() => setPreview3DOpen(true)}
-        />
-        <main className="flex-1 flex flex-col relative overflow-hidden">
-          <Outlet />
-        </main>
-      </div>
-      <UploadPhotoDialog open={uploadOpen} onOpenChange={setUploadOpen} onGenerate={handleGenerate} />
-      <Preview3DDialog open={preview3DOpen} onOpenChange={setPreview3DOpen} />
+      <Navbar onMenuClick={isEditorPage ? () => setSidebarOpen(!sidebarOpen) : undefined} />
+      <main className="flex-1 flex flex-col relative overflow-hidden">
+        <Outlet context={{
+          sidebarOpen,
+          setSidebarOpen,
+          uploadOpen,
+          setUploadOpen,
+          handleGenerate
+        }} />
+      </main>
     </div>
   );
 }

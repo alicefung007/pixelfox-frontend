@@ -51,14 +51,16 @@ export default function Navbar({ onMenuClick }: Props) {
   return (
     <nav className="h-14 sm:h-16 border-b flex items-center justify-between px-3 sm:px-4 bg-background z-50">
       <div className="flex items-center gap-2 sm:gap-4 md:gap-8">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-muted-foreground h-9 w-9 md:hidden"
-          onClick={onMenuClick}
-        >
-          <Menu className="h-5 w-5" />
-        </Button>
+        {onMenuClick && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-muted-foreground h-9 w-9 md:hidden"
+            onClick={onMenuClick}
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+        )}
 
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 sm:w-8 sm:h-8 bg-primary rounded flex items-center justify-center text-white font-bold text-[10px] sm:text-xs">PX</div>

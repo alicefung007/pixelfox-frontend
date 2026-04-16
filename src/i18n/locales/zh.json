@@ -110,6 +110,14 @@
       "currentEditorPalette": "当前编辑器调色板",
       "colorMerging": "颜色合并",
       "colorMergeThreshold": "颜色合并阈值"
+    },
+    "preview3d": {
+      "description": "旋转、缩放并以 3D 视角检查你的作品。",
+      "empty": "画布为空",
+      "shapeCylinder": "圆柱体",
+      "shapeRoundedCube": "圆角方块",
+      "pauseRotation": "暂停",
+      "resumeRotation": "旋转"
     }
   }
 }
