@@ -245,6 +245,7 @@ export default function Preview3DDialog({ open, onOpenChange }: Props) {
                 </div>
               </div>
               <Canvas
+              key={beadShape}
               shadows
               gl={{ alpha: true }}
               camera={{ position: [0, 0, cameraDist], fov: 40, near: 0.1, far: cameraDist * 10 }}
