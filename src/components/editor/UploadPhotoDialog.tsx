@@ -62,6 +62,7 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
   const scrollRef = useRef<HTMLDivElement>(null);
   const imageContainerRef = useRef<HTMLDivElement>(null);
   const resultCanvasRef = useRef<HTMLCanvasElement>(null);
+  const widthBeadsRef = useRef(widthBeads);
 
   // Image transform state
   const [scale, setScale] = useState(1);
@@ -82,6 +83,8 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
 
   // Image rotation state (0, 90, 180, 270)
   const [rotation, setRotation] = useState(0);
+
+  widthBeadsRef.current = widthBeads;
 
   const getTouchDistance = (touches: React.TouchList) => {
     if (touches.length < 2) return 0;
@@ -221,6 +224,23 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
       if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
     };
   }, [imagePreviewUrl]);
+
+  // When a non-square image is uploaded, unlock aspect ratio and set height proportionally based on width
+  useEffect(() => {
+    if (!selectedFile) return;
+    const url = URL.createObjectURL(selectedFile);
+    const img = new Image();
+    img.onload = () => {
+      if (img.width !== img.height) {
+        setAspectRatioLocked(false);
+        const currentWidth = parseInt(widthBeadsRef.current, 10) || 60;
+        const newHeight = Math.round(currentWidth * (img.height / img.width));
+        setHeightBeads(String(clamp(newHeight, 1, 200)));
+      }
+      URL.revokeObjectURL(url);
+    };
+    img.src = url;
+  }, [selectedFile]);
 
   const selectedPalette = useMemo(
     () => SYSTEM_PALETTES.find((p) => p.id === colorPaletteId) ?? SYSTEM_PALETTES[0],

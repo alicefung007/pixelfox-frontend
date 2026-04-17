@@ -77,8 +77,11 @@ export default function PalettePanel() {
             <Settings size={14} />
             <span className="text-xs">{t("palette.manage")}</span>
           </Button>
-          <div className="bg-primary/10 dark:bg-primary/20 text-primary text-[10px] font-bold px-2 py-0.5 rounded border border-primary/20 uppercase tracking-wider shrink-0">
-            {palette.i18nKey ? t(palette.i18nKey) : palette.name}
+          <div className="bg-primary/10 dark:bg-primary/20 text-primary px-2 py-1 rounded-md border border-primary/20 shrink-0 flex flex-col items-center gap-0.5">
+            <span className="text-[11px] font-semibold leading-none">
+              {palette.i18nKey ? t(palette.i18nKey) : palette.name}
+            </span>
+            <span className="text-[9px] text-primary/60 leading-none">Current Palette</span>
           </div>
         </div>
 
