@@ -26,7 +26,7 @@ export default function PalettePanel() {
   const { t } = useTranslation();
   const { primaryColor, setColor } = useEditorStore();
   const committedPixels = useEditorStore((s) => s.history[s.historyIndex]?.pixels ?? s.pixels);
-  const { currentPaletteId, recentColors, setCurrentPaletteId, activeTab: tab, setActiveTab: setTab, usedTabFlashAt } = usePaletteStore();
+  const { currentPaletteId, recentColors, setCurrentPaletteId, activeTab: tab, setActiveTab: setTab, selectedUsedColor, setSelectedUsedColor, usedTabFlashAt } = usePaletteStore();
   const [isManageOpen, setIsManageOpen] = useState(false);
   const [isUsedFlashing, setIsUsedFlashing] = useState(false);
 
@@ -61,6 +61,14 @@ export default function PalettePanel() {
     if (tab === "used") return canvasUsedColors.map((c) => ({ label: getLabelFromColor(c, palette.swatches), color: c }));
     return recentColors.map((c) => ({ label: getLabelFromColor(c, palette.swatches), color: c }));
   }, [palette.swatches, recentColors, canvasUsedColors, tab]);
+
+  useEffect(() => {
+    if (!selectedUsedColor) return;
+    const hasSelection = canvasUsedColors.some((color) => normalizeHex(color) === normalizeHex(selectedUsedColor));
+    if (!hasSelection) {
+      setSelectedUsedColor(null);
+    }
+  }, [canvasUsedColors, selectedUsedColor, setSelectedUsedColor]);
 
   return (
     <div className="h-full bg-background flex flex-col overflow-hidden shadow-sm">
@@ -119,10 +127,28 @@ export default function PalettePanel() {
               <button
                 className={cn(
                   "w-full aspect-square rounded-md border-2 relative flex items-center justify-center",
-                  primaryColor === swatch.color ? "border-primary" : "border-gray-400/20"
+                  tab === "used" && selectedUsedColor && normalizeHex(selectedUsedColor) === normalizeHex(swatch.color)
+                    ? "border-primary ring-2 ring-primary/25"
+                    : primaryColor === swatch.color
+                      ? "border-primary"
+                      : "border-gray-400/20"
                 )}
                 style={{ backgroundColor: swatch.color }}
-                onClick={() => setColor(swatch.color)}
+                onClick={() => {
+                  setColor(swatch.color);
+                  if (tab === "used") {
+                    const normalizedSwatch = normalizeHex(swatch.color);
+                    setSelectedUsedColor(
+                      selectedUsedColor && normalizeHex(selectedUsedColor) === normalizedSwatch
+                        ? null
+                        : normalizedSwatch
+                    );
+                    return;
+                  }
+                  if (selectedUsedColor) {
+                    setSelectedUsedColor(null);
+                  }
+                }}
               >
                 <span className={cn(
                   "text-[8px] sm:text-[9px] md:text-[10px] font-bold transition-colors",

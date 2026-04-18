@@ -4,14 +4,14 @@ import { usePaletteStore } from '@/store/usePaletteStore';
 import { Minus, Plus, Maximize, Pencil, PaintBucket, Eraser, Pipette, Brush } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/components/theme-provider';
-import { clampZoom, getLinePoints } from '@/lib/utils';
+import { clampZoom, getLinePoints, normalizeHex } from '@/lib/utils';
 import { EDITOR_CONFIG, CANVAS_CONFIG, CURSOR_CONFIG } from '@/lib/constants';
 
 
 export default function PixelCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const { pixels, width, height, backgroundColor, zoom, setPixel, clearPixel, setPixels, currentTool, primaryColor, setZoom, saveHistory, undo, redo } = useEditorStore();
+  const { pixels, width, height, backgroundColor, zoom, setPixel, clearPixel, setPixels, currentTool, primaryColor, setZoom, saveHistory } = useEditorStore();
   const [isAutoZoom, setIsAutoZoom] = useState(true);
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
   const [viewOffset, setViewOffset] = useState({ x: 0, y: 0 });
@@ -24,6 +24,7 @@ export default function PixelCanvas() {
   const [cursorOverlay, setCursorOverlay] = useState<{ x: number; y: number; visible: boolean }>({ x: 0, y: 0, visible: false });
   const cursorRafRef = useRef<number | null>(null);
   const cursorPendingRef = useRef<{ x: number; y: number; visible: boolean }>(cursorOverlay);
+  const [primaryThemeColor, setPrimaryThemeColor] = useState('oklch(0.68 0.19 48)');
   const { theme } = useTheme();
   const [systemTheme, setSystemTheme] = useState<'dark' | 'light'>(() => {
     if (typeof window === 'undefined' || !('matchMedia' in window)) return 'light';
@@ -51,6 +52,12 @@ export default function PixelCanvas() {
     mediaQuery.addEventListener('change', handleChange);
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, [theme]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const nextPrimary = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
+    if (nextPrimary) setPrimaryThemeColor(nextPrimary);
+  }, [theme, systemTheme]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -106,8 +113,7 @@ export default function PixelCanvas() {
     setViewOffset({ x, y });
   }, [isAutoZoom, viewportSize.width, viewportSize.height, zoom, width, height]);
 
-
-  const { addUsedColor, addRecentColor } = usePaletteStore();
+  const { addUsedColor, addRecentColor, selectedUsedColor } = usePaletteStore();
   const [isDrawing, setIsDrawing] = useState(false);
   const [lastCoords, setLastCoords] = useState<{ x: number, y: number } | null>(null);
 
@@ -157,6 +163,22 @@ export default function PixelCanvas() {
     });
 
     const effectiveScale = dpr * scale;
+
+    if (selectedUsedColor) {
+      const normalizedSelectedColor = normalizeHex(selectedUsedColor);
+      const insetWidth = Math.min(0.18, 2 / effectiveScale);
+      ctx.strokeStyle = primaryThemeColor;
+      ctx.lineWidth = Math.max(1 / effectiveScale, insetWidth);
+
+      Object.entries(pixels).forEach(([key, color]) => {
+        if (normalizeHex(color) !== normalizedSelectedColor) return;
+        const [x, y] = key.split(',').map(Number);
+        const insetOffset = ctx.lineWidth / 2;
+        const insetSize = Math.max(1 - ctx.lineWidth, 0);
+        ctx.strokeRect(x + insetOffset, y + insetOffset, insetSize, insetSize);
+      });
+    }
+
     const gridLineWidth = CANVAS_CONFIG.GRID_LINE_WIDTH / effectiveScale;
     const bold5LineWidth = (CANVAS_CONFIG.BOLD_LINE_WIDTH * CANVAS_CONFIG.GRID_LINE_WIDTH) / effectiveScale;
     const bold10LineWidth = (CANVAS_CONFIG.MAJOR_LINE_WIDTH * CANVAS_CONFIG.GRID_LINE_WIDTH) / effectiveScale;
@@ -210,7 +232,7 @@ export default function PixelCanvas() {
     ctx.strokeRect(0, 0, width, height);
 
     ctx.restore();
-  }, [pixels, width, height, zoom, viewOffset.x, viewOffset.y, viewportSize.width, viewportSize.height, theme, systemTheme, backgroundColor]);
+  }, [pixels, width, height, zoom, viewOffset.x, viewOffset.y, viewportSize.width, viewportSize.height, theme, systemTheme, backgroundColor, selectedUsedColor, primaryThemeColor]);
 
   const getCoordinates = (e: React.MouseEvent) => {
     const canvas = canvasRef.current;
