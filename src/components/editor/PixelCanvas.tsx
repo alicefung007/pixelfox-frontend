@@ -12,6 +12,7 @@ export default function PixelCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const { pixels, width, height, backgroundColor, zoom, setPixel, clearPixel, setPixels, currentTool, primaryColor, setZoom, saveHistory } = useEditorStore();
+  const { addUsedColor, addRecentColor, selectedUsedColor } = usePaletteStore();
   const [isAutoZoom, setIsAutoZoom] = useState(true);
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
   const [viewOffset, setViewOffset] = useState({ x: 0, y: 0 });
@@ -112,8 +113,6 @@ export default function PixelCanvas() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setViewOffset({ x, y });
   }, [isAutoZoom, viewportSize.width, viewportSize.height, zoom, width, height]);
-
-  const { addUsedColor, addRecentColor, selectedUsedColor } = usePaletteStore();
   const [isDrawing, setIsDrawing] = useState(false);
   const [lastCoords, setLastCoords] = useState<{ x: number, y: number } | null>(null);
 
@@ -166,17 +165,29 @@ export default function PixelCanvas() {
 
     if (selectedUsedColor) {
       const normalizedSelectedColor = normalizeHex(selectedUsedColor);
-      const insetWidth = Math.min(0.18, 2 / effectiveScale);
-      ctx.strokeStyle = primaryThemeColor;
-      ctx.lineWidth = Math.max(1 / effectiveScale, insetWidth);
+      const outlineWidth = Math.max(1 / effectiveScale, 0.16);
+      const glowInset = outlineWidth / 2;
+      const glowSize = Math.max(1 - outlineWidth, 0);
 
+      ctx.save();
+      ctx.strokeStyle = primaryThemeColor;
+      ctx.lineWidth = outlineWidth;
       Object.entries(pixels).forEach(([key, color]) => {
         if (normalizeHex(color) !== normalizedSelectedColor) return;
         const [x, y] = key.split(',').map(Number);
-        const insetOffset = ctx.lineWidth / 2;
-        const insetSize = Math.max(1 - ctx.lineWidth, 0);
-        ctx.strokeRect(x + insetOffset, y + insetOffset, insetSize, insetSize);
+        ctx.strokeRect(x + glowInset, y + glowInset, glowSize, glowSize);
       });
+      ctx.restore();
+
+      ctx.save();
+      ctx.fillStyle = primaryThemeColor;
+      ctx.globalAlpha = 0.14;
+      Object.entries(pixels).forEach(([key, color]) => {
+        if (normalizeHex(color) !== normalizedSelectedColor) return;
+        const [x, y] = key.split(',').map(Number);
+        ctx.fillRect(x + 0.12, y + 0.12, 0.76, 0.76);
+      });
+      ctx.restore();
     }
 
     const gridLineWidth = CANVAS_CONFIG.GRID_LINE_WIDTH / effectiveScale;
