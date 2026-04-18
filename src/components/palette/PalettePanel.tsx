@@ -2,11 +2,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { PaletteTabId } from "@/store/usePaletteStore";
 import { useTranslation } from "react-i18next";
 import {
-  Palette,
+  CheckCircle2,
   Settings,
-  Grid,
-  History,
-  Shapes,
+  SwatchBook,
   TriangleAlert,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -35,7 +33,7 @@ export default function PalettePanel() {
   const { t } = useTranslation();
   const { primaryColor, setColor, clear } = useEditorStore();
   const committedPixels = useEditorStore((s) => s.history[s.historyIndex]?.pixels ?? s.pixels);
-  const { currentPaletteId, recentColors, setCurrentPaletteId, activeTab: tab, setActiveTab: setTab, selectedUsedColor, setSelectedUsedColor, usedTabFlashAt } = usePaletteStore();
+  const { currentPaletteId, setCurrentPaletteId, activeTab: tab, setActiveTab: setTab, selectedUsedColor, setSelectedUsedColor, usedTabFlashAt } = usePaletteStore();
   const [isManageOpen, setIsManageOpen] = useState(false);
   const [isUsedFlashing, setIsUsedFlashing] = useState(false);
   const [pendingPaletteId, setPendingPaletteId] = useState<SystemPaletteId | null>(null);
@@ -46,6 +44,12 @@ export default function PalettePanel() {
     const timer = setTimeout(() => setIsUsedFlashing(false), 900);
     return () => clearTimeout(timer);
   }, [usedTabFlashAt]);
+
+  useEffect(() => {
+    if (tab === "recent") {
+      setTab("all");
+    }
+  }, [tab, setTab]);
 
   const palette = getSystemPalette(currentPaletteId)!;
 
@@ -68,9 +72,8 @@ export default function PalettePanel() {
 
   const visibleSwatches = useMemo((): PaletteSwatch[] => {
     if (tab === "all") return palette.swatches;
-    if (tab === "used") return canvasUsedColors.map((c) => ({ label: getLabelFromColor(c, palette.swatches), color: c }));
-    return recentColors.map((c) => ({ label: getLabelFromColor(c, palette.swatches), color: c }));
-  }, [palette.swatches, recentColors, canvasUsedColors, tab]);
+    return canvasUsedColors.map((c) => ({ label: getLabelFromColor(c, palette.swatches), color: c }));
+  }, [palette.swatches, canvasUsedColors, tab]);
 
   const pendingPalette = useMemo(
     () => (pendingPaletteId ? getSystemPalette(pendingPaletteId) : null),
@@ -103,7 +106,7 @@ export default function PalettePanel() {
     <div className="h-full bg-background flex flex-col overflow-hidden shadow-sm">
       <div className="flex items-center justify-between gap-2 shrink-0 px-3 sm:px-4 py-2 overflow-x-auto">
         <div className="flex items-center gap-2 shrink-0">
-          <Palette size={16} className="text-muted-foreground" />
+          <SwatchBook size={16} className="text-muted-foreground" />
           <span className="text-sm font-medium text-muted-foreground hidden sm:inline">{t("palette.palette")}</span>
           <Button
             variant="outline"
@@ -131,15 +134,11 @@ export default function PalettePanel() {
                 isUsedFlashing && "ring-2 ring-primary ring-offset-1 ring-offset-background scale-110"
               )}
             >
-              <Grid size={12} />
+              <CheckCircle2 size={12} />
               <span className="hidden sm:inline">{t("palette.usedColors")}</span>
             </TabsTrigger>
-            <TabsTrigger value="recent" className="text-[10px] h-6 px-2 sm:px-3 gap-1 cursor-pointer">
-              <History size={12} />
-              <span className="hidden sm:inline">{t("palette.recent")}</span>
-            </TabsTrigger>
             <TabsTrigger value="all" className="text-[10px] h-6 px-2 sm:px-3 gap-1 cursor-pointer">
-              <Shapes size={12} />
+              <SwatchBook size={12} />
               <span className="hidden sm:inline">{t("palette.allColors")}</span>
             </TabsTrigger>
           </TabsList>
@@ -149,7 +148,7 @@ export default function PalettePanel() {
       <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-2 mt-1">
         <div
           key={tab}
-          className="grid grid-cols-7 gap-2 sm:gap-3 py-1 sm:[grid-template-columns:repeat(auto-fill,minmax(52px,1fr))] animate-in fade-in-50 slide-in-from-bottom-2 duration-300"
+          className="grid grid-cols-7 gap-2 sm:gap-3 py-1 sm:[grid-template-columns:repeat(auto-fill,minmax(52px,1fr))]"
         >
           {visibleSwatches.map((swatch, i) => (
             <div key={i} className="flex flex-col items-center gap-1 p-0.5 sm:p-1 transition-transform hover:scale-105 active:scale-95">
@@ -282,11 +281,16 @@ export default function PalettePanel() {
           </div>
 
           <DialogFooter className="border-t border-border/60 bg-muted/20 px-6 py-4">
-            <Button variant="outline" onClick={() => setPendingPaletteId(null)}>
+            <Button
+              variant="outline"
+              className="h-auto min-h-9 px-4 py-2"
+              onClick={() => setPendingPaletteId(null)}
+            >
               {t("palette.changeConfirmCancel")}
             </Button>
             <Button
               variant="destructive"
+              className="h-auto min-h-9 flex-col gap-0.5 px-4 py-2 leading-tight"
               onClick={() => {
                 if (!pendingPaletteId) return;
                 clear();
@@ -297,7 +301,10 @@ export default function PalettePanel() {
                 setIsManageOpen(false);
               }}
             >
-              {t("palette.changeConfirmContinue")}
+              <span>{t("palette.changeConfirmContinue")}</span>
+              <span className="text-[11px] opacity-90">
+                {t("palette.changeConfirmContinueHint")}
+              </span>
             </Button>
           </DialogFooter>
         </DialogContent>

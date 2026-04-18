@@ -42,6 +42,7 @@
     "changeConfirmMore": "还有 {{count}} 个",
     "changeConfirmCancel": "暂不切换",
     "changeConfirmContinue": "继续切换",
+    "changeConfirmContinueHint": "将会清空图案",
     "mard": "MARD (全部)",
     "mard24": "MARD 24",
     "mard221": "MARD 221",

@@ -42,6 +42,7 @@
     "changeConfirmMore": "他 {{count}} 色",
     "changeConfirmCancel": "今は切り替えない",
     "changeConfirmContinue": "切り替える",
+    "changeConfirmContinueHint": "図案はクリアされます",
     "mard": "MARD (全て)",
     "mard24": "MARD 24",
     "mard221": "MARD 221",

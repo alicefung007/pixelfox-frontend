@@ -42,6 +42,7 @@
     "changeConfirmMore": "+{{count}} more",
     "changeConfirmCancel": "Not Now",
     "changeConfirmContinue": "Switch Palette",
+    "changeConfirmContinueHint": "This will clear the pattern",
     "mard": "MARD (ALL)",
     "mard24": "MARD 24",
     "mard221": "MARD 221",

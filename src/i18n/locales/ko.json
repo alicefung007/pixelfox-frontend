@@ -42,6 +42,7 @@
     "changeConfirmMore": "+{{count}}개 더",
     "changeConfirmCancel": "지금은 전환 안 함",
     "changeConfirmContinue": "전환하기",
+    "changeConfirmContinueHint": "도안이 지워집니다",
     "mard": "MARD (전체)",
     "mard24": "MARD 24",
     "mard221": "MARD 221",
