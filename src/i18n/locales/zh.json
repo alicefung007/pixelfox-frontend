@@ -94,6 +94,7 @@
       "originalImage": "原始图片",
       "flipHorizontal": "水平翻转",
       "flipVertical": "垂直翻转",
+      "trimEdges": "清理无用边",
       "rotate": "旋转",
       "resetTransform": "重置",
       "patternPreview": "图案预览",

@@ -94,6 +94,7 @@
       "originalImage": "オリジナル画像",
       "flipHorizontal": "水平反転",
       "flipVertical": "垂直反転",
+      "trimEdges": "余白をトリミング",
       "rotate": "回転",
       "resetTransform": "リセット",
       "patternPreview": "パターンプレビュー",

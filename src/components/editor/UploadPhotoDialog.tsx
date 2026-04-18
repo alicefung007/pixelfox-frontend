@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { X, Sparkles, Link, Unlink, Check, ChevronsUpDown, Upload, FlipHorizontal, FlipVertical } from "lucide-react";
+import { X, Sparkles, Link, Unlink, Check, ChevronsUpDown, Upload, FlipHorizontal, FlipVertical, Crop } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -36,12 +36,136 @@ type Props = {
   onGenerate: (result: ColorMatchResult, paletteId: SystemPaletteId) => void;
 };
 
+function trimColorMatchResult(result: ColorMatchResult): ColorMatchResult {
+  if (result.width <= 1 || result.height <= 1) {
+    return result;
+  }
+
+  const { imageData, width, height } = result;
+  const data = imageData.data;
+  const cornerOffsets = [
+    0,
+    (width - 1) * 4,
+    ((height - 1) * width) * 4,
+    ((height * width) - 1) * 4,
+  ];
+
+  const counts = new Map<string, number>();
+  cornerOffsets.forEach((offset) => {
+    const key = `${data[offset]},${data[offset + 1]},${data[offset + 2]},${data[offset + 3]}`;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  });
+
+  let backgroundColor = `${data[0]},${data[1]},${data[2]},${data[3]}`;
+  let maxCount = 0;
+  counts.forEach((count, key) => {
+    if (count > maxCount) {
+      backgroundColor = key;
+      maxCount = count;
+    }
+  });
+
+  const [bgR, bgG, bgB, bgA] = backgroundColor.split(",").map(Number);
+  const isBackground = (x: number, y: number) => {
+    const offset = (y * width + x) * 4;
+    return (
+      data[offset] === bgR &&
+      data[offset + 1] === bgG &&
+      data[offset + 2] === bgB &&
+      data[offset + 3] === bgA
+    );
+  };
+
+  let top = 0;
+  while (top < height) {
+    let allBackground = true;
+    for (let x = 0; x < width; x += 1) {
+      if (!isBackground(x, top)) {
+        allBackground = false;
+        break;
+      }
+    }
+    if (!allBackground) break;
+    top += 1;
+  }
+
+  let bottom = height - 1;
+  while (bottom >= top) {
+    let allBackground = true;
+    for (let x = 0; x < width; x += 1) {
+      if (!isBackground(x, bottom)) {
+        allBackground = false;
+        break;
+      }
+    }
+    if (!allBackground) break;
+    bottom -= 1;
+  }
+
+  let left = 0;
+  while (left < width) {
+    let allBackground = true;
+    for (let y = top; y <= bottom; y += 1) {
+      if (!isBackground(left, y)) {
+        allBackground = false;
+        break;
+      }
+    }
+    if (!allBackground) break;
+    left += 1;
+  }
+
+  let right = width - 1;
+  while (right >= left) {
+    let allBackground = true;
+    for (let y = top; y <= bottom; y += 1) {
+      if (!isBackground(right, y)) {
+        allBackground = false;
+        break;
+      }
+    }
+    if (!allBackground) break;
+    right -= 1;
+  }
+
+  if (top === 0 && bottom === height - 1 && left === 0 && right === width - 1) {
+    return result;
+  }
+
+  const trimmedWidth = right - left + 1;
+  const trimmedHeight = bottom - top + 1;
+  if (trimmedWidth <= 0 || trimmedHeight <= 0) {
+    return result;
+  }
+
+  const trimmedImageData = new ImageData(trimmedWidth, trimmedHeight);
+  for (let y = 0; y < trimmedHeight; y += 1) {
+    for (let x = 0; x < trimmedWidth; x += 1) {
+      const srcOffset = ((top + y) * width + left + x) * 4;
+      const dstOffset = (y * trimmedWidth + x) * 4;
+      trimmedImageData.data[dstOffset] = data[srcOffset];
+      trimmedImageData.data[dstOffset + 1] = data[srcOffset + 1];
+      trimmedImageData.data[dstOffset + 2] = data[srcOffset + 2];
+      trimmedImageData.data[dstOffset + 3] = data[srcOffset + 3];
+    }
+  }
+
+  return {
+    ...result,
+    imageData: trimmedImageData,
+    width: trimmedWidth,
+    height: trimmedHeight,
+    beadCount: trimmedWidth * trimmedHeight,
+  };
+}
+
 export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Props) {
   const { t } = useTranslation();
   
   // Pattern size beads (1-200)
   const [widthBeads, setWidthBeads] = useState("60");
   const [heightBeads, setHeightBeads] = useState("60");
+  const [processingDimensions, setProcessingDimensions] = useState({ width: "60", height: "60" });
   const [aspectRatioLocked, setAspectRatioLocked] = useState(true);
 
   // Offset values (-200 to 200)
@@ -60,22 +184,8 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
   const [processedResult, setProcessedResult] = useState<ColorMatchResult | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const imageContainerRef = useRef<HTMLDivElement>(null);
   const resultCanvasRef = useRef<HTMLCanvasElement>(null);
-  const widthBeadsRef = useRef(widthBeads);
-
-  // Image transform state
-  const [scale, setScale] = useState(1);
-  const [translate, setTranslate] = useState({ x: 0, y: 0 });
-  const [isDraggingImage, setIsDraggingImage] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const gestureRef = useRef(false);
-  const gestureStartRef = useRef<{
-    distance: number;
-    midpoint: { x: number; y: number };
-    scale: number;
-    translate: { x: number; y: number };
-  } | null>(null);
+  const widthBeadsRef = useRef(processingDimensions.width);
 
   // Image flip state
   const [flipHorizontal, setFlipHorizontal] = useState(false);
@@ -83,127 +193,9 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
 
   // Image rotation state (0, 90, 180, 270)
   const [rotation, setRotation] = useState(0);
+  const [trimEdges, setTrimEdges] = useState(false);
 
-  widthBeadsRef.current = widthBeads;
-
-  const getTouchDistance = (touches: React.TouchList) => {
-    if (touches.length < 2) return 0;
-    const dx = touches[0].clientX - touches[1].clientX;
-    const dy = touches[0].clientY - touches[1].clientY;
-    return Math.sqrt(dx * dx + dy * dy);
-  };
-
-  const getTouchMidpoint = (touches: React.TouchList) => {
-    if (touches.length < 2) return { x: 0, y: 0 };
-    return {
-      x: (touches[0].clientX + touches[1].clientX) / 2,
-      y: (touches[0].clientY + touches[1].clientY) / 2,
-    };
-  };
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (e.touches.length >= 2) {
-      gestureRef.current = true;
-      const container = imageContainerRef.current;
-      if (container) {
-        const rect = container.getBoundingClientRect();
-        gestureStartRef.current = {
-          distance: getTouchDistance(e.touches),
-          midpoint: {
-            x: getTouchMidpoint(e.touches).x - rect.left,
-            y: getTouchMidpoint(e.touches).y - rect.top,
-          },
-          scale: scale,
-          translate: { x: translate.x, y: translate.y },
-        };
-      }
-      return;
-    }
-    setIsDraggingImage(true);
-    setDragStart({ x: e.touches[0].clientX - translate.x, y: e.touches[0].clientY - translate.y });
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (gestureRef.current && e.touches.length >= 2) {
-      const start = gestureStartRef.current;
-      if (!start) return;
-
-      const container = imageContainerRef.current;
-      if (!container) return;
-
-      const rect = container.getBoundingClientRect();
-      const currentDistance = getTouchDistance(e.touches);
-      const currentMidpoint = getTouchMidpoint(e.touches);
-      const screenMidpoint = {
-        x: currentMidpoint.x - rect.left,
-        y: currentMidpoint.y - rect.top,
-      };
-
-      if (currentDistance > 0 && start.distance > 0) {
-        const scaleDelta = currentDistance / start.distance;
-        const newScale = Math.max(0.5, Math.min(3, start.scale * scaleDelta));
-        setScale(newScale);
-
-        const dx = screenMidpoint.x - start.midpoint.x;
-        const dy = screenMidpoint.y - start.midpoint.y;
-
-        const startScale = start.scale;
-        const worldX = (start.midpoint.x - start.translate.x) / startScale;
-        const worldY = (start.midpoint.y - start.translate.y) / startScale;
-
-        setTranslate({
-          x: screenMidpoint.x - worldX * newScale + dx,
-          y: screenMidpoint.y - worldY * newScale + dy,
-        });
-      }
-      return;
-    }
-
-    if (!isDraggingImage || e.touches.length !== 1) return;
-    setTranslate({
-      x: e.touches[0].clientX - dragStart.x,
-      y: e.touches[0].clientY - dragStart.y,
-    });
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (e.touches.length < 2) {
-      gestureRef.current = false;
-      gestureStartRef.current = null;
-    }
-    if (e.touches.length === 0) {
-      setIsDraggingImage(false);
-    }
-  };
-
-  // Mouse drag handlers
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (e.button !== 0) return;
-    setIsDraggingImage(true);
-    setDragStart({ x: e.clientX - translate.x, y: e.clientY - translate.y });
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDraggingImage) return;
-    setTranslate({
-      x: e.clientX - dragStart.x,
-      y: e.clientY - dragStart.y,
-    });
-  };
-
-  const handleMouseUp = () => {
-    setIsDraggingImage(false);
-  };
-
-  const handleWheel = (e: React.WheelEvent) => {
-    const delta = e.deltaY > 0 ? -0.1 : 0.1;
-    setScale((prev) => Math.max(0.5, Math.min(3, prev + delta)));
-  };
-
-  const resetTransform = () => {
-    setScale(1);
-    setTranslate({ x: 0, y: 0 });
-  };
+  widthBeadsRef.current = processingDimensions.width;
 
   // Truncate filename with ellipsis in the middle
   const truncateFilename = (name: string) => {
@@ -235,7 +227,9 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
         setAspectRatioLocked(false);
         const currentWidth = parseInt(widthBeadsRef.current, 10) || 60;
         const newHeight = Math.round(currentWidth * (img.height / img.width));
-        setHeightBeads(String(clamp(newHeight, 1, 200)));
+        const nextHeight = String(clamp(newHeight, 1, 200));
+        setHeightBeads(nextHeight);
+        setProcessingDimensions((prev) => ({ ...prev, height: nextHeight }));
       }
       URL.revokeObjectURL(url);
     };
@@ -305,8 +299,8 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
         const poolSize = colorMerging ? colorMergeThreshold[0] : 1;
 
         const result = await convertImageToPixelArt(processedImg, selectedPalette, {
-          width: (parseInt(widthBeads, 10) || 60) * poolSize,
-          height: (parseInt(heightBeads, 10) || 60) * poolSize,
+          width: (parseInt(processingDimensions.width, 10) || 60) * poolSize,
+          height: (parseInt(processingDimensions.height, 10) || 60) * poolSize,
           poolSize,
           ciede2000Threshold: colorMerging ? colorMergeThreshold[0] : 0,
         });
@@ -320,20 +314,48 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
     };
 
     processImage();
-  }, [imagePreviewUrl, selectedPalette, widthBeads, heightBeads, colorMergeThreshold, flipHorizontal, flipVertical, rotation]);
+  }, [imagePreviewUrl, selectedPalette, processingDimensions.width, processingDimensions.height, colorMergeThreshold, flipHorizontal, flipVertical, rotation]);
+
+  const effectiveResult = useMemo(
+    () => (processedResult && trimEdges ? trimColorMatchResult(processedResult) : processedResult),
+    [processedResult, trimEdges]
+  );
 
   useEffect(() => {
-    if (!processedResult) return;
+    if (!trimEdges) {
+      if (widthBeads !== processingDimensions.width) {
+        setWidthBeads(processingDimensions.width);
+      }
+      if (heightBeads !== processingDimensions.height) {
+        setHeightBeads(processingDimensions.height);
+      }
+      return;
+    }
+
+    if (!effectiveResult) return;
+
+    const nextWidth = String(effectiveResult.width);
+    const nextHeight = String(effectiveResult.height);
+    if (widthBeads !== nextWidth) {
+      setWidthBeads(nextWidth);
+    }
+    if (heightBeads !== nextHeight) {
+      setHeightBeads(nextHeight);
+    }
+  }, [trimEdges, effectiveResult, processingDimensions.width, processingDimensions.height, widthBeads, heightBeads]);
+
+  useEffect(() => {
+    if (!effectiveResult) return;
     const canvas = resultCanvasRef.current;
     if (!canvas) return;
 
-    canvas.width = processedResult.width;
-    canvas.height = processedResult.height;
+    canvas.width = effectiveResult.width;
+    canvas.height = effectiveResult.height;
     const ctx = canvas.getContext("2d");
     if (ctx) {
-      ctx.putImageData(processedResult.imageData, 0, 0);
+      ctx.putImageData(effectiveResult.imageData, 0, 0);
     }
-  }, [processedResult]);
+  }, [effectiveResult]);
 
   // Clamp beads value between 1-200
   const clampBeads = (val: string) => {
@@ -356,14 +378,18 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
     setWidthBeads(clamped);
     if (aspectRatioLocked && clamped !== "") {
       const newWidth = parseInt(clamped, 10);
-      const currentHeight = parseInt(heightBeads, 10) || 1;
-      const currentWidth = parseInt(widthBeads, 10) || 1;
+      const currentHeight = parseInt(processingDimensions.height, 10) || 1;
+      const currentWidth = parseInt(processingDimensions.width, 10) || 1;
       if (currentWidth > 0) {
         const ratio = currentHeight / currentWidth;
         const newHeight = Math.round(newWidth * ratio);
-        setHeightBeads(String(clamp(newHeight, 1, 200)));
+        const nextHeight = String(clamp(newHeight, 1, 200));
+        setHeightBeads(nextHeight);
+        setProcessingDimensions({ width: clamped, height: nextHeight });
+        return;
       }
     }
+    setProcessingDimensions((prev) => ({ ...prev, width: clamped }));
   };
 
   const handleHeightBeadsChange = (val: string) => {
@@ -371,14 +397,18 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
     setHeightBeads(clamped);
     if (aspectRatioLocked && clamped !== "") {
       const newHeight = parseInt(clamped, 10);
-      const currentHeight = parseInt(heightBeads, 10) || 1;
-      const currentWidth = parseInt(widthBeads, 10) || 1;
+      const currentHeight = parseInt(processingDimensions.height, 10) || 1;
+      const currentWidth = parseInt(processingDimensions.width, 10) || 1;
       if (currentHeight > 0) {
         const ratio = currentWidth / currentHeight;
         const newWidth = Math.round(newHeight * ratio);
-        setWidthBeads(String(clamp(newWidth, 1, 200)));
+        const nextWidth = String(clamp(newWidth, 1, 200));
+        setWidthBeads(nextWidth);
+        setProcessingDimensions({ width: nextWidth, height: clamped });
+        return;
       }
     }
+    setProcessingDimensions((prev) => ({ ...prev, height: clamped }));
   };
 
   return (
@@ -650,6 +680,7 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
                         onClick={() => {
                           if (!aspectRatioLocked) {
                             setHeightBeads(widthBeads);
+                            setProcessingDimensions((prev) => ({ ...prev, height: prev.width }));
                           }
                           setAspectRatioLocked(!aspectRatioLocked);
                         }}
@@ -795,6 +826,21 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
                       variant="ghost"
                       className={cn(
                         "size-7 rounded-md",
+                        trimEdges && "bg-primary text-white hover:bg-primary/80 hover:text-white"
+                      )}
+                      onClick={() => setTrimEdges((prev) => !prev)}
+                    >
+                      <Crop className="size-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{t("editor.uploadDialog.trimEdges")}</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className={cn(
+                        "size-7 rounded-md",
                         flipHorizontal && "bg-primary text-white hover:bg-primary/80 hover:text-white"
                       )}
                       onClick={() => setFlipHorizontal(!flipHorizontal)}
@@ -828,7 +874,7 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
                   <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                   {t("editor.uploadDialog.processing")}
                 </div>
-              ) : processedResult ? (
+              ) : effectiveResult ? (
                 <canvas
                   ref={resultCanvasRef}
                   className="h-full w-auto"
@@ -850,25 +896,12 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
             <div className="rounded-xl border bg-[linear-gradient(45deg,#f5f5f5_25%,transparent_25%,transparent_75%,#f5f5f5_75%,#f5f5f5),linear-gradient(45deg,#f5f5f5_25%,transparent_25%,transparent_75%,#f5f5f5_75%,#f5f5f5)] bg-[length:10px_10px] bg-[position:0_0,5px_5px] bg-repeat aspect-video overflow-hidden relative select-none">
               {imagePreviewUrl ? (
                 <div
-                  ref={imageContainerRef}
                   className="absolute inset-0"
-                  /* onMouseDown={handleMouseDown}
-                  onMouseMove={handleMouseMove}
-                  onMouseUp={handleMouseUp}
-                  onMouseLeave={handleMouseUp}
-                  onTouchStart={handleTouchStart}
-                  onTouchMove={handleTouchMove}
-                  onTouchEnd={handleTouchEnd}
-                  onWheel={handleWheel} */
                 >
                   <img
                     src={imagePreviewUrl}
                     alt="Original"
                     className="w-full h-full object-contain pointer-events-none"
-                    /* style={{
-                      transform: `translate(${translate.x}px, ${translate.y}px) scale(${scale})`,
-                      transformOrigin: 'center center',
-                    }} */
                     draggable={false}
                   />
                 </div>
@@ -877,32 +910,6 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
                   {t("editor.uploadDialog.uploadPhoto")}
                 </div>
               )}
-              {/*{imagePreviewUrl && (
-                <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-background/80 backdrop-blur-sm rounded-lg p-1">
-                  <button
-                    type="button"
-                    onClick={() => setScale((s) => Math.max(0.5, s - 0.2))}
-                    className="w-6 h-6 flex items-center justify-center rounded hover:bg-muted text-xs font-medium"
-                  >
-                    −
-                  </button>
-                  <span className="text-xs min-w-[3ch] text-center">{Math.round(scale * 100)}%</span>
-                  <button
-                    type="button"
-                    onClick={() => setScale((s) => Math.min(3, s + 0.2))}
-                    className="w-6 h-6 flex items-center justify-center rounded hover:bg-muted text-xs font-medium"
-                  >
-                    +
-                  </button>
-                  <button
-                    type="button"
-                    onClick={resetTransform}
-                    className="w-6 h-6 flex items-center justify-center rounded hover:bg-muted text-sm"
-                  >
-                    ↺
-                  </button>
-                </div>
-              )}*/}
             </div>
           </div>
         </div>
@@ -916,8 +923,8 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
           <Button
             className="w-full sm:w-auto gap-2 bg-gradient-to-r from-primary to-primary/80 hover:opacity-90 border-none text-white font-medium"
             onClick={() => {
-              if (processedResult) {
-                onGenerate(processedResult, colorPaletteId);
+              if (effectiveResult) {
+                onGenerate(effectiveResult, colorPaletteId);
                 onOpenChange(false);
               }
             }}

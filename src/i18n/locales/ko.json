@@ -94,6 +94,7 @@
       "originalImage": "원본 이미지",
       "flipHorizontal": "수평 뒤집기",
       "flipVertical": "수직 뒤집기",
+      "trimEdges": "불필요한 여백 자르기",
       "rotate": "회전",
       "resetTransform": "초기화",
       "patternPreview": "패턴 미리보기",

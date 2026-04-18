@@ -94,6 +94,7 @@
       "originalImage": "Original Image",
       "flipHorizontal": "Flip horizontal",
       "flipVertical": "Flip vertical",
+      "trimEdges": "Trim empty edges",
       "rotate": "Rotate",
       "resetTransform": "Reset",
       "patternPreview": "Pattern Preview",
