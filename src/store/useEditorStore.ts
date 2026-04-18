@@ -38,17 +38,87 @@ interface EditorState {
   setUploadOpen: (open: boolean) => void;
 }
 
+const DEFAULT_WIDTH = EDITOR_CONFIG.DEFAULT_WIDTH;
+const DEFAULT_HEIGHT = EDITOR_CONFIG.DEFAULT_HEIGHT;
+
+const createInitialHistoryEntry = (): HistoryEntry => ({
+  pixels: {},
+  width: DEFAULT_WIDTH,
+  height: DEFAULT_HEIGHT,
+});
+
+const sanitizeHistory = (
+  history: HistoryEntry[] | undefined,
+  fallbackPixels: Record<string, string>,
+  fallbackWidth: number,
+  fallbackHeight: number
+): { history: HistoryEntry[]; historyIndex: number } => {
+  if (!Array.isArray(history) || history.length === 0) {
+    return {
+      history: [{ pixels: { ...fallbackPixels }, width: fallbackWidth, height: fallbackHeight }],
+      historyIndex: 0,
+    };
+  }
+
+  const sanitizedHistory = history
+    .filter((entry): entry is HistoryEntry => Boolean(entry))
+    .map((entry) => ({
+      pixels: entry.pixels ?? {},
+      width: entry.width ?? fallbackWidth,
+      height: entry.height ?? fallbackHeight,
+    }));
+
+  if (sanitizedHistory.length === 0) {
+    return {
+      history: [{ pixels: { ...fallbackPixels }, width: fallbackWidth, height: fallbackHeight }],
+      historyIndex: 0,
+    };
+  }
+
+  return {
+    history: sanitizedHistory,
+    historyIndex: sanitizedHistory.length - 1,
+  };
+};
+
+const sanitizePersistedEditorState = (
+  persistedState: Partial<EditorState> | undefined
+): Partial<EditorState> => {
+  const width = persistedState?.width ?? DEFAULT_WIDTH;
+  const height = persistedState?.height ?? DEFAULT_HEIGHT;
+  const pixels = persistedState?.pixels ?? {};
+  const { history, historyIndex } = sanitizeHistory(
+    persistedState?.history,
+    pixels,
+    width,
+    height
+  );
+
+  return {
+    ...persistedState,
+    pixels,
+    width,
+    height,
+    history,
+    historyIndex: Math.min(
+      Math.max(persistedState?.historyIndex ?? historyIndex, 0),
+      history.length - 1
+    ),
+    uploadOpen: false,
+  };
+};
+
 export const useEditorStore = create<EditorState>()(
   persist(
     (set) => ({
   pixels: {},
-  width: EDITOR_CONFIG.DEFAULT_WIDTH,
-  height: EDITOR_CONFIG.DEFAULT_HEIGHT,
+  width: DEFAULT_WIDTH,
+  height: DEFAULT_HEIGHT,
   currentTool: 'brush',
   primaryColor: EDITOR_CONFIG.DEFAULT_PRIMARY_COLOR,
   backgroundColor: null,
   zoom: EDITOR_CONFIG.DEFAULT_ZOOM,
-  history: [{ pixels: {}, width: EDITOR_CONFIG.DEFAULT_WIDTH, height: EDITOR_CONFIG.DEFAULT_HEIGHT }],
+  history: [createInitialHistoryEntry()],
   historyIndex: 0,
   uploadOpen: false,
 
@@ -160,12 +230,19 @@ export const useEditorStore = create<EditorState>()(
 }),
 {
   name: 'pixelfox-editor-storage',
+  version: 2,
   storage: createJSONStorage(() => localStorage),
   partialize: (state) => ({
+    pixels: state.pixels,
+    width: state.width,
+    height: state.height,
+    history: state.history,
+    historyIndex: state.historyIndex,
     backgroundColor: state.backgroundColor,
     primaryColor: state.primaryColor,
     currentTool: state.currentTool,
     zoom: state.zoom,
   }),
+  migrate: (persistedState) => sanitizePersistedEditorState(persistedState as Partial<EditorState>),
 }
 ));
