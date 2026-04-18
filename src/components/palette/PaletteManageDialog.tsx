@@ -1,6 +1,6 @@
 import { useLayoutEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Bookmark, Check, Save, Search, Settings2, Trash2, X } from "lucide-react";
+import { Bookmark, Check, Palette, Save, Search, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
@@ -137,7 +137,7 @@ export default function PaletteManageDialog({
             <div className="min-w-0">
               <DialogTitle className="flex items-center gap-2">
                 <span className="inline-flex size-7 items-center justify-center rounded-full bg-primary/10 text-primary">
-                  <Settings2 className="size-4" />
+                  <Palette className="size-4" />
                 </span>
                 <span>{t("palette.manageDialog.title")}</span>
               </DialogTitle>

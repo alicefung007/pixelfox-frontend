@@ -386,8 +386,13 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
       <DialogContent className="max-w-[980px] w-[calc(100vw-32px)] md:w-full p-0 flex flex-col gap-0 max-h-[95vh]">
         <DialogHeader className="px-3 pt-3 pb-2 md:px-6 md:pt-6 md:pb-4 shrink-0 text-left">
           <div className="flex items-start justify-between gap-4">
-            <div className="space-y-1">
-              <DialogTitle>{t("editor.uploadDialog.title")}</DialogTitle>
+            <div className="min-w-0 space-y-1">
+              <DialogTitle className="flex items-center gap-2">
+                <span className="inline-flex size-7 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <Upload className="size-4" />
+                </span>
+                <span>{t("editor.uploadDialog.title")}</span>
+              </DialogTitle>
               <DialogDescription>{t("editor.uploadDialog.description")}</DialogDescription>
             </div>
             <DialogClose asChild>
