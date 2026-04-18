@@ -118,8 +118,8 @@ export default function PalettePanel() {
             <div key={i} className="flex flex-col items-center gap-1 p-0.5 sm:p-1 transition-transform hover:scale-105 active:scale-95">
               <button
                 className={cn(
-                  "w-full aspect-square rounded-md shadow-sm relative flex items-center justify-center",
-                  primaryColor === swatch.color ? "ring-2 ring-primary" : ""
+                  "w-full aspect-square rounded-md border-2 relative flex items-center justify-center",
+                  primaryColor === swatch.color ? "border-primary" : "border-gray-400/20"
                 )}
                 style={{ backgroundColor: swatch.color }}
                 onClick={() => setColor(swatch.color)}

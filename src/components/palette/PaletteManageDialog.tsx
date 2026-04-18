@@ -293,8 +293,8 @@ export default function PaletteManageDialog({
                     >
                       <div
                         className={cn(
-                          "relative w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-md shadow-sm ring-1 ring-foreground/5 transition-shadow flex items-center justify-center",
-                          isSelected ? "ring-2 ring-primary" : ""
+                          "relative w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-md border-2 transition-shadow flex items-center justify-center",
+                          isSelected ? "border-primary" : "border-gray-400/20"
                         )}
                         style={{ backgroundColor: swatch.color }}
                       >
