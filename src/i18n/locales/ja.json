@@ -36,6 +36,12 @@
   "palette": {
     "palette": "パレット",
     "manage": "管理",
+    "changeConfirmTitle": "パレットを切り替えますか？",
+    "changeConfirmDescription": "現在使用中の {{count}} 色は {{palette}} に含まれていません。このまま切り替えると図案はクリアされます。",
+    "changeConfirmNote": "新しいパレットにない色を使っている部分だけがリセットされます。問題なければ切り替えてください。",
+    "changeConfirmMore": "他 {{count}} 色",
+    "changeConfirmCancel": "今は切り替えない",
+    "changeConfirmContinue": "切り替える",
     "mard": "MARD (全て)",
     "mard24": "MARD 24",
     "mard221": "MARD 221",

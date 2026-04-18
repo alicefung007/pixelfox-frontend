@@ -36,6 +36,12 @@
   "palette": {
     "palette": "Palette",
     "manage": "Manage",
+    "changeConfirmTitle": "Switch palette?",
+    "changeConfirmDescription": "{{count}} used colors are not available in {{palette}}. Continuing will clear the pattern.",
+    "changeConfirmNote": "Only the parts that use colors missing from the new palette will be reset. If that's okay, continue to switch.",
+    "changeConfirmMore": "+{{count}} more",
+    "changeConfirmCancel": "Not Now",
+    "changeConfirmContinue": "Switch Palette",
     "mard": "MARD (ALL)",
     "mard24": "MARD 24",
     "mard221": "MARD 221",

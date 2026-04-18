@@ -36,6 +36,12 @@
   "palette": {
     "palette": "팔레트",
     "manage": "관리",
+    "changeConfirmTitle": "팔레트를 전환할까요?",
+    "changeConfirmDescription": "현재 사용 중인 색상 {{count}}개가 {{palette}} 팔레트에 없습니다. 계속 전환하면 도안이 지워집니다.",
+    "changeConfirmNote": "새 팔레트에 없는 색상을 사용한 부분만 재설정됩니다. 괜찮다면 계속 전환하세요.",
+    "changeConfirmMore": "+{{count}}개 더",
+    "changeConfirmCancel": "지금은 전환 안 함",
+    "changeConfirmContinue": "전환하기",
     "mard": "MARD (전체)",
     "mard24": "MARD 24",
     "mard221": "MARD 221",

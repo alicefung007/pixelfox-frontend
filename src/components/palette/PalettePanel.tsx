@@ -7,13 +7,22 @@ import {
   Grid,
   History,
   Shapes,
+  TriangleAlert,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useEditorStore } from "@/store/useEditorStore";
 import { usePaletteStore } from "@/store/usePaletteStore";
 import PaletteManageDialog from "@/components/palette/PaletteManageDialog";
-import { getSystemPalette, type PaletteSwatch } from "@/lib/palettes";
+import { getSystemPalette, type PaletteSwatch, type SystemPaletteId } from "@/lib/palettes";
 import { cn, normalizeHex, hexLabel, isDarkColor } from "@/lib/utils";
 
 function getLabelFromColor(hex: string, paletteSwatches: PaletteSwatch[]): string {
@@ -24,11 +33,12 @@ function getLabelFromColor(hex: string, paletteSwatches: PaletteSwatch[]): strin
 
 export default function PalettePanel() {
   const { t } = useTranslation();
-  const { primaryColor, setColor } = useEditorStore();
+  const { primaryColor, setColor, clear } = useEditorStore();
   const committedPixels = useEditorStore((s) => s.history[s.historyIndex]?.pixels ?? s.pixels);
   const { currentPaletteId, recentColors, setCurrentPaletteId, activeTab: tab, setActiveTab: setTab, selectedUsedColor, setSelectedUsedColor, usedTabFlashAt } = usePaletteStore();
   const [isManageOpen, setIsManageOpen] = useState(false);
   const [isUsedFlashing, setIsUsedFlashing] = useState(false);
+  const [pendingPaletteId, setPendingPaletteId] = useState<SystemPaletteId | null>(null);
 
   useEffect(() => {
     if (!usedTabFlashAt) return;
@@ -61,6 +71,25 @@ export default function PalettePanel() {
     if (tab === "used") return canvasUsedColors.map((c) => ({ label: getLabelFromColor(c, palette.swatches), color: c }));
     return recentColors.map((c) => ({ label: getLabelFromColor(c, palette.swatches), color: c }));
   }, [palette.swatches, recentColors, canvasUsedColors, tab]);
+
+  const pendingPalette = useMemo(
+    () => (pendingPaletteId ? getSystemPalette(pendingPaletteId) : null),
+    [pendingPaletteId]
+  );
+  const pendingIncompatibleColors = useMemo(() => {
+    if (!pendingPalette) return [];
+    const targetColors = new Set(
+      pendingPalette.swatches.map((swatch) => normalizeHex(swatch.color))
+    );
+    return canvasUsedColors.filter((color) => !targetColors.has(normalizeHex(color)));
+  }, [canvasUsedColors, pendingPalette]);
+  const visiblePendingIncompatibleColors = useMemo(
+    () =>
+      pendingIncompatibleColors.length > 8
+        ? pendingIncompatibleColors.slice(0, 7)
+        : pendingIncompatibleColors,
+    [pendingIncompatibleColors]
+  );
 
   useEffect(() => {
     if (!selectedUsedColor) return;
@@ -178,12 +207,101 @@ export default function PalettePanel() {
         open={isManageOpen}
         onOpenChange={setIsManageOpen}
         onPaletteChange={(paletteId) => {
+          if (paletteId === currentPaletteId) return true;
+          const targetPalette = getSystemPalette(paletteId);
+          const targetColors = new Set(
+            (targetPalette?.swatches ?? []).map((swatch) => normalizeHex(swatch.color))
+          );
+          const hasIncompatibleUsedColors = canvasUsedColors.some(
+            (color) => !targetColors.has(normalizeHex(color))
+          );
+          if (hasIncompatibleUsedColors) {
+            setPendingPaletteId(paletteId);
+            return false;
+          }
           setCurrentPaletteId(paletteId);
+          return true;
         }}
         onConfirm={() => {
           setTab("all");
         }}
       />
+
+      <Dialog open={Boolean(pendingPaletteId)} onOpenChange={(open) => {
+        if (!open) setPendingPaletteId(null);
+      }}>
+        <DialogContent className="max-w-md rounded-2xl border-border/60 p-0 overflow-hidden">
+          <DialogHeader className="gap-3 px-6 pt-6">
+            <div className="flex items-start gap-3">
+              <span className="mt-0.5 inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+                <TriangleAlert className="size-5" />
+              </span>
+              <div className="space-y-1">
+                <DialogTitle>{t("palette.changeConfirmTitle")}</DialogTitle>
+                <DialogDescription>
+                  {t("palette.changeConfirmDescription", {
+                    count: pendingIncompatibleColors.length,
+                    palette: pendingPalette?.i18nKey
+                      ? t(pendingPalette.i18nKey)
+                      : pendingPalette?.name ?? "",
+                  })}
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="px-6 py-4">
+            {pendingIncompatibleColors.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {visiblePendingIncompatibleColors.map((color) => (
+                  <span
+                    key={color}
+                    className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-background px-2.5 py-1 text-xs text-foreground shadow-sm"
+                  >
+                    <span
+                      className="size-3 rounded-full border border-black/10"
+                      style={{ backgroundColor: color }}
+                    />
+                    <span>
+                      {(palette.i18nKey ? t(palette.i18nKey) : palette.name)}
+                      {"("}
+                      {getLabelFromColor(color, palette.swatches)}
+                      {")"}
+                    </span>
+                  </span>
+                ))}
+                {pendingIncompatibleColors.length > 8 && (
+                  <span className="inline-flex items-center rounded-full border border-border/60 bg-background px-2.5 py-1 text-xs text-muted-foreground shadow-sm">
+                    {t("palette.changeConfirmMore", {
+                      count: pendingIncompatibleColors.length - visiblePendingIncompatibleColors.length,
+                    })}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="border-t border-border/60 bg-muted/20 px-6 py-4">
+            <Button variant="outline" onClick={() => setPendingPaletteId(null)}>
+              {t("palette.changeConfirmCancel")}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (!pendingPaletteId) return;
+                clear();
+                setCurrentPaletteId(pendingPaletteId);
+                setPendingPaletteId(null);
+                setSelectedUsedColor(null);
+                setTab("all");
+                setIsManageOpen(false);
+              }}
+            >
+              {t("palette.changeConfirmContinue")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

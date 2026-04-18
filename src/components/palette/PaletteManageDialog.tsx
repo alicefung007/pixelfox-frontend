@@ -32,7 +32,7 @@ type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm?: (selectedColors: string[]) => void;
-  onPaletteChange?: (paletteId: SystemPaletteId) => void;
+  onPaletteChange?: (paletteId: SystemPaletteId) => boolean | void;
 };
 
 type SchemeId = "all" | "used" | "recent";
@@ -159,7 +159,8 @@ export default function PaletteManageDialog({
   };
 
   const handleConfirm = () => {
-    onPaletteChange?.(systemFilter);
+    const shouldContinue = onPaletteChange?.(systemFilter);
+    if (shouldContinue === false) return;
     const colors = Array.from(selected);
     onConfirm?.(colors);
     onOpenChange(false);
