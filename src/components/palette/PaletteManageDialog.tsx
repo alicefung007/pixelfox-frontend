@@ -189,7 +189,7 @@ export default function PaletteManageDialog({
         <Separator />
 
         <div className="flex-1 min-h-0 overflow-y-auto">
-          <div className="px-6 pt-4 pb-6 flex flex-col gap-4">
+          <div className="px-6 pt-4 pb-6 flex flex-col gap-2">
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-4">
                 <div className="relative flex-1 min-w-0">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
@@ -201,66 +201,78 @@ export default function PaletteManageDialog({
                   />
                 </div>
 
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-9 gap-1 sm:gap-2"
-                    onClick={handleSelectAllVisible}
-                  >
-                    <Check className="size-4" />
-                    <span className="hidden sm:hidden md:inline">{t("palette.manageDialog.selectAll")}</span>
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-9 gap-1 sm:gap-2"
-                    onClick={handleClear}
-                  >
-                    <Trash2 className="size-4" />
-                    <span className="hidden sm:hidden md:inline">{t("palette.manageDialog.clear")}</span>
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-9 gap-1 sm:gap-2 text-primary border-primary/60 hover:bg-primary/10"
-                  >
-                    <Save className="size-4" />
-                    <span className="hidden sm:inline">{t("palette.manageDialog.saveScheme")}</span>
-                  </Button>
+                <div className="flex w-full items-center sm:w-auto">
+                  <div className="flex flex-1 justify-start">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 gap-1 whitespace-nowrap px-2 text-xs sm:h-9 sm:gap-2 sm:px-3 sm:text-sm"
+                      onClick={handleSelectAllVisible}
+                    >
+                      <Check className="size-3.5 sm:size-4" />
+                      <span>{t("palette.manageDialog.selectAll")}</span>
+                    </Button>
+                  </div>
+                  <div className="flex flex-1 justify-center px-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 gap-1 whitespace-nowrap px-2 text-xs sm:h-9 sm:gap-2 sm:px-3 sm:text-sm"
+                      onClick={handleClear}
+                    >
+                      <Trash2 className="size-3.5 sm:size-4" />
+                      <span>{t("palette.manageDialog.clear")}</span>
+                    </Button>
+                  </div>
+                  <div className="flex flex-1 justify-end">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 gap-1 whitespace-nowrap px-2 text-xs sm:h-9 sm:gap-2 sm:px-3 sm:text-sm text-primary border-primary/60 hover:bg-primary/10"
+                    >
+                      <Save className="size-3.5 sm:size-4" />
+                      <span>{t("palette.manageDialog.saveScheme")}</span>
+                    </Button>
+                  </div>
                 </div>
               </div>
 
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
-                <div className="flex items-start gap-2 min-w-0 w-full flex-nowrap -mx-2 px-2">
-                  <span className="text-xs text-muted-foreground shrink-0 mt-0.5">
-                    {t("palette.manageDialog.presetPlansFilter")}
-                  </span>
-                  <div className="flex gap-2 flex-wrap min-w-0">
-                    {SYSTEM_PALETTES.map((p) => {
-                      const active = systemFilter === p.id;
-                      return (
-                        <button
-                          key={p.id}
-                          type="button"
-                          onClick={() => {
-                            setSystemFilter(p.id);
-                            const newPalette = getSystemPalette(p.id);
-                            const allColors = newPalette?.swatches.map((s) => normalizeHex(s.color)) ?? [];
-                            setSelected(new Set(allColors));
-                          }}
-                          className={cn(
-                            "h-7 rounded-md px-3 text-xs font-semibold transition-colors border shrink-0",
-                            active
-                              ? "bg-primary text-white border-primary"
-                              : "bg-muted/40 text-muted-foreground border-border hover:bg-muted"
-                          )}
-                        >
-                          {p.i18nKey ? t(p.i18nKey) : p.name}
-                        </button>
-                      );
-                    })}
+                <div className="min-w-0 w-full overflow-x-auto pb-1 sm:overflow-visible sm:pb-0">
+                  <div className="flex min-w-max items-start gap-2 sm:min-w-0 sm:w-full sm:flex-nowrap">
+                    <span className="mt-0.5 shrink-0 text-xs text-muted-foreground">
+                      {t("palette.manageDialog.presetPlansFilter")}
+                    </span>
+                    <div className="overflow-hidden rounded-md sm:min-w-0 sm:flex-1">
+                      <div
+                        className="grid max-h-16 min-w-0 grid-flow-col grid-rows-2 gap-2 overflow-y-hidden sm:max-h-none sm:flex sm:flex-wrap"
+                        style={{ gridAutoColumns: "calc((100vw - 8rem) / 2)" }}
+                      >
+                      {SYSTEM_PALETTES.map((p) => {
+                        const active = systemFilter === p.id;
+                        return (
+                          <button
+                            key={p.id}
+                            type="button"
+                            onClick={() => {
+                              setSystemFilter(p.id);
+                              const newPalette = getSystemPalette(p.id);
+                              const allColors = newPalette?.swatches.map((s) => normalizeHex(s.color)) ?? [];
+                              setSelected(new Set(allColors));
+                            }}
+                            className={cn(
+                              "h-7 min-w-0 rounded-md px-3 text-xs font-semibold transition-colors border shrink-0",
+                              active
+                                ? "bg-primary text-white border-primary"
+                                : "bg-muted/40 text-muted-foreground border-border hover:bg-muted"
+                            )}
+                          >
+                            <span className="block truncate">{p.i18nKey ? t(p.i18nKey) : p.name}</span>
+                          </button>
+                        );
+                      })}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -279,7 +291,7 @@ export default function PaletteManageDialog({
                 </Tabs> */}
               </div>
 
-              <div className="rounded-3xl bg-background/40 p-1">
+              <div className="rounded-md bg-background/40 p-1">
                 <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 xl:grid-cols-14 gap-2 sm:gap-3">
                 {visibleColors.map((swatch) => {
                   const key = normalizeHex(swatch.color);
