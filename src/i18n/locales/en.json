@@ -62,6 +62,7 @@
       "schemeUsed": "Used Colors ({{count}})",
       "schemeRecent": "Recent Colors ({{count}})",
       "searchPlaceholder": "Search color name or HEX...",
+      "select": "Select",
       "selectAll": "Select All",
       "clear": "Clear",
       "saveScheme": "Save Plan",

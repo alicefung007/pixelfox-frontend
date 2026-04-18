@@ -62,6 +62,7 @@
       "schemeUsed": "사용된 색상 ({{count}})",
       "schemeRecent": "최근 색상 ({{count}})",
       "searchPlaceholder": "색상명 또는 HEX 검색...",
+      "select": "선택",
       "selectAll": "전체 선택",
       "clear": "비우기",
       "saveScheme": "Plan 저장",

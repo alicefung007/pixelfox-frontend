@@ -62,6 +62,7 @@
       "schemeUsed": "已用颜色 ({{count}})",
       "schemeRecent": "最近颜色 ({{count}})",
       "searchPlaceholder": "搜索颜色名或 HEX...",
+      "select": "选择",
       "selectAll": "全选",
       "clear": "清空",
       "saveScheme": "存为 Plan",

@@ -100,6 +100,26 @@ export default function PaletteManageDialog({
     });
   }, [scheme, paletteColors, usedColors, recentColors, search]);
 
+  const groupedColors = useMemo(() => {
+    const groups = new Map<string, PaletteSwatch[]>();
+
+    for (const swatch of visibleColors) {
+      const firstChar = swatch.label.trim().charAt(0).toUpperCase();
+      const groupKey = /^[A-Z]$/.test(firstChar) ? firstChar : "#";
+      const existing = groups.get(groupKey);
+      if (existing) existing.push(swatch);
+      else groups.set(groupKey, [swatch]);
+    }
+
+    return Array.from(groups.entries())
+      .sort(([a], [b]) => {
+        if (a === "#") return 1;
+        if (b === "#") return -1;
+        return a.localeCompare(b);
+      })
+      .map(([label, colors]) => ({ label, colors }));
+  }, [visibleColors]);
+
   const selectedCount = selected.size;
 
   const handleToggleColor = (color: string) => {
@@ -121,6 +141,22 @@ export default function PaletteManageDialog({
   };
 
   const handleClear = () => setSelected(new Set());
+
+  const handleSelectGroup = (colors: PaletteSwatch[]) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      for (const color of colors) next.add(normalizeHex(color.color));
+      return next;
+    });
+  };
+
+  const handleClearGroup = (colors: PaletteSwatch[]) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      for (const color of colors) next.delete(normalizeHex(color.color));
+      return next;
+    });
+  };
 
   const handleConfirm = () => {
     onPaletteChange?.(systemFilter);
@@ -292,40 +328,73 @@ export default function PaletteManageDialog({
               </div>
 
               <div className="rounded-md bg-background/40 p-1">
-                <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 xl:grid-cols-14 gap-2 sm:gap-3">
-                {visibleColors.map((swatch) => {
-                  const key = normalizeHex(swatch.color);
-                  const isSelected = selected.has(key);
-                  return (
-                    <button
-                      key={`${swatch.label}-${key}`}
-                      type="button"
-                      onClick={() => handleToggleColor(swatch.color)}
-                      className="group flex flex-col items-center gap-1 p-1 transition-transform hover:scale-105 active:scale-95 relative"
-                    >
-                      <div
-                        className={cn(
-                          "relative w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-md border-2 transition-shadow flex items-center justify-center",
-                          isSelected ? "border-primary" : "border-gray-400/20"
-                        )}
-                        style={{ backgroundColor: swatch.color }}
-                      >
-                        <span className={cn(
-                          "text-[8px] sm:text-[9px] md:text-[10px] font-bold transition-colors",
-                          isDarkColor(swatch.color) ? "text-white" : "text-black/60"
-                        )}>
-                          {swatch.label}
+                <div className="flex flex-col gap-4">
+                  {groupedColors.map((group) => (
+                    <div key={group.label} className="flex flex-col gap-3">
+                      <div className="flex items-center gap-3">
+                        <span className="shrink-0 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                          {group.label}
                         </span>
-                        {isSelected && (
-                          <div className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 size-3 sm:size-4 rounded-full bg-primary text-white flex items-center justify-center shadow-sm">
-                            <Check className="size-2 sm:size-2.5" />
-                          </div>
-                        )}
+                        <Separator className="flex-1" />
+                        <div className="flex items-center gap-1.5 sm:gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 px-2 text-xs text-muted-foreground hover:text-muted-foreground sm:px-2.5"
+                            onClick={() => handleSelectGroup(group.colors)}
+                          >
+                            {t("palette.manageDialog.selectAll")}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 px-2 text-xs text-muted-foreground hover:text-muted-foreground sm:px-2.5"
+                            onClick={() => handleClearGroup(group.colors)}
+                          >
+                            {t("palette.manageDialog.clear")}
+                          </Button>
+                        </div>
                       </div>
-                    </button>
-                  );
-                })}
-              </div>
+
+                      <div className="grid grid-cols-6 gap-2 sm:grid-cols-8 sm:gap-3 md:grid-cols-10 lg:grid-cols-12 xl:grid-cols-14">
+                        {group.colors.map((swatch) => {
+                          const key = normalizeHex(swatch.color);
+                          const isSelected = selected.has(key);
+                          return (
+                            <button
+                              key={`${group.label}-${swatch.label}-${key}`}
+                              type="button"
+                              onClick={() => handleToggleColor(swatch.color)}
+                              className="group relative flex flex-col items-center gap-1 p-1 transition-transform hover:scale-105 active:scale-95"
+                            >
+                              <div
+                                className={cn(
+                                  "relative flex h-9 w-9 items-center justify-center rounded-md border-2 transition-shadow sm:h-10 sm:w-10 md:h-12 md:w-12",
+                                  isSelected ? "border-primary" : "border-gray-400/20"
+                                )}
+                                style={{ backgroundColor: swatch.color }}
+                              >
+                                <span
+                                  className={cn(
+                                    "text-[8px] font-bold transition-colors sm:text-[9px] md:text-[10px]",
+                                    isDarkColor(swatch.color) ? "text-white" : "text-black/60"
+                                  )}
+                                >
+                                  {swatch.label}
+                                </span>
+                                {isSelected && (
+                                  <div className="absolute -right-0.5 -top-0.5 flex size-3 items-center justify-center rounded-full bg-primary text-white shadow-sm sm:-right-1 sm:-top-1 sm:size-4">
+                                    <Check className="size-2 sm:size-2.5" />
+                                  </div>
+                                )}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
         </div>
