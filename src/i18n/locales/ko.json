@@ -137,6 +137,34 @@
       "shapeRoundedCube": "둥근 큐브",
       "pauseRotation": "일시정지",
       "resumeRotation": "회전"
+    },
+    "exportDialog": {
+      "title": "패턴 내보내기",
+      "description": "내보내기 옵션을 조정하고 현재 패턴을 다운로드하세요.",
+      "settings": "내보내기 설정",
+      "autoCrop": "자동 자르기",
+      "autoCropHint": "패턴 가장자리의 빈 여백을 잘라냅니다",
+      "removeWhiteBackground": "흰색 배경 제거",
+      "showGrid": "격자 표시",
+      "showMinorGrid": "보조 격자 표시",
+      "gridInterval": "격자 간격",
+      "gridColor": "격자 색상",
+      "showAxis": "축 표시",
+      "showAxisHint": "행과 열 표시를 함께 보여줍니다",
+      "palettePlan": "사용 색상 목록",
+      "palettePlanPlaceholder": "목록 선택",
+      "palettePlanCurrent": "현재 팔레트",
+      "palettePlanUsed": "사용한 색상",
+      "palettePlanNone": "표시 안 함",
+      "showColorCode": "색상 코드 표시",
+      "mirrorFlip": "좌우 반전",
+      "mirrorFlipHint": "뒷면에서 비즈 작업할 때 유용합니다",
+      "preview": "미리보기",
+      "previewTitle": "패턴",
+      "previewSubtitle": "미리보기",
+      "previewPlaceholder": "미리보기 자리 표시자",
+      "close": "닫기",
+      "downloadImage": "이미지 다운로드"
     }
   }
 }

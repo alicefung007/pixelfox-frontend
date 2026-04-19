@@ -180,7 +180,7 @@ export default function PalettePanel() {
     <div className="h-full bg-background flex flex-col overflow-hidden shadow-sm">
       <div className="flex items-center justify-between gap-2 shrink-0 px-3 sm:px-4 py-2 overflow-x-auto">
         <div className="flex items-center gap-2 shrink-0">
-          <SwatchBook size={16} className="text-muted-foreground" />
+          <Palette size={16} className="text-muted-foreground" />
           <span className="text-sm font-medium text-muted-foreground hidden sm:inline">{t("palette.palette")}</span>
           <Button
             variant="outline"

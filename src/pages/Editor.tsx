@@ -5,6 +5,7 @@ import PalettePanel from "@/components/palette/PalettePanel";
 import Sidebar from "@/components/layout/Sidebar";
 import UploadPhotoDialog from "@/components/editor/UploadPhotoDialog";
 import Preview3DDialog from "@/components/editor/Preview3DDialog";
+import ExportPatternDialog from "@/components/editor/ExportPatternDialog";
 import { useToolShortcuts } from "@/hooks/useToolShortcuts";
 import {
   ResizableHandle,
@@ -17,12 +18,14 @@ type EditorContext = {
   setSidebarOpen: (open: boolean) => void;
   uploadOpen: boolean;
   setUploadOpen: (open: boolean) => void;
+  exportOpen: boolean;
+  setExportOpen: (open: boolean) => void;
   handleGenerate: (result: any, paletteId: any) => void;
 };
 
 export default function Editor() {
   useToolShortcuts();
-  const { sidebarOpen, setSidebarOpen, uploadOpen, setUploadOpen, handleGenerate } = useOutletContext<EditorContext>();
+  const { sidebarOpen, setSidebarOpen, uploadOpen, setUploadOpen, exportOpen, setExportOpen, handleGenerate } = useOutletContext<EditorContext>();
   const [preview3DOpen, setPreview3DOpen] = useState(false);
 
   return (
@@ -32,6 +35,7 @@ export default function Editor() {
         onClose={() => setSidebarOpen(false)}
         onUpload={() => setUploadOpen(true)}
         onPreview3D={() => setPreview3DOpen(true)}
+        onExport={() => setExportOpen(true)}
       />
 
       <div className="flex-1 h-full">
@@ -78,6 +82,7 @@ export default function Editor() {
 
       <UploadPhotoDialog open={uploadOpen} onOpenChange={setUploadOpen} onGenerate={handleGenerate} />
       <Preview3DDialog open={preview3DOpen} onOpenChange={setPreview3DOpen} />
+      <ExportPatternDialog open={exportOpen} onOpenChange={setExportOpen} />
     </div>
   );
 }

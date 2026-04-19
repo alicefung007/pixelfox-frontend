@@ -11,7 +11,7 @@ export default function AppLayout() {
   const isEditorPage = location.pathname === "/";
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const { setPixels, setSize, saveHistory, uploadOpen, setUploadOpen } = useEditorStore();
+  const { setPixels, setSize, saveHistory, uploadOpen, setUploadOpen, exportOpen, setExportOpen } = useEditorStore();
   const { setCurrentPaletteId, setActiveTab, flashUsedTab } = usePaletteStore();
 
   const handleGenerate = useCallback((result: ColorMatchResult, paletteId: SystemPaletteId) => {
@@ -48,6 +48,8 @@ export default function AppLayout() {
           setSidebarOpen,
           uploadOpen,
           setUploadOpen,
+          exportOpen,
+          setExportOpen,
           handleGenerate
         }} />
       </main>

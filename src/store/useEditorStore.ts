@@ -22,6 +22,7 @@ interface EditorState {
   history: HistoryEntry[];
   historyIndex: number;
   uploadOpen: boolean;
+  exportOpen: boolean;
 
   setPixel: (x: number, y: number, color: string) => void;
   clearPixel: (x: number, y: number) => void;
@@ -36,6 +37,7 @@ interface EditorState {
   redo: () => void;
   clear: () => void;
   setUploadOpen: (open: boolean) => void;
+  setExportOpen: (open: boolean) => void;
 }
 
 const DEFAULT_WIDTH = EDITOR_CONFIG.DEFAULT_WIDTH;
@@ -107,6 +109,7 @@ const sanitizePersistedEditorState = (
       history.length - 1
     ),
     uploadOpen: false,
+    exportOpen: false,
   };
 };
 
@@ -195,6 +198,7 @@ export const useEditorStore = create<EditorState>()(
   history: initialCanvasState.history,
   historyIndex: initialCanvasState.historyIndex,
   uploadOpen: false,
+  exportOpen: false,
 
   setPixel: (x, y, color) => set((state) => {
     const key = `${x},${y}`;
@@ -333,6 +337,7 @@ export const useEditorStore = create<EditorState>()(
   }),
 
   setUploadOpen: (open) => set({ uploadOpen: open }),
+  setExportOpen: (open) => set({ exportOpen: open }),
 }),
 {
   name: EDITOR_STORAGE_KEY,

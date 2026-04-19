@@ -137,6 +137,34 @@
       "shapeRoundedCube": "角丸キューブ",
       "pauseRotation": "一時停止",
       "resumeRotation": "回転"
+    },
+    "exportDialog": {
+      "title": "パターンを書き出し",
+      "description": "書き出し設定を調整して、現在のパターンをダウンロードします。",
+      "settings": "書き出し設定",
+      "autoCrop": "自動トリミング",
+      "autoCropHint": "パターンの周囲の余白を切り取ります",
+      "removeWhiteBackground": "白い背景を削除",
+      "showGrid": "グリッドを表示",
+      "showMinorGrid": "補助グリッドを表示",
+      "gridInterval": "グリッド間隔",
+      "gridColor": "グリッド色",
+      "showAxis": "座標軸を表示",
+      "showAxisHint": "行と列の目印を表示します",
+      "palettePlan": "使用色リスト",
+      "palettePlanPlaceholder": "リストを選択",
+      "palettePlanCurrent": "現在のパレット",
+      "palettePlanUsed": "使用した色",
+      "palettePlanNone": "表示しない",
+      "showColorCode": "カラーコードを表示",
+      "mirrorFlip": "左右反転",
+      "mirrorFlipHint": "裏面からビーズを置くときに便利です",
+      "preview": "プレビュー",
+      "previewTitle": "パターン",
+      "previewSubtitle": "プレビュー",
+      "previewPlaceholder": "プレビューのプレースホルダー",
+      "close": "閉じる",
+      "downloadImage": "画像をダウンロード"
     }
   }
 }

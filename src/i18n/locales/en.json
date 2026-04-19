@@ -137,6 +137,34 @@
       "shapeRoundedCube": "Rounded Cube",
       "pauseRotation": "Pause",
       "resumeRotation": "Rotate"
+    },
+    "exportDialog": {
+      "title": "Export Pattern",
+      "description": "Adjust export options and download your current pattern.",
+      "settings": "Export Settings",
+      "autoCrop": "Auto Crop",
+      "autoCropHint": "Trim empty margins around the pattern",
+      "removeWhiteBackground": "Remove White Background",
+      "showGrid": "Show Grid",
+      "showMinorGrid": "Show Minor Grid",
+      "gridInterval": "Grid Interval",
+      "gridColor": "Grid Color",
+      "showAxis": "Show Axis",
+      "showAxisHint": "Display row and column markers",
+      "palettePlan": "Palette Plan",
+      "palettePlanPlaceholder": "Select a plan",
+      "palettePlanCurrent": "Current Palette",
+      "palettePlanUsed": "Used Colors",
+      "palettePlanNone": "None",
+      "showColorCode": "Show Color Code",
+      "mirrorFlip": "Mirror Flip",
+      "mirrorFlipHint": "Best for beading from the back",
+      "preview": "Preview",
+      "previewTitle": "Pindou Art",
+      "previewSubtitle": "preview",
+      "previewPlaceholder": "Preview placeholder",
+      "close": "Close",
+      "downloadImage": "Download Image"
     }
   }
 }

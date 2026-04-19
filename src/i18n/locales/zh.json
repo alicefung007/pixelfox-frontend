@@ -137,6 +137,34 @@
       "shapeRoundedCube": "圆角方块",
       "pauseRotation": "暂停",
       "resumeRotation": "旋转"
+    },
+    "exportDialog": {
+      "title": "导出拼豆图",
+      "description": "调整导出选项并下载当前拼豆图。",
+      "settings": "导出设置",
+      "autoCrop": "自动裁剪",
+      "autoCropHint": "裁掉图案四周的空白边缘",
+      "removeWhiteBackground": "移除白色背景",
+      "showGrid": "显示网格",
+      "showMinorGrid": "显示细网格",
+      "gridInterval": "网格间隔",
+      "gridColor": "网格颜色",
+      "showAxis": "显示坐标轴",
+      "showAxisHint": "显示行列坐标标记",
+      "palettePlan": "用色清单",
+      "palettePlanPlaceholder": "选择清单",
+      "palettePlanCurrent": "当前调色板",
+      "palettePlanUsed": "已用颜色",
+      "palettePlanNone": "不显示",
+      "showColorCode": "显示颜色编码",
+      "mirrorFlip": "镜像翻转",
+      "mirrorFlipHint": "适合从背面串豆",
+      "preview": "预览",
+      "previewTitle": "拼豆图",
+      "previewSubtitle": "预览",
+      "previewPlaceholder": "预览占位",
+      "close": "关闭",
+      "downloadImage": "下载图片"
     }
   }
 }

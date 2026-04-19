@@ -32,9 +32,10 @@ type Props = {
   onClose?: () => void;
   onUpload?: () => void;
   onPreview3D?: () => void;
+  onExport?: () => void;
 };
 
-export default function Sidebar({ isOpen = true, onClose, onUpload, onPreview3D }: Props) {
+export default function Sidebar({ isOpen = true, onClose, onUpload, onPreview3D, onExport }: Props) {
   const { t } = useTranslation();
   const { currentTool, setTool, undo, redo, clear, width, height, setSize, saveHistory, backgroundColor, setBackgroundColor } = useEditorStore();
 
@@ -75,6 +76,7 @@ export default function Sidebar({ isOpen = true, onClose, onUpload, onPreview3D 
             undo={undo}
             redo={redo}
             clear={clear}
+            onExport={onExport}
             t={t}
           />
         </ScrollArea>
@@ -114,6 +116,7 @@ export default function Sidebar({ isOpen = true, onClose, onUpload, onPreview3D 
             undo={undo}
             redo={redo}
             clear={clear}
+            onExport={onExport}
             t={t}
             onAction={onClose}
           />
@@ -137,6 +140,7 @@ type SidebarContentProps = {
   undo: () => void;
   redo: () => void;
   clear: () => void;
+  onExport?: () => void;
   t: (key: string) => string;
   onAction?: () => void;
 };
@@ -155,6 +159,7 @@ function SidebarContent({
   undo,
   redo,
   clear,
+  onExport,
   t,
   onAction
 }: SidebarContentProps) {
@@ -231,7 +236,13 @@ function SidebarContent({
       </div>
 
       <div className="space-y-2">
-        <Button className="w-full justify-between h-10 bg-gradient-to-r from-primary to-primary/80 hover:opacity-90 border-none text-white font-medium" onClick={onAction}>
+        <Button
+          className="w-full justify-between h-10 bg-gradient-to-r from-primary to-primary/80 hover:opacity-90 border-none text-white font-medium"
+          onClick={() => {
+            onExport?.();
+            onAction?.();
+          }}
+        >
           <div className="flex items-center gap-2">
             <Download size={18} />
             <span>{t("sidebar.export")}</span>
