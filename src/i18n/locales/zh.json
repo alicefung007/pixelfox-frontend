@@ -61,6 +61,16 @@
     "recent": "最近",
     "allColors": "所有颜色",
     "custom": "自定义",
+    "usedActions": {
+      "replace": "Replace",
+      "clear": "Clear",
+      "exclude": "Exclude"
+    },
+    "replaceDialog": {
+      "title": "Palette Replace Color",
+      "description": "从 {{palette}} 色盘中选择一个色卡，选中后会立即替换当前已选颜色。",
+      "cancel": "Cancel"
+    },
     "manageDialog": {
       "title": "配色管理",
       "description": "挑选并在图纸中使用不同的配色系统及配色方案。",

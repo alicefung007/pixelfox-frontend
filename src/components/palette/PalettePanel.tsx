@@ -2,21 +2,28 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { PaletteTabId } from "@/store/usePaletteStore";
 import { useTranslation } from "react-i18next";
 import {
+  Ban,
   CheckCircle2,
+  Palette,
+  Replace,
   Settings,
   SwatchBook,
+  Trash2,
   TriangleAlert,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
 import { useEditorStore } from "@/store/useEditorStore";
 import { usePaletteStore } from "@/store/usePaletteStore";
 import PaletteManageDialog from "@/components/palette/PaletteManageDialog";
@@ -31,12 +38,15 @@ function getLabelFromColor(hex: string, paletteSwatches: PaletteSwatch[]): strin
 
 export default function PalettePanel() {
   const { t } = useTranslation();
-  const { primaryColor, setColor, clear } = useEditorStore();
+  const { primaryColor, setColor, clear, setPixels, saveHistory } = useEditorStore();
+  const currentPixels = useEditorStore((s) => s.pixels);
   const committedPixels = useEditorStore((s) => s.history[s.historyIndex]?.pixels ?? s.pixels);
   const { currentPaletteId, setCurrentPaletteId, activeTab: tab, setActiveTab: setTab, selectedUsedColor, setSelectedUsedColor, usedTabFlashAt } = usePaletteStore();
   const [isManageOpen, setIsManageOpen] = useState(false);
   const [isUsedFlashing, setIsUsedFlashing] = useState(false);
   const [pendingPaletteId, setPendingPaletteId] = useState<SystemPaletteId | null>(null);
+  const [isReplaceOpen, setIsReplaceOpen] = useState(false);
+  const [usedActionPopoverColor, setUsedActionPopoverColor] = useState<string | null>(null);
 
   useEffect(() => {
     if (!usedTabFlashAt) return;
@@ -99,8 +109,72 @@ export default function PalettePanel() {
     const hasSelection = canvasUsedColors.some((color) => normalizeHex(color) === normalizeHex(selectedUsedColor));
     if (!hasSelection) {
       setSelectedUsedColor(null);
+      setUsedActionPopoverColor(null);
     }
   }, [canvasUsedColors, selectedUsedColor, setSelectedUsedColor]);
+
+  useEffect(() => {
+    if (tab !== "used") {
+      setUsedActionPopoverColor(null);
+    }
+  }, [tab]);
+
+  const handleReplaceColor = (nextColor: string) => {
+    if (!selectedUsedColor) return;
+
+    const selectedColor = normalizeHex(selectedUsedColor);
+    const replacementColor = `#${normalizeHex(nextColor)}`;
+    if (selectedColor === normalizeHex(replacementColor)) {
+      setIsReplaceOpen(false);
+      return;
+    }
+
+    let changed = false;
+    const nextPixels: Record<string, string> = {};
+    for (const [key, color] of Object.entries(currentPixels)) {
+      if (normalizeHex(color) === selectedColor) {
+        nextPixels[key] = replacementColor;
+        changed = true;
+      } else {
+        nextPixels[key] = color;
+      }
+    }
+
+    if (!changed) {
+      setIsReplaceOpen(false);
+      return;
+    }
+
+    setPixels(nextPixels);
+    saveHistory();
+    setColor(replacementColor);
+    setSelectedUsedColor(replacementColor);
+    setUsedActionPopoverColor(normalizeHex(replacementColor));
+    setIsReplaceOpen(false);
+  };
+
+  const handleClearSelectedColor = () => {
+    if (!selectedUsedColor) return;
+
+    const selectedColor = normalizeHex(selectedUsedColor);
+    let changed = false;
+    const nextPixels: Record<string, string> = {};
+
+    for (const [key, color] of Object.entries(currentPixels)) {
+      if (normalizeHex(color) === selectedColor) {
+        changed = true;
+        continue;
+      }
+      nextPixels[key] = color;
+    }
+
+    if (!changed) return;
+
+    setPixels(nextPixels);
+    saveHistory();
+    setSelectedUsedColor(null);
+    setUsedActionPopoverColor(null);
+  };
 
   return (
     <div className="h-full bg-background flex flex-col overflow-hidden shadow-sm">
@@ -150,55 +224,126 @@ export default function PalettePanel() {
           key={tab}
           className="grid grid-cols-7 gap-2 sm:gap-3 py-1 sm:[grid-template-columns:repeat(auto-fill,minmax(52px,1fr))]"
         >
-          {visibleSwatches.map((swatch, i) => (
-            <div key={i} className="flex flex-col items-center gap-1 p-0.5 sm:p-1 transition-transform hover:scale-105 active:scale-95">
-              <button
-                className={cn(
-                  "w-full aspect-square rounded-md border-2 relative flex items-center justify-center",
-                  tab === "used" && selectedUsedColor && normalizeHex(selectedUsedColor) === normalizeHex(swatch.color)
-                    ? "border-primary ring-2 ring-primary/25"
-                    : primaryColor === swatch.color
-                      ? "border-primary"
-                      : "border-gray-400/20"
-                )}
-                style={{ backgroundColor: swatch.color }}
-                onClick={() => {
-                  setColor(swatch.color);
-                  if (tab === "used") {
-                    const normalizedSwatch = normalizeHex(swatch.color);
-                    setSelectedUsedColor(
-                      selectedUsedColor && normalizeHex(selectedUsedColor) === normalizedSwatch
-                        ? null
-                        : normalizedSwatch
-                    );
+          {visibleSwatches.map((swatch, i) => {
+            const normalizedSwatch = normalizeHex(swatch.color);
+            const isSelectedUsedColor =
+              tab === "used" &&
+              selectedUsedColor &&
+              normalizeHex(selectedUsedColor) === normalizedSwatch;
+            const isUsedActionPopoverOpen =
+              tab === "used" && usedActionPopoverColor === normalizedSwatch;
+
+            return (
+            <div key={i} className="relative flex flex-col items-center gap-1 p-0.5 sm:p-1 transition-transform hover:scale-105 active:scale-95">
+              <Popover
+                open={isUsedActionPopoverOpen}
+                onOpenChange={(open) => {
+                  if (open) {
+                    setUsedActionPopoverColor(normalizedSwatch);
                     return;
                   }
-                  if (selectedUsedColor) {
+                  setUsedActionPopoverColor(null);
+                  if (isSelectedUsedColor) {
                     setSelectedUsedColor(null);
                   }
                 }}
               >
-                <span className={cn(
-                  "text-[8px] sm:text-[9px] md:text-[10px] font-bold transition-colors",
-                  isDarkColor(swatch.color) ? "text-white" : "text-black/60"
-                )}>
-                  {swatch.label}
-                </span>
-                {primaryColor === swatch.color && (
-                  <div className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 size-3 sm:size-4 rounded-full bg-primary text-white flex items-center justify-center shadow-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                  </div>
-                )}
-                {tab === "used" && (
-                  <span className="absolute -bottom-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-foreground/80 text-background text-[9px] font-semibold leading-none flex items-center justify-center shadow-sm tabular-nums">
-                    {usedCounts.get(swatch.color) ?? 0}
-                  </span>
-                )}
-              </button>
+                <PopoverAnchor asChild>
+                  <button
+                    type="button"
+                    className={cn(
+                      "w-full aspect-square rounded-md border-2 relative flex items-center justify-center",
+                      isSelectedUsedColor
+                        ? "border-primary ring-2 ring-primary/25"
+                        : primaryColor === swatch.color
+                          ? "border-primary"
+                          : "border-gray-400/20"
+                    )}
+                    style={{ backgroundColor: swatch.color }}
+                    onClick={() => {
+                      setColor(swatch.color);
+                      if (tab === "used") {
+                        const isSameSelection =
+                          selectedUsedColor && normalizeHex(selectedUsedColor) === normalizedSwatch;
+
+                        if (isSameSelection) {
+                          if (isUsedActionPopoverOpen) {
+                            setSelectedUsedColor(null);
+                            setUsedActionPopoverColor(null);
+                          } else {
+                            setUsedActionPopoverColor(normalizedSwatch);
+                          }
+                          return;
+                        }
+
+                        setSelectedUsedColor(normalizedSwatch);
+                        setUsedActionPopoverColor(normalizedSwatch);
+                        return;
+                      }
+                      if (selectedUsedColor) {
+                        setSelectedUsedColor(null);
+                      }
+                      setUsedActionPopoverColor(null);
+                    }}
+                  >
+                    <span className={cn(
+                      "text-[8px] sm:text-[9px] md:text-[10px] font-bold transition-colors",
+                      isDarkColor(swatch.color) ? "text-white" : "text-black/60"
+                    )}>
+                      {swatch.label}
+                    </span>
+                    {primaryColor === swatch.color && (
+                      <div className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 size-3 sm:size-4 rounded-full bg-primary text-white flex items-center justify-center shadow-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      </div>
+                    )}
+                    {tab === "used" && (
+                      <span className="absolute -bottom-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-foreground/80 text-background text-[9px] font-semibold leading-none flex items-center justify-center shadow-sm tabular-nums">
+                        {usedCounts.get(swatch.color) ?? 0}
+                      </span>
+                    )}
+                  </button>
+                </PopoverAnchor>
+                <PopoverContent
+                  side="top"
+                  align="end"
+                  sideOffset={8}
+                  className="z-[100] flex w-fit flex-row items-center gap-0 rounded-lg border bg-background/95 p-0.5 shadow-sm backdrop-blur-sm"
+                  onOpenAutoFocus={(event) => event.preventDefault()}
+                >
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 gap-1.5 rounded-md px-2.5 text-xs"
+                    onClick={() => setIsReplaceOpen(true)}
+                  >
+                    <Replace className="size-3.5" />
+                    <span>{t("palette.usedActions.replace")}</span>
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 gap-1.5 rounded-md px-2.5 text-xs"
+                    onClick={handleClearSelectedColor}
+                  >
+                    <Trash2 className="size-3.5" />
+                    <span>{t("palette.usedActions.clear")}</span>
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 gap-1.5 rounded-md px-2.5 text-xs"
+                  >
+                    <Ban className="size-3.5" />
+                    <span>{t("palette.usedActions.exclude")}</span>
+                  </Button>
+                </PopoverContent>
+              </Popover>
             </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -225,6 +370,77 @@ export default function PalettePanel() {
           setTab("all");
         }}
       />
+
+      <Dialog open={isReplaceOpen} onOpenChange={setIsReplaceOpen}>
+        <DialogContent className="max-w-2xl p-0 overflow-hidden">
+          <DialogHeader className="px-6 pt-6 pb-3">
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <DialogTitle className="flex items-center gap-2">
+                  <span className="inline-flex size-7 items-center justify-center rounded-full bg-primary/10 text-primary">
+                    <Palette className="size-4" />
+                  </span>
+                  <span>{t("palette.replaceDialog.title")}</span>
+                </DialogTitle>
+                <DialogDescription className="mt-1">
+                  {t("palette.replaceDialog.description", {
+                    palette: palette.i18nKey ? t(palette.i18nKey) : palette.name,
+                  })}
+                </DialogDescription>
+              </div>
+              <DialogClose asChild>
+                <Button variant="ghost" size="icon" className="rounded-full">
+                  <X className="size-4" />
+                </Button>
+              </DialogClose>
+            </div>
+          </DialogHeader>
+
+          <div className="max-h-[60vh] overflow-y-auto px-6 pb-6">
+            <div className="grid grid-cols-7 gap-2 py-1 sm:gap-3 sm:[grid-template-columns:repeat(auto-fill,minmax(52px,1fr))]">
+              {palette.swatches.map((swatch) => {
+                const isCurrent = selectedUsedColor
+                  ? normalizeHex(selectedUsedColor) === normalizeHex(swatch.color)
+                  : false;
+
+                return (
+                  <div
+                    key={`${swatch.label}-${normalizeHex(swatch.color)}`}
+                    className="flex flex-col items-center gap-1 p-0.5 transition-transform hover:scale-105 active:scale-95 sm:p-1"
+                  >
+                    <button
+                      type="button"
+                      className={cn(
+                        "relative flex aspect-square w-full items-center justify-center rounded-md border-2",
+                        isCurrent
+                          ? "border-primary ring-2 ring-primary/25"
+                          : "border-gray-400/20"
+                      )}
+                      style={{ backgroundColor: swatch.color }}
+                      onClick={() => handleReplaceColor(swatch.color)}
+                    >
+                      <span
+                        className={cn(
+                          "text-[8px] font-bold transition-colors sm:text-[9px] md:text-[10px]",
+                          isDarkColor(swatch.color) ? "text-white" : "text-black/60"
+                        )}
+                      >
+                        {swatch.label}
+                      </span>
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <DialogFooter className="border-t border-border/60 bg-muted/20 px-6 py-4">
+            <Button variant="outline" onClick={() => setIsReplaceOpen(false)}>
+              {t("palette.replaceDialog.cancel")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={Boolean(pendingPaletteId)} onOpenChange={(open) => {
         if (!open) setPendingPaletteId(null);

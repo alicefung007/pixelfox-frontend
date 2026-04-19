@@ -61,6 +61,16 @@
     "recent": "Recent",
     "allColors": "All Colors",
     "custom": "Custom",
+    "usedActions": {
+      "replace": "Replace",
+      "clear": "Clear",
+      "exclude": "Exclude"
+    },
+    "replaceDialog": {
+      "title": "Palette Replace Color",
+      "description": "Choose a swatch from {{palette}}. Selecting one will immediately replace the current used color.",
+      "cancel": "Cancel"
+    },
     "manageDialog": {
       "title": "Palette Manager",
       "description": "Pick and use different color systems and schemes in your artwork.",
