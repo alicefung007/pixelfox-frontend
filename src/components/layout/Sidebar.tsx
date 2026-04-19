@@ -45,13 +45,13 @@ export default function Sidebar({ isOpen = true, onClose, onUpload, onPreview3D 
     { icon: <Box size={18} />, label: t("sidebar.preview3d"), onClick: onPreview3D },
   ];
 
-  const tools: { id: ToolType; icon: React.ReactNode; label: string; shortcut: string }[] = [
+  const tools: { id: ToolType; icon: React.ReactNode; label: string; shortcut: string; hidden?: boolean }[] = [
     { id: 'brush', icon: <Brush size={18} />, label: t("sidebar.brush"), shortcut: "B" },
     { id: 'bucket', icon: <PaintBucket size={18} />, label: t("sidebar.bucket"), shortcut: "G" },
     { id: 'hand', icon: <Hand size={18} />, label: t("sidebar.hand"), shortcut: "H" },
     { id: 'eraser', icon: <Eraser size={18} />, label: t("sidebar.eraser"), shortcut: "E" },
     { id: 'eyedropper', icon: <Pipette size={18} />, label: t("sidebar.eyedropper"), shortcut: "I" },
-    { id: 'text', icon: <Type size={18} />, label: t("sidebar.text"), shortcut: "T" },
+    { id: 'text', icon: <Type size={18} />, label: t("sidebar.text"), shortcut: "T", hidden: true },
   ];
 
   return (
@@ -125,7 +125,7 @@ export default function Sidebar({ isOpen = true, onClose, onUpload, onPreview3D 
 
 type SidebarContentProps = {
   actionButtons: { icon: React.ReactNode; label: string; shortcut?: string; onClick?: () => void }[];
-  tools: { id: ToolType; icon: React.ReactNode; label: string; shortcut: string }[];
+  tools: { id: ToolType; icon: React.ReactNode; label: string; shortcut: string; hidden?: boolean }[];
   currentTool: ToolType;
   onToolChange: (tool: ToolType) => void;
   width: number;
@@ -253,7 +253,7 @@ function SidebarContent({
         <span className="text-[10px] font-bold text-muted-foreground uppercase px-2 mb-1 block">
           {t("sidebar.tools")}
         </span>
-        {tools.map((tool) => (
+        {tools.filter((tool) => !tool.hidden).map((tool) => (
           <Button 
             key={tool.id} 
             variant={currentTool === tool.id ? "secondary" : "ghost"} 

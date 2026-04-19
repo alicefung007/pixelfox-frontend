@@ -40,6 +40,8 @@ interface EditorState {
 
 const DEFAULT_WIDTH = EDITOR_CONFIG.DEFAULT_WIDTH;
 const DEFAULT_HEIGHT = EDITOR_CONFIG.DEFAULT_HEIGHT;
+const EDITOR_STORAGE_KEY = 'pixelfox-editor-storage';
+const EDITOR_CANVAS_STORAGE_KEY = 'pixelfox-editor-canvas-storage';
 
 const createInitialHistoryEntry = (): HistoryEntry => ({
   pixels: {},
@@ -108,18 +110,90 @@ const sanitizePersistedEditorState = (
   };
 };
 
-export const useEditorStore = create<EditorState>()(
-  persist(
-    (set) => ({
+type PersistedCanvasState = Pick<EditorState, 'pixels' | 'width' | 'height' | 'history' | 'historyIndex'>;
+
+const getDefaultCanvasState = (): PersistedCanvasState => ({
   pixels: {},
   width: DEFAULT_WIDTH,
   height: DEFAULT_HEIGHT,
+  history: [createInitialHistoryEntry()],
+  historyIndex: 0,
+});
+
+const loadPersistedCanvasState = (fallback?: Partial<EditorState>): PersistedCanvasState => {
+  const fallbackState = sanitizePersistedEditorState(fallback);
+
+  if (typeof window === 'undefined') {
+    return {
+      pixels: fallbackState.pixels ?? {},
+      width: fallbackState.width ?? DEFAULT_WIDTH,
+      height: fallbackState.height ?? DEFAULT_HEIGHT,
+      history: fallbackState.history ?? [createInitialHistoryEntry()],
+      historyIndex: fallbackState.historyIndex ?? 0,
+    };
+  }
+
+  try {
+    const raw = window.localStorage.getItem(EDITOR_CANVAS_STORAGE_KEY);
+    if (!raw) {
+      return {
+        pixels: fallbackState.pixels ?? {},
+        width: fallbackState.width ?? DEFAULT_WIDTH,
+        height: fallbackState.height ?? DEFAULT_HEIGHT,
+        history: fallbackState.history ?? [createInitialHistoryEntry()],
+        historyIndex: fallbackState.historyIndex ?? 0,
+      };
+    }
+
+    const parsed = JSON.parse(raw) as Partial<EditorState>;
+    const sanitized = sanitizePersistedEditorState(parsed);
+    return {
+      pixels: sanitized.pixels ?? {},
+      width: sanitized.width ?? DEFAULT_WIDTH,
+      height: sanitized.height ?? DEFAULT_HEIGHT,
+      history: sanitized.history ?? [createInitialHistoryEntry()],
+      historyIndex: sanitized.historyIndex ?? 0,
+    };
+  } catch {
+    return {
+      pixels: fallbackState.pixels ?? {},
+      width: fallbackState.width ?? DEFAULT_WIDTH,
+      height: fallbackState.height ?? DEFAULT_HEIGHT,
+      history: fallbackState.history ?? [createInitialHistoryEntry()],
+      historyIndex: fallbackState.historyIndex ?? 0,
+    };
+  }
+};
+
+const persistCanvasState = (state: PersistedCanvasState) => {
+  if (typeof window === 'undefined') return;
+
+  window.localStorage.setItem(
+    EDITOR_CANVAS_STORAGE_KEY,
+    JSON.stringify({
+      pixels: state.pixels,
+      width: state.width,
+      height: state.height,
+      history: state.history,
+      historyIndex: state.historyIndex,
+    })
+  );
+};
+
+const initialCanvasState = loadPersistedCanvasState(getDefaultCanvasState());
+
+export const useEditorStore = create<EditorState>()(
+  persist(
+    (set) => ({
+  pixels: initialCanvasState.pixels,
+  width: initialCanvasState.width,
+  height: initialCanvasState.height,
   currentTool: 'brush',
   primaryColor: EDITOR_CONFIG.DEFAULT_PRIMARY_COLOR,
   backgroundColor: null,
   zoom: EDITOR_CONFIG.DEFAULT_ZOOM,
-  history: [createInitialHistoryEntry()],
-  historyIndex: 0,
+  history: initialCanvasState.history,
+  historyIndex: initialCanvasState.historyIndex,
   uploadOpen: false,
 
   setPixel: (x, y, color) => set((state) => {
@@ -174,10 +248,18 @@ export const useEditorStore = create<EditorState>()(
 
     const newHistory = state.history.slice(0, state.historyIndex + 1);
     newHistory.push({ pixels: { ...currentPixels }, width: state.width, height: state.height });
-    return {
+    const nextState = {
       history: newHistory,
       historyIndex: newHistory.length - 1,
     };
+    persistCanvasState({
+      pixels: currentPixels,
+      width: state.width,
+      height: state.height,
+      history: newHistory,
+      historyIndex: newHistory.length - 1,
+    });
+    return nextState;
   }),
 
   setTool: (tool) => set({ currentTool: tool }),
@@ -192,12 +274,20 @@ export const useEditorStore = create<EditorState>()(
     if (state.historyIndex > 0) {
       const newIndex = state.historyIndex - 1;
       const entry = state.history[newIndex];
-      return {
+      const nextState = {
         historyIndex: newIndex,
         pixels: entry.pixels,
         width: entry.width,
         height: entry.height,
       };
+      persistCanvasState({
+        pixels: entry.pixels,
+        width: entry.width,
+        height: entry.height,
+        history: state.history,
+        historyIndex: newIndex,
+      });
+      return nextState;
     }
     return state;
   }),
@@ -206,12 +296,20 @@ export const useEditorStore = create<EditorState>()(
     if (state.historyIndex < state.history.length - 1) {
       const newIndex = state.historyIndex + 1;
       const entry = state.history[newIndex];
-      return {
+      const nextState = {
         historyIndex: newIndex,
         pixels: entry.pixels,
         width: entry.width,
         height: entry.height,
       };
+      persistCanvasState({
+        pixels: entry.pixels,
+        width: entry.width,
+        height: entry.height,
+        history: state.history,
+        historyIndex: newIndex,
+      });
+      return nextState;
     }
     return state;
   }),
@@ -219,30 +317,36 @@ export const useEditorStore = create<EditorState>()(
   clear: () => set((state) => {
     const newHistory = state.history.slice(0, state.historyIndex + 1);
     newHistory.push({ pixels: {}, width: state.width, height: state.height });
-    return {
+    const nextState = {
       pixels: {},
       history: newHistory,
       historyIndex: newHistory.length - 1,
     };
+    persistCanvasState({
+      pixels: {},
+      width: state.width,
+      height: state.height,
+      history: newHistory,
+      historyIndex: newHistory.length - 1,
+    });
+    return nextState;
   }),
 
   setUploadOpen: (open) => set({ uploadOpen: open }),
 }),
 {
-  name: 'pixelfox-editor-storage',
+  name: EDITOR_STORAGE_KEY,
   version: 2,
   storage: createJSONStorage(() => localStorage),
   partialize: (state) => ({
-    pixels: state.pixels,
-    width: state.width,
-    height: state.height,
-    history: state.history,
-    historyIndex: state.historyIndex,
     backgroundColor: state.backgroundColor,
     primaryColor: state.primaryColor,
     currentTool: state.currentTool,
     zoom: state.zoom,
   }),
-  migrate: (persistedState) => sanitizePersistedEditorState(persistedState as Partial<EditorState>),
+  migrate: (persistedState) => ({
+    ...sanitizePersistedEditorState(persistedState as Partial<EditorState>),
+    ...loadPersistedCanvasState(persistedState as Partial<EditorState>),
+  }),
 }
 ));
