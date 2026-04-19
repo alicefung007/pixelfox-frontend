@@ -144,7 +144,7 @@
       "settings": "导出设置",
       "autoCrop": "自动裁剪",
       "autoCropHint": "裁掉图案四周的空白边缘",
-      "removeWhiteBackground": "移除白色背景",
+      "whiteBackground": "白色背景",
       "showGrid": "显示网格",
       "showMinorGrid": "显示细网格",
       "gridInterval": "网格间隔",

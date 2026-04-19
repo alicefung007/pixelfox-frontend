@@ -144,7 +144,7 @@
       "settings": "Export Settings",
       "autoCrop": "Auto Crop",
       "autoCropHint": "Trim empty margins around the pattern",
-      "removeWhiteBackground": "Remove White Background",
+      "whiteBackground": "White Background",
       "showGrid": "Show Grid",
       "showMinorGrid": "Show Minor Grid",
       "gridInterval": "Grid Interval",

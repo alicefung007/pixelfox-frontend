@@ -104,7 +104,7 @@ function renderPatternImage(options: {
   height: number;
   paletteLabels: Map<string, string>;
   autoCrop: boolean;
-  removeWhiteBackground: boolean;
+  whiteBackground: boolean;
   showGrid: boolean;
   showMinorGrid: boolean;
   gridInterval: number;
@@ -121,7 +121,7 @@ function renderPatternImage(options: {
     height,
     paletteLabels,
     autoCrop,
-    removeWhiteBackground,
+    whiteBackground,
     showGrid,
     showMinorGrid,
     gridInterval,
@@ -161,7 +161,7 @@ function renderPatternImage(options: {
   const contentWidth = cols * cellSize;
   const contentHeight = rows * cellSize;
 
-  if (!removeWhiteBackground) {
+  if (whiteBackground) {
     ctx.fillStyle = "#FFFFFF";
     ctx.fillRect(0, 0, exportWidth, exportHeight);
   } else {
@@ -169,7 +169,7 @@ function renderPatternImage(options: {
   }
 
   if (showAxis) {
-    ctx.fillStyle = removeWhiteBackground ? "rgba(248,250,252,0.96)" : "#F8FAFC";
+    ctx.fillStyle = whiteBackground ? "#F8FAFC" : "rgba(248,250,252,0.96)";
     ctx.fillRect(0, 0, exportWidth, axisSize);
     ctx.fillRect(0, exportHeight - axisSize, exportWidth, axisSize);
     ctx.fillRect(0, 0, axisSize, exportHeight);
@@ -304,7 +304,7 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
   const height = useEditorStore((state) => state.height);
   const currentPaletteId = usePaletteStore((state) => state.currentPaletteId);
   const [autoCrop, setAutoCrop] = useState(true);
-  const [removeWhiteBackground, setRemoveWhiteBackground] = useState(true);
+  const [whiteBackground, setWhiteBackground] = useState(true);
   const [showGrid, setShowGrid] = useState(true);
   const [showMinorGrid, setShowMinorGrid] = useState(true);
   const [gridInterval, setGridInterval] = useState([5]);
@@ -344,7 +344,7 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
         height,
         paletteLabels,
         autoCrop,
-        removeWhiteBackground,
+        whiteBackground,
         showGrid,
         showMinorGrid,
         gridInterval: gridInterval[0],
@@ -359,7 +359,7 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
       height,
       paletteLabels,
       autoCrop,
-      removeWhiteBackground,
+      whiteBackground,
       showGrid,
       showMinorGrid,
       gridInterval,
@@ -423,10 +423,10 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
                   />
                 </div>
                 <div className="flex items-center justify-between gap-3">
-                  <Label className="text-[11px] font-semibold">{t("editor.exportDialog.removeWhiteBackground")}</Label>
+                  <Label className="text-[11px] font-semibold">{t("editor.exportDialog.whiteBackground")}</Label>
                   <Switch
-                    checked={removeWhiteBackground}
-                    onCheckedChange={setRemoveWhiteBackground}
+                    checked={whiteBackground}
+                    onCheckedChange={setWhiteBackground}
                     className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                   />
                 </div>
@@ -554,7 +554,7 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
                   <img
                     src={exportResult.dataUrl}
                     alt={t("editor.exportDialog.previewTitle")}
-                    className="max-h-[520px] max-w-full object-contain mx-auto [image-rendering:pixelated]"
+                    className="max-h-[520px] max-w-full object-contain mx-auto border border-black/10 shadow-[0_12px_30px_rgba(15,23,42,0.12),0_2px_8px_rgba(15,23,42,0.08)] [image-rendering:pixelated]"
                   />
                 </div>
               ) : (
