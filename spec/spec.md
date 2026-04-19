@@ -151,7 +151,7 @@ import type { PaletteDefinition } from '@/lib/palettes/types';
   DEFAULT_ZOOM: 160,           // Initial zoom percentage
   MIN_ZOOM: 10,                // Minimum zoom (100%)
   MAX_ZOOM: 1000,              // Maximum zoom (1000%)
-  DEFAULT_PRIMARY_COLOR: '#FF61A6',  // Default brush color
+  DEFAULT_PRIMARY_COLOR: '#F77C31',  // Default brush color
   PAN_SPEED: 1.5,              // Pan speed multiplier
   AUTO_FIT_PADDING: 96,        // Auto-fit padding in pixels
   ZOOM_STEP: 10               // Zoom increment per step

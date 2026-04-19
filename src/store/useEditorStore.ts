@@ -44,6 +44,7 @@ const DEFAULT_WIDTH = EDITOR_CONFIG.DEFAULT_WIDTH;
 const DEFAULT_HEIGHT = EDITOR_CONFIG.DEFAULT_HEIGHT;
 const EDITOR_STORAGE_KEY = 'pixelfox-editor-storage';
 const EDITOR_CANVAS_STORAGE_KEY = 'pixelfox-editor-canvas-storage';
+const LEGACY_DEFAULT_PRIMARY_COLOR = '#FF61A6';
 
 const createInitialHistoryEntry = (): HistoryEntry => ({
   pixels: {},
@@ -100,6 +101,11 @@ const sanitizePersistedEditorState = (
 
   return {
     ...persistedState,
+    primaryColor:
+      !persistedState?.primaryColor ||
+      persistedState.primaryColor.toUpperCase() === LEGACY_DEFAULT_PRIMARY_COLOR
+        ? EDITOR_CONFIG.DEFAULT_PRIMARY_COLOR
+        : persistedState.primaryColor,
     pixels,
     width,
     height,
@@ -341,7 +347,7 @@ export const useEditorStore = create<EditorState>()(
 }),
 {
   name: EDITOR_STORAGE_KEY,
-  version: 2,
+  version: 3,
   storage: createJSONStorage(() => localStorage),
   partialize: (state) => ({
     backgroundColor: state.backgroundColor,
