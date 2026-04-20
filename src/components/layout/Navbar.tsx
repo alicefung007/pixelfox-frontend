@@ -64,7 +64,7 @@ export default function Navbar({ onMenuClick }: Props) {
 
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 sm:w-8 sm:h-8 bg-primary rounded flex items-center justify-center text-white font-bold text-[10px] sm:text-xs">PX</div>
-          <span className="font-bold text-base sm:text-lg tracking-tight hidden sm:inline">pixelfox<span className="text-primary">.art</span></span>
+          <span className="font-bold text-base sm:text-lg tracking-tight hidden sm:inline">PixelFox<span className="text-primary">.art</span></span>
         </div>
         
         <div className="hidden md:flex items-center gap-6">

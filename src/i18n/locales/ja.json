@@ -164,7 +164,10 @@
       "previewSubtitle": "プレビュー",
       "previewPlaceholder": "プレビューのプレースホルダー",
       "close": "閉じる",
-      "downloadImage": "画像をダウンロード"
+      "downloadImage": "画像をダウンロード",
+      "summaryPalette": "パレット",
+      "summarySize": "サイズ",
+      "summaryBeadCount": "ビーズ数"
     }
   }
 }

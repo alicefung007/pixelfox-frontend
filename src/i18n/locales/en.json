@@ -164,7 +164,10 @@
       "previewSubtitle": "preview",
       "previewPlaceholder": "Preview placeholder",
       "close": "Close",
-      "downloadImage": "Download Image"
+      "downloadImage": "Download Image",
+      "summaryPalette": "Palette",
+      "summarySize": "Size",
+      "summaryBeadCount": "Bead Count"
     }
   }
 }

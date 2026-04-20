@@ -164,7 +164,10 @@
       "previewSubtitle": "预览",
       "previewPlaceholder": "预览占位",
       "close": "关闭",
-      "downloadImage": "下载图片"
+      "downloadImage": "下载图片",
+      "summaryPalette": "色盘",
+      "summarySize": "尺寸",
+      "summaryBeadCount": "拼豆数"
     }
   }
 }

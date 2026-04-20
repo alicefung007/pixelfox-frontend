@@ -164,7 +164,10 @@
       "previewSubtitle": "미리보기",
       "previewPlaceholder": "미리보기 자리 표시자",
       "close": "닫기",
-      "downloadImage": "이미지 다운로드"
+      "downloadImage": "이미지 다운로드",
+      "summaryPalette": "팔레트",
+      "summarySize": "크기",
+      "summaryBeadCount": "비즈 수"
     }
   }
 }

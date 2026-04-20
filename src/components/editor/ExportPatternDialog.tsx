@@ -38,6 +38,24 @@ type RenderResult = {
   height: number;
 };
 
+type ColorUsageItem = {
+  color: string;
+  label: string;
+  count: number;
+};
+
+type SummaryInfo = {
+  paletteName: string;
+  sizeText: string;
+  beadCount: number;
+  colorCountExcludingWhite: number;
+};
+
+type SummarySegment = {
+  text: string;
+  icon?: "palette" | "size" | "bead";
+};
+
 type ExportDialogSettings = {
   autoCrop: boolean;
   whiteBackground: boolean;
@@ -67,10 +85,29 @@ const GRID_COLORS = [
 ];
 
 const CELL_SIZE = 40;
-const AXIS_SIZE = 28;
+const AXIS_SIZE = 40;
+const BRAND_HEADER_HEIGHT = 192;
+const BRAND_HEADER_PADDING_X = 40;
+const BRAND_ICON_SIZE = 112;
+const BRAND_FONT = "600 120px Geist, sans-serif";
+const BRAND_URL_FONT = "400 56px Geist, sans-serif";
 const MAX_EXPORT_EDGE = 4096;
 const MAJOR_GRID_WIDTH = 2;
 const MINOR_GRID_WIDTH = 2;
+const COLOR_STATS_PADDING_X = 18;
+const COLOR_STATS_PADDING_Y = 18;
+const COLOR_STATS_GAP_X = 16;
+const COLOR_STATS_GAP_Y = 16;
+const COLOR_STATS_SUMMARY_GAP_Y = 12;
+const COLOR_STATS_SUMMARY_LINE_HEIGHT = 52;
+const COLOR_STATS_SUMMARY_FONT = "400 20px Geist, sans-serif";
+const COLOR_STATS_SUMMARY_ICON_SIZE = 22;
+const COLOR_STATS_SUMMARY_ICON_GAP = 8;
+const COLOR_STATS_BADGE_HEIGHT = 28;
+const COLOR_STATS_BADGE_RADIUS = 8;
+const COLOR_STATS_BADGE_DOT_SIZE = 12;
+const COLOR_STATS_BADGE_PADDING_X = 12;
+const COLOR_STATS_BADGE_MAX_LABEL_WIDTH = 120;
 const PREVIEW_MIN_SCALE = 0.5;
 const PREVIEW_MAX_SCALE = 5;
 const PREVIEW_SCALE_STEP = 0.12;
@@ -203,10 +240,291 @@ function hexToRgbTuple(hex: string) {
   };
 }
 
+function getColorUsage(
+  pixels: Record<string, string>,
+  paletteLabels: Map<string, string>
+): ColorUsageItem[] {
+  const usageMap = new Map<string, number>();
+
+  Object.values(pixels).forEach((color) => {
+    const normalized = normalizeHex(color);
+    if (!normalized) return;
+    usageMap.set(normalized, (usageMap.get(normalized) ?? 0) + 1);
+  });
+
+  return Array.from(usageMap.entries())
+    .map(([color, count]) => ({
+      color: `#${color}`,
+      label: paletteLabels.get(color) ?? `#${color.toUpperCase()}`,
+      count,
+    }))
+    .sort((a, b) => {
+      if (b.count !== a.count) return b.count - a.count;
+      return a.label.localeCompare(b.label);
+    });
+}
+
+function fitTextToWidth(ctx: CanvasRenderingContext2D, text: string, maxWidth: number) {
+  if (ctx.measureText(text).width <= maxWidth) return text;
+
+  const ellipsis = "…";
+  let result = text;
+  while (result.length > 1 && ctx.measureText(`${result}${ellipsis}`).width > maxWidth) {
+    result = result.slice(0, -1);
+  }
+  return `${result}${ellipsis}`;
+}
+
+function getPreferredColorBadgeWidth(totalWidth: number) {
+  if (totalWidth <= 480) return 72;
+  if (totalWidth <= 720) return 84;
+  if (totalWidth <= 960) return 96;
+  if (totalWidth <= 1280) return 108;
+  return 120;
+}
+
+function isWhiteLikeColor(hex: string) {
+  const rgb = hexToRgbTuple(hex);
+  if (!rgb) return false;
+  return rgb.r >= 245 && rgb.g >= 245 && rgb.b >= 245;
+}
+
+function createSummaryLayout(
+  ctx: CanvasRenderingContext2D,
+  summary: SummaryInfo,
+  totalWidth: number,
+  labels: { palette: string; size: string; beadCount: string }
+) {
+  const contentWidth = Math.max(0, totalWidth - COLOR_STATS_PADDING_X * 2);
+  const segments: SummarySegment[] = [
+    { icon: "palette", text: `${labels.palette}: ${summary.paletteName}` },
+    { icon: "size", text: `${labels.size}: ${summary.sizeText}` },
+    { icon: "bead", text: `${labels.beadCount}: ${summary.beadCount}` },
+  ];
+
+  const lines: SummarySegment[][] = [];
+  let currentLine: SummarySegment[] = [];
+  ctx.font = COLOR_STATS_SUMMARY_FONT;
+
+  for (const segment of segments) {
+    const segmentWidth =
+      ctx.measureText(segment.text).width +
+      (segment.icon ? COLOR_STATS_SUMMARY_ICON_SIZE + COLOR_STATS_SUMMARY_ICON_GAP : 0);
+    const currentWidth = currentLine.reduce((sum, item, index) => {
+      const itemWidth =
+        ctx.measureText(item.text).width +
+        (item.icon ? COLOR_STATS_SUMMARY_ICON_SIZE + COLOR_STATS_SUMMARY_ICON_GAP : 0);
+      return sum + itemWidth + (index > 0 ? 24 : 0);
+    }, 0);
+
+    if (currentLine.length === 0 || currentWidth + 24 + segmentWidth <= contentWidth) {
+      currentLine.push(segment);
+      continue;
+    }
+    lines.push(currentLine);
+    currentLine = [segment];
+  }
+
+  if (currentLine.length > 0) {
+    lines.push(currentLine);
+  }
+
+  return {
+    lines,
+    height: lines.length > 0
+      ? lines.length * COLOR_STATS_SUMMARY_LINE_HEIGHT + COLOR_STATS_SUMMARY_GAP_Y
+      : 0,
+  };
+}
+
+function drawPaletteSummaryIcon(ctx: CanvasRenderingContext2D, x: number, y: number) {
+  const size = COLOR_STATS_SUMMARY_ICON_SIZE;
+  const radius = 4;
+  const innerPadding = 2;
+  const swatchGap = 2;
+  const swatchSize = (size - innerPadding * 2 - swatchGap) / 2;
+  const swatches = [
+    { color: "#FB7185", x: x + innerPadding, y: y + innerPadding },
+    { color: "#FBBF24", x: x + innerPadding + swatchSize + swatchGap, y: y + innerPadding },
+    { color: "#38BDF8", x: x + innerPadding, y: y + innerPadding + swatchSize + swatchGap },
+    { color: "#34D399", x: x + innerPadding + swatchSize + swatchGap, y: y + innerPadding + swatchSize + swatchGap },
+  ];
+
+  ctx.save();
+  ctx.fillStyle = "#FFFFFF";
+  ctx.beginPath();
+  ctx.roundRect(x, y, size, size, radius);
+  ctx.fill();
+
+  ctx.strokeStyle = "#CBD5E1";
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  swatches.forEach((swatch) => {
+    ctx.fillStyle = swatch.color;
+    ctx.beginPath();
+    ctx.roundRect(swatch.x, swatch.y, swatchSize, swatchSize, 2);
+    ctx.fill();
+  });
+
+  ctx.strokeStyle = "rgba(15,23,42,0.08)";
+  swatches.forEach((swatch) => {
+    ctx.beginPath();
+    ctx.roundRect(swatch.x, swatch.y, swatchSize, swatchSize, 2);
+    ctx.stroke();
+  });
+  ctx.restore();
+}
+
+function drawSizeSummaryIcon(ctx: CanvasRenderingContext2D, x: number, y: number) {
+  const size = COLOR_STATS_SUMMARY_ICON_SIZE;
+  const radius = 4;
+
+  ctx.save();
+  ctx.strokeStyle = "#94A3B8";
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.roundRect(x + 1, y + 1, size - 2, size - 2, radius);
+  ctx.stroke();
+
+  ctx.strokeStyle = "#475569";
+  ctx.lineWidth = 1.4;
+  ctx.beginPath();
+  ctx.moveTo(x + size * 0.28, y + size * 0.36);
+  ctx.lineTo(x + size * 0.72, y + size * 0.36);
+  ctx.moveTo(x + size * 0.28, y + size * 0.64);
+  ctx.lineTo(x + size * 0.72, y + size * 0.64);
+  ctx.moveTo(x + size * 0.36, y + size * 0.28);
+  ctx.lineTo(x + size * 0.36, y + size * 0.72);
+  ctx.moveTo(x + size * 0.64, y + size * 0.28);
+  ctx.lineTo(x + size * 0.64, y + size * 0.72);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawBeadSummaryIcon(ctx: CanvasRenderingContext2D, x: number, y: number, color: string) {
+  const size = COLOR_STATS_SUMMARY_ICON_SIZE;
+  const radius = 4;
+  const centerX = x + size / 2;
+  const centerY = y + size / 2;
+  const beadRadius = size * 0.32;
+
+  ctx.save();
+  ctx.fillStyle = "#FFFFFF";
+  ctx.beginPath();
+  ctx.roundRect(x, y, size, size, radius);
+  ctx.fill();
+
+  ctx.strokeStyle = "#CBD5E1";
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.fillStyle = color;  ctx.beginPath();
+  ctx.arc(centerX, centerY, beadRadius, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = "rgba(15,23,42,0.08)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, beadRadius, 0, Math.PI * 2);
+  ctx.stroke();
+
+  ctx.fillStyle = "rgba(255,255,255,0.5)";
+  ctx.beginPath();
+  ctx.arc(centerX - beadRadius * 0.25, centerY - beadRadius * 0.25, beadRadius * 0.25, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawBrandIcon(ctx: CanvasRenderingContext2D, x: number, y: number, color: string) {
+  const size = BRAND_ICON_SIZE;
+  const pixelSize = size / 8;
+
+  ctx.save();
+  const pixels: { col: number; row: number }[] = [
+    { col: 2, row: 0 }, { col: 5, row: 0 },
+    { col: 1, row: 1 }, { col: 2, row: 1 }, { col: 3, row: 1 }, { col: 4, row: 1 }, { col: 5, row: 1 }, { col: 6, row: 1 },
+    { col: 0, row: 2 }, { col: 1, row: 2 }, { col: 2, row: 2 }, { col: 3, row: 2 }, { col: 4, row: 2 }, { col: 5, row: 2 }, { col: 6, row: 2 }, { col: 7, row: 2 },
+    { col: 0, row: 3 }, { col: 1, row: 3 }, { col: 3, row: 3 }, { col: 4, row: 3 }, { col: 6, row: 3 }, { col: 7, row: 3 },
+    { col: 0, row: 4 }, { col: 1, row: 4 }, { col: 2, row: 4 }, { col: 3, row: 4 }, { col: 4, row: 4 }, { col: 5, row: 4 }, { col: 6, row: 4 }, { col: 7, row: 4 },
+    { col: 1, row: 5 }, { col: 2, row: 5 }, { col: 5, row: 5 }, { col: 6, row: 5 },
+    { col: 2, row: 6 }, { col: 3, row: 6 }, { col: 4, row: 6 }, { col: 5, row: 6 },
+    { col: 3, row: 7 }, { col: 4, row: 7 },
+  ];
+
+  ctx.fillStyle = color;
+  for (const p of pixels) {
+    ctx.fillRect(x + p.col * pixelSize, y + p.row * pixelSize, pixelSize + 0.5, pixelSize + 0.5);
+  }
+  ctx.restore();
+}
+
+function createColorBadgeLayout(
+  ctx: CanvasRenderingContext2D,
+  items: ColorUsageItem[],
+  totalWidth: number,
+  offsetY = 0
+) {
+  if (items.length === 0) {
+    return { badges: [], height: offsetY > 0 ? COLOR_STATS_PADDING_Y * 2 + offsetY : 0 };
+  }
+
+  const contentWidth = Math.max(0, totalWidth - COLOR_STATS_PADDING_X * 2);
+  const minBadgeWidth = COLOR_STATS_BADGE_PADDING_X * 2 + COLOR_STATS_BADGE_DOT_SIZE + 24;
+  const preferredColumnWidth = Math.max(minBadgeWidth, getPreferredColorBadgeWidth(totalWidth));
+  const maxColumns = Math.max(
+    1,
+    Math.floor((contentWidth + COLOR_STATS_GAP_X) / (preferredColumnWidth + COLOR_STATS_GAP_X))
+  );
+  const columnWidth = Math.max(
+    minBadgeWidth,
+    Math.floor((contentWidth - COLOR_STATS_GAP_X * (maxColumns - 1)) / maxColumns)
+  );
+  const badges: Array<{
+    x: number;
+    y: number;
+    width: number;
+    label: string;
+    item: ColorUsageItem;
+  }> = [];
+
+  ctx.font = "600 12px Geist, sans-serif";
+  items.forEach((item, index) => {
+    const countText = String(item.count);
+    ctx.font = "700 11px Geist, sans-serif";
+    const countWidth = Math.max(24, Math.ceil(ctx.measureText(countText).width) + 14);
+
+    ctx.font = "600 12px Geist, sans-serif";
+    const maxLabelWidth = Math.min(
+      COLOR_STATS_BADGE_MAX_LABEL_WIDTH,
+      Math.max(20, columnWidth - COLOR_STATS_BADGE_PADDING_X * 2 - COLOR_STATS_BADGE_DOT_SIZE - countWidth - 20)
+    );
+    const label = fitTextToWidth(ctx, item.label, maxLabelWidth);
+    const columnIndex = index % maxColumns;
+    const rowIndex = Math.floor(index / maxColumns);
+    const x = COLOR_STATS_PADDING_X + columnIndex * (columnWidth + COLOR_STATS_GAP_X);
+    const y = COLOR_STATS_PADDING_Y + offsetY + rowIndex * (COLOR_STATS_BADGE_HEIGHT + COLOR_STATS_GAP_Y);
+
+    badges.push({ x, y, width: columnWidth, label, item });
+  });
+
+  const rowCount = Math.ceil(items.length / maxColumns);
+
+  return {
+    badges,
+    height:
+      COLOR_STATS_PADDING_Y * 2 +
+      offsetY +
+      rowCount * COLOR_STATS_BADGE_HEIGHT +
+      Math.max(0, rowCount - 1) * COLOR_STATS_GAP_Y,
+  };
+}
+
 function renderPatternImage(options: {
   pixels: Record<string, string>;
   width: number;
   height: number;
+  paletteName: string;
   paletteLabels: Map<string, string>;
   autoCrop: boolean;
   whiteBackground: boolean;
@@ -217,13 +535,18 @@ function renderPatternImage(options: {
   showAxis: boolean;
   showColorCode: boolean;
   mirrorFlip: boolean;
+  summaryLabels: { palette: string; size: string; beadCount: string };
 }): RenderResult | null {
   if (typeof document === "undefined") return null;
+
+  const themePrimaryColor =
+    getComputedStyle(document.documentElement).getPropertyValue("--primary").trim() || "#F77C31";
 
   const {
     pixels,
     width,
     height,
+    paletteName,
     paletteLabels,
     autoCrop,
     whiteBackground,
@@ -234,6 +557,7 @@ function renderPatternImage(options: {
     showAxis,
     showColorCode,
     mirrorFlip,
+    summaryLabels,
   } = options;
 
   const sourceBounds = autoCrop ? getPixelBounds(pixels, width, height) : null;
@@ -251,9 +575,38 @@ function renderPatternImage(options: {
   if (cols <= 0 || rows <= 0) return null;
 
   const axisSize = showAxis ? AXIS_SIZE : 0;
-  const cellSize = clampCellSize(CELL_SIZE, cols, rows, axisSize);
-  const exportWidth = cols * cellSize + axisSize * 2;
-  const exportHeight = rows * cellSize + axisSize * 2;
+  const colorUsage = getColorUsage(pixels, paletteLabels);
+  const summaryInfo: SummaryInfo = {
+    paletteName,
+    sizeText: `${cols} × ${rows}`,
+    beadCount: Object.keys(pixels).length,
+    colorCountExcludingWhite: colorUsage.filter((item) => !isWhiteLikeColor(item.color)).length,
+  };
+  const measureCanvas = document.createElement("canvas");
+  const measureCtx = measureCanvas.getContext("2d");
+  if (!measureCtx) return null;
+
+  let cellSize = clampCellSize(CELL_SIZE, cols, rows, axisSize);
+  let exportWidth = cols * cellSize + axisSize * 2;
+  let summaryLayout = createSummaryLayout(measureCtx, summaryInfo, exportWidth, summaryLabels);
+  let colorStatsLayout = createColorBadgeLayout(measureCtx, colorUsage, exportWidth, summaryLayout.height);
+
+  for (let iteration = 0; iteration < 4; iteration += 1) {
+    const maxByHeight = Math.floor(
+      (MAX_EXPORT_EDGE - BRAND_HEADER_HEIGHT - axisSize * 2 - colorStatsLayout.height) / Math.max(rows, 1)
+    );
+    const nextCellSize = Math.max(8, Math.min(cellSize, maxByHeight));
+    if (nextCellSize === cellSize) break;
+
+    cellSize = nextCellSize;
+    exportWidth = cols * cellSize + axisSize * 2;
+    summaryLayout = createSummaryLayout(measureCtx, summaryInfo, exportWidth, summaryLabels);
+    colorStatsLayout = createColorBadgeLayout(measureCtx, colorUsage, exportWidth, summaryLayout.height);
+  }
+
+  exportWidth = cols * cellSize + axisSize * 2;
+  const gridHeight = rows * cellSize + axisSize * 2;
+  const exportHeight = BRAND_HEADER_HEIGHT + gridHeight + colorStatsLayout.height;
 
   const canvas = document.createElement("canvas");
   canvas.width = exportWidth;
@@ -263,9 +616,10 @@ function renderPatternImage(options: {
   ctx.imageSmoothingEnabled = false;
 
   const gridOriginX = axisSize;
-  const gridOriginY = axisSize;
+  const gridOriginY = BRAND_HEADER_HEIGHT + axisSize;
   const contentWidth = cols * cellSize;
   const contentHeight = rows * cellSize;
+  const colorStatsTop = BRAND_HEADER_HEIGHT + gridHeight;
 
   if (whiteBackground) {
     ctx.fillStyle = "#FFFFFF";
@@ -274,12 +628,74 @@ function renderPatternImage(options: {
     ctx.clearRect(0, 0, exportWidth, exportHeight);
   }
 
+  // Brand header
+  ctx.fillStyle = whiteBackground ? "#F8FAFC" : "rgba(248,250,252,0.96)";
+  ctx.fillRect(0, 0, exportWidth, BRAND_HEADER_HEIGHT);
+  ctx.fillStyle = "rgba(148,163,184,0.2)";
+  ctx.fillRect(0, BRAND_HEADER_HEIGHT - 1, exportWidth, 1);
+
+  const brandIconY = (BRAND_HEADER_HEIGHT - BRAND_ICON_SIZE) / 2;
+  drawBrandIcon(ctx, BRAND_HEADER_PADDING_X, brandIconY, themePrimaryColor);
+  const brandTextX = BRAND_HEADER_PADDING_X + BRAND_ICON_SIZE + 10;
+
+  ctx.font = BRAND_FONT;
+  ctx.textAlign = "left";
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = "#1E293B";
+  ctx.fillText("PixelFox", brandTextX, BRAND_HEADER_HEIGHT / 2);
+
+  const brandNameWidth = ctx.measureText("PixelFox").width;
+  ctx.font = BRAND_URL_FONT;
+  ctx.fillStyle = "#94A3B8";
+  ctx.fillText("pixelfox.art", brandTextX + brandNameWidth + 30, BRAND_HEADER_HEIGHT / 2);
+
+  if (colorStatsLayout.height > 0) {
+    ctx.fillStyle = whiteBackground ? "#F8FAFC" : "rgba(248,250,252,0.96)";
+    ctx.fillRect(0, colorStatsTop, exportWidth, colorStatsLayout.height);
+    ctx.fillStyle = "rgba(148,163,184,0.32)";
+    ctx.fillRect(0, colorStatsTop, exportWidth, 1);
+  }
+
+  if (summaryLayout.lines.length > 0) {
+    ctx.font = COLOR_STATS_SUMMARY_FONT;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "top";
+    ctx.fillStyle = "#334155";
+
+    summaryLayout.lines.forEach((line, index) => {
+      let cursorX = COLOR_STATS_PADDING_X;
+      const lineY = colorStatsTop + COLOR_STATS_PADDING_Y + index * COLOR_STATS_SUMMARY_LINE_HEIGHT;
+      const iconY = lineY + (COLOR_STATS_SUMMARY_LINE_HEIGHT - COLOR_STATS_SUMMARY_ICON_SIZE) / 2;
+      const textY = lineY + (COLOR_STATS_SUMMARY_LINE_HEIGHT - 20) / 2;
+
+      line.forEach((segment, segmentIndex) => {
+        if (segmentIndex > 0) {
+          cursorX += 24;
+        }
+
+        if (segment.icon === "palette") {
+          drawPaletteSummaryIcon(ctx, cursorX, iconY);
+          cursorX += COLOR_STATS_SUMMARY_ICON_SIZE + COLOR_STATS_SUMMARY_ICON_GAP;
+        } else if (segment.icon === "size") {
+          drawSizeSummaryIcon(ctx, cursorX, iconY);
+          cursorX += COLOR_STATS_SUMMARY_ICON_SIZE + COLOR_STATS_SUMMARY_ICON_GAP;
+        } else if (segment.icon === "bead") {
+          drawBeadSummaryIcon(ctx, cursorX, iconY, themePrimaryColor);
+          cursorX += COLOR_STATS_SUMMARY_ICON_SIZE + COLOR_STATS_SUMMARY_ICON_GAP;
+        }
+
+        ctx.fillText(segment.text, cursorX, textY);
+        cursorX += ctx.measureText(segment.text).width;
+      });
+    });
+  }
+
   if (showAxis) {
     ctx.fillStyle = whiteBackground ? "#F8FAFC" : "rgba(248,250,252,0.96)";
-    ctx.fillRect(0, 0, exportWidth, axisSize);
-    ctx.fillRect(0, exportHeight - axisSize, exportWidth, axisSize);
-    ctx.fillRect(0, 0, axisSize, exportHeight);
-    ctx.fillRect(exportWidth - axisSize, 0, axisSize, exportHeight);
+    ctx.fillRect(0, BRAND_HEADER_HEIGHT, exportWidth, axisSize);
+    ctx.fillRect(0, BRAND_HEADER_HEIGHT + gridHeight - axisSize, exportWidth, axisSize);
+    ctx.fillRect(0, BRAND_HEADER_HEIGHT, axisSize, gridHeight);
+    ctx.fillRect(exportWidth - axisSize, BRAND_HEADER_HEIGHT, axisSize, gridHeight);
   }
 
   for (let row = 0; row < rows; row += 1) {
@@ -362,7 +778,7 @@ function renderPatternImage(options: {
   }
 
   if (showAxis) {
-    ctx.fillStyle = "#334155";
+    ctx.fillStyle = "#94A3B8";
     ctx.font = `600 ${Math.max(12, Math.floor(axisSize * 0.52))}px Geist, sans-serif`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
@@ -372,8 +788,8 @@ function renderPatternImage(options: {
         ? String(col + 1)
         : String(mirrorFlip ? bounds.maxX - col + 1 : bounds.minX + col + 1);
       const x = gridOriginX + col * cellSize + cellSize / 2;
-      ctx.fillText(text, x, axisSize / 2);
-      ctx.fillText(text, x, exportHeight - axisSize / 2);
+      ctx.fillText(text, x, BRAND_HEADER_HEIGHT + axisSize / 2);
+      ctx.fillText(text, x, BRAND_HEADER_HEIGHT + gridHeight - axisSize / 2);
     }
 
     for (let row = 0; row < rows; row += 1) {
@@ -381,6 +797,53 @@ function renderPatternImage(options: {
       const y = gridOriginY + row * cellSize + cellSize / 2;
       ctx.fillText(text, axisSize / 2, y);
       ctx.fillText(text, exportWidth - axisSize / 2, y);
+    }
+  }
+
+  if (colorStatsLayout.badges.length > 0) {
+    for (const badge of colorStatsLayout.badges) {
+      const badgeX = badge.x;
+      const badgeY = colorStatsTop + badge.y;
+      const countText = String(badge.item.count);
+
+      ctx.fillStyle = whiteBackground ? "#FFFFFF" : "rgba(255,255,255,0.88)";
+      ctx.beginPath();
+      ctx.roundRect(badgeX, badgeY, badge.width, COLOR_STATS_BADGE_HEIGHT, COLOR_STATS_BADGE_RADIUS);
+      ctx.fill();
+
+      ctx.strokeStyle = "rgba(148,163,184,0.38)";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      const dotX = badgeX + COLOR_STATS_BADGE_PADDING_X + COLOR_STATS_BADGE_DOT_SIZE / 2;
+      const dotY = badgeY + COLOR_STATS_BADGE_HEIGHT / 2;
+      ctx.fillStyle = badge.item.color;
+      ctx.beginPath();
+      ctx.arc(dotX, dotY, COLOR_STATS_BADGE_DOT_SIZE / 2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(15,23,42,0.12)";
+      ctx.stroke();
+
+      ctx.font = "600 12px Geist, sans-serif";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = "#0F172A";
+      const labelX = badgeX + COLOR_STATS_BADGE_PADDING_X + COLOR_STATS_BADGE_DOT_SIZE + 8;
+      ctx.fillText(badge.label, labelX, badgeY + COLOR_STATS_BADGE_HEIGHT / 2);
+
+      ctx.font = "700 11px Geist, sans-serif";
+      const countWidth = Math.max(24, Math.ceil(ctx.measureText(countText).width) + 14);
+      const countX = badgeX + badge.width - COLOR_STATS_BADGE_PADDING_X - countWidth;
+      const countY = badgeY + (COLOR_STATS_BADGE_HEIGHT - 20) / 2;
+
+      ctx.fillStyle = "rgba(226,232,240,0.96)";
+      ctx.beginPath();
+      ctx.roundRect(countX, countY, countWidth, 20, 10);
+      ctx.fill();
+
+      ctx.fillStyle = "#475569";
+      ctx.textAlign = "center";
+      ctx.fillText(countText, countX + countWidth / 2, badgeY + COLOR_STATS_BADGE_HEIGHT / 2 + 0.5);
     }
   }
 
@@ -397,6 +860,7 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
   const width = useEditorStore((state) => state.width);
   const height = useEditorStore((state) => state.height);
   const currentPaletteId = usePaletteStore((state) => state.currentPaletteId);
+  const currentPalette = useMemo(() => getSystemPalette(currentPaletteId), [currentPaletteId]);
   const [persistedSettings, setPersistedSettings] = useState<ExportDialogSettings>(() => loadExportDialogSettings());
   const [autoCrop, setAutoCrop] = useState(persistedSettings.autoCrop);
   const [whiteBackground, setWhiteBackground] = useState(persistedSettings.whiteBackground);
@@ -473,7 +937,7 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
   }, [persistedSettings]);
 
   const paletteLabels = useMemo(() => {
-    const palette = getSystemPalette(currentPaletteId);
+    const palette = currentPalette;
     if (!palette) return new Map<string, string>();
 
     const matcher = createColorMatcher(palette);
@@ -493,7 +957,13 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
     });
 
     return resolved;
-  }, [currentPaletteId, pixels]);
+  }, [currentPalette, pixels]);
+
+  const paletteDisplayName = currentPalette
+    ? currentPalette.i18nKey
+      ? t(currentPalette.i18nKey)
+      : currentPalette.name
+    : currentPaletteId;
 
   const exportResult = useMemo(
     () =>
@@ -501,6 +971,7 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
         pixels,
         width,
         height,
+        paletteName: paletteDisplayName,
         paletteLabels,
         autoCrop,
         whiteBackground,
@@ -511,11 +982,17 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
         showAxis,
         showColorCode,
         mirrorFlip,
+        summaryLabels: {
+          palette: t("editor.exportDialog.summaryPalette"),
+          size: t("editor.exportDialog.summarySize"),
+          beadCount: t("editor.exportDialog.summaryBeadCount"),
+        },
       }),
     [
       pixels,
       width,
       height,
+      paletteDisplayName,
       paletteLabels,
       autoCrop,
       whiteBackground,
