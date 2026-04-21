@@ -1,14 +1,14 @@
 import { useState, useCallback } from "react";
 import { Outlet, useLocation } from "react-router-dom";
+import { Toaster } from "sonner";
 import Navbar from "./Navbar";
-import PaletteRemapNotice from "@/components/notice/PaletteRemapNotice";
 import { useEditorStore } from "@/store/useEditorStore";
 import { usePaletteStore } from "@/store/usePaletteStore";
 import type { ColorMatchResult } from "@/lib/image-processor";
 import type { SystemPaletteId } from "@/lib/palettes";
 import { getSystemPalette } from "@/lib/palettes";
 import { resolvePaletteColor } from "@/lib/palette-color";
-import { showPaletteRemapNotice } from "@/lib/palette-notice";
+import { showPaletteRemapToast } from "@/lib/palette-notice";
 import { useTranslation } from "react-i18next";
 
 export default function AppLayout() {
@@ -41,7 +41,7 @@ export default function AppLayout() {
     if (targetPalette) {
       const resolvedColor = resolvePaletteColor(primaryColor, targetPalette);
       setColor(resolvedColor);
-      showPaletteRemapNotice({
+      showPaletteRemapToast({
         fromColor: primaryColor,
         toColor: resolvedColor,
         palette: targetPalette,
@@ -59,7 +59,7 @@ export default function AppLayout() {
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-background">
       <Navbar onMenuClick={isEditorPage ? () => setSidebarOpen(!sidebarOpen) : undefined} />
-      <PaletteRemapNotice />
+      <Toaster position="top-right" />
       <main className="flex-1 flex flex-col relative overflow-hidden">
         <Outlet context={{
           sidebarOpen,

@@ -29,7 +29,7 @@ import { usePaletteStore } from "@/store/usePaletteStore";
 import PaletteManageDialog from "@/components/palette/PaletteManageDialog";
 import { getSystemPalette, type PaletteSwatch, type SystemPaletteId } from "@/lib/palettes";
 import { resolvePaletteColor } from "@/lib/palette-color";
-import { showPaletteRemapNotice } from "@/lib/palette-notice";
+import { showPaletteRemapToast } from "@/lib/palette-notice";
 import { cn, normalizeHex, hexLabel, isDarkColor } from "@/lib/utils";
 
 function getLabelFromColor(hex: string, paletteSwatches: PaletteSwatch[]): string {
@@ -125,7 +125,7 @@ export default function PalettePanel() {
     const resolvedPrimaryColor = resolvePaletteColor(primaryColor, palette);
     if (normalizeHex(resolvedPrimaryColor) === normalizeHex(primaryColor)) return;
     setColor(resolvedPrimaryColor);
-    showPaletteRemapNotice({
+    showPaletteRemapToast({
       fromColor: primaryColor,
       toColor: resolvedPrimaryColor,
       palette,
@@ -380,7 +380,7 @@ export default function PalettePanel() {
           if (targetPalette) {
             const resolvedColor = resolvePaletteColor(primaryColor, targetPalette);
             setColor(resolvedColor);
-            showPaletteRemapNotice({
+            showPaletteRemapToast({
               fromColor: primaryColor,
               toColor: resolvedColor,
               palette: targetPalette,
@@ -537,7 +537,7 @@ export default function PalettePanel() {
                 if (pendingPalette) {
                   const resolvedColor = resolvePaletteColor(primaryColor, pendingPalette);
                   setColor(resolvedColor);
-                  showPaletteRemapNotice({
+                  showPaletteRemapToast({
                     fromColor: primaryColor,
                     toColor: resolvedColor,
                     palette: pendingPalette,
