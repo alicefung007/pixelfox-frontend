@@ -86,11 +86,11 @@ const GRID_COLORS = [
 
 const CELL_SIZE = 40;
 const AXIS_SIZE = 40;
-const BRAND_HEADER_HEIGHT = 192;
+const BRAND_HEADER_HEIGHT = 120;
 const BRAND_HEADER_PADDING_X = 40;
-const BRAND_ICON_SIZE = 112;
-const BRAND_FONT = "600 120px Geist, sans-serif";
-const BRAND_URL_FONT = "400 56px Geist, sans-serif";
+const BRAND_ICON_SIZE = 64;
+const BRAND_FONT = "600 72px Geist, sans-serif";
+const BRAND_URL_FONT = "400 32px Geist, sans-serif";
 const MAX_EXPORT_EDGE = 4096;
 const MAJOR_GRID_WIDTH = 2;
 const MINOR_GRID_WIDTH = 2;
