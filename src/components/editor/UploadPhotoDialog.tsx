@@ -28,6 +28,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { cn, clamp } from "@/lib/utils";
 import { SYSTEM_PALETTES, type SystemPaletteId } from "@/lib/palettes";
+import { usePaletteStore } from "@/store/usePaletteStore";
 import { convertImageToPixelArt, type ColorMatchResult } from "@/lib/image-processor";
 
 type Props = {
@@ -196,6 +197,14 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
   const [trimEdges, setTrimEdges] = useState(false);
 
   widthBeadsRef.current = processingDimensions.width;
+
+  // Sync color palette to editor's selected palette when dialog opens
+  const currentPaletteId = usePaletteStore((s) => s.currentPaletteId);
+  useEffect(() => {
+    if (open) {
+      setColorPaletteId(currentPaletteId);
+    }
+  }, [open, currentPaletteId]);
 
   // Truncate filename with ellipsis in the middle
   const truncateFilename = (name: string) => {
