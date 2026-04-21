@@ -1,17 +1,23 @@
 import { useState, useCallback } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import Navbar from "./Navbar";
+import PaletteRemapNotice from "@/components/notice/PaletteRemapNotice";
 import { useEditorStore } from "@/store/useEditorStore";
 import { usePaletteStore } from "@/store/usePaletteStore";
 import type { ColorMatchResult } from "@/lib/image-processor";
 import type { SystemPaletteId } from "@/lib/palettes";
+import { getSystemPalette } from "@/lib/palettes";
+import { resolvePaletteColor } from "@/lib/palette-color";
+import { showPaletteRemapNotice } from "@/lib/palette-notice";
+import { useTranslation } from "react-i18next";
 
 export default function AppLayout() {
+  const { t } = useTranslation();
   const location = useLocation();
   const isEditorPage = location.pathname === "/";
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const { setPixels, setSize, saveHistory, uploadOpen, setUploadOpen, exportOpen, setExportOpen } = useEditorStore();
+  const { setPixels, setSize, saveHistory, setColor, primaryColor, uploadOpen, setUploadOpen, exportOpen, setExportOpen } = useEditorStore();
   const { setCurrentPaletteId, setActiveTab, flashUsedTab } = usePaletteStore();
 
   const handleGenerate = useCallback((result: ColorMatchResult, paletteId: SystemPaletteId) => {
@@ -31,17 +37,29 @@ export default function AppLayout() {
 
     setSize(width, height);
     setPixels(pixels);
+    const targetPalette = getSystemPalette(paletteId);
+    if (targetPalette) {
+      const resolvedColor = resolvePaletteColor(primaryColor, targetPalette);
+      setColor(resolvedColor);
+      showPaletteRemapNotice({
+        fromColor: primaryColor,
+        toColor: resolvedColor,
+        palette: targetPalette,
+        t,
+      });
+    }
     setCurrentPaletteId(paletteId);
     saveHistory();
     setTimeout(() => {
       setActiveTab("used");
       flashUsedTab();
     }, 350);
-  }, [setPixels, setSize, saveHistory, setCurrentPaletteId, setActiveTab, flashUsedTab]);
+  }, [setPixels, setSize, saveHistory, setColor, primaryColor, setCurrentPaletteId, setActiveTab, flashUsedTab, t]);
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-background">
       <Navbar onMenuClick={isEditorPage ? () => setSidebarOpen(!sidebarOpen) : undefined} />
+      <PaletteRemapNotice />
       <main className="flex-1 flex flex-col relative overflow-hidden">
         <Outlet context={{
           sidebarOpen,

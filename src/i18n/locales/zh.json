@@ -61,6 +61,10 @@
     "recent": "最近",
     "allColors": "所有颜色",
     "custom": "自定义",
+    "remapNotice": {
+      "title": "画笔颜色已自动调整",
+      "description": "{{palette}} 色盘里没有当前画笔颜色，已自动切换为最接近的 {{to}}。"
+    },
     "usedActions": {
       "replace": "Replace",
       "clear": "Clear",

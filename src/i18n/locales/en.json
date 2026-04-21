@@ -61,6 +61,10 @@
     "recent": "Recent",
     "allColors": "All Colors",
     "custom": "Custom",
+    "remapNotice": {
+      "title": "Brush color adjusted",
+      "description": "Current brush color is not available in {{palette}}, so it was changed to the closest match, {{to}}."
+    },
     "usedActions": {
       "replace": "Replace",
       "clear": "Clear",

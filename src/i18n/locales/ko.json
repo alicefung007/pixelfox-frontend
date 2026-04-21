@@ -61,6 +61,10 @@
     "recent": "최근",
     "allColors": "모든 색상",
     "custom": "사용자 지정",
+    "remapNotice": {
+      "title": "브러시 색상을 자동 조정했어요",
+      "description": "{{palette}} 팔레트에 현재 브러시 색상이 없어 가장 가까운 {{to}}(으)로 자동 변경했습니다."
+    },
     "usedActions": {
       "replace": "Replace",
       "clear": "Clear",

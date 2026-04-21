@@ -61,6 +61,10 @@
     "recent": "最近",
     "allColors": "すべての色",
     "custom": "カスタム",
+    "remapNotice": {
+      "title": "ブラシ色を自動調整しました",
+      "description": "{{palette}} には現在のブラシの色がないため、最も近い {{to}} に自動変更しました。"
+    },
     "usedActions": {
       "replace": "Replace",
       "clear": "Clear",

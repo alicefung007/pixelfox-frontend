@@ -28,6 +28,8 @@ import { useEditorStore } from "@/store/useEditorStore";
 import { usePaletteStore } from "@/store/usePaletteStore";
 import PaletteManageDialog from "@/components/palette/PaletteManageDialog";
 import { getSystemPalette, type PaletteSwatch, type SystemPaletteId } from "@/lib/palettes";
+import { resolvePaletteColor } from "@/lib/palette-color";
+import { showPaletteRemapNotice } from "@/lib/palette-notice";
 import { cn, normalizeHex, hexLabel, isDarkColor } from "@/lib/utils";
 
 function getLabelFromColor(hex: string, paletteSwatches: PaletteSwatch[]): string {
@@ -118,6 +120,18 @@ export default function PalettePanel() {
       setUsedActionPopoverColor(null);
     }
   }, [tab]);
+
+  useEffect(() => {
+    const resolvedPrimaryColor = resolvePaletteColor(primaryColor, palette);
+    if (normalizeHex(resolvedPrimaryColor) === normalizeHex(primaryColor)) return;
+    setColor(resolvedPrimaryColor);
+    showPaletteRemapNotice({
+      fromColor: primaryColor,
+      toColor: resolvedPrimaryColor,
+      palette,
+      t,
+    });
+  }, [palette, primaryColor, setColor]);
 
   const handleReplaceColor = (nextColor: string) => {
     if (!selectedUsedColor) return;
@@ -363,6 +377,16 @@ export default function PalettePanel() {
             setPendingPaletteId(paletteId);
             return false;
           }
+          if (targetPalette) {
+            const resolvedColor = resolvePaletteColor(primaryColor, targetPalette);
+            setColor(resolvedColor);
+            showPaletteRemapNotice({
+              fromColor: primaryColor,
+              toColor: resolvedColor,
+              palette: targetPalette,
+              t,
+            });
+          }
           setCurrentPaletteId(paletteId);
           return true;
         }}
@@ -510,6 +534,16 @@ export default function PalettePanel() {
               onClick={() => {
                 if (!pendingPaletteId) return;
                 clear();
+                if (pendingPalette) {
+                  const resolvedColor = resolvePaletteColor(primaryColor, pendingPalette);
+                  setColor(resolvedColor);
+                  showPaletteRemapNotice({
+                    fromColor: primaryColor,
+                    toColor: resolvedColor,
+                    palette: pendingPalette,
+                    t,
+                  });
+                }
                 setCurrentPaletteId(pendingPaletteId);
                 setPendingPaletteId(null);
                 setSelectedUsedColor(null);
