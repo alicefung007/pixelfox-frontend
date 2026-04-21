@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { PaletteTabId } from "@/store/usePaletteStore";
 import { useTranslation } from "react-i18next";
 import {
@@ -32,18 +32,21 @@ import { resolvePaletteColor } from "@/lib/palette-color";
 import { showPaletteRemapToast } from "@/lib/palette-notice";
 import { cn, normalizeHex, hexLabel, isDarkColor } from "@/lib/utils";
 
-function getLabelFromColor(hex: string, paletteSwatches: PaletteSwatch[]): string {
-  const normalizedHex = normalizeHex(hex);
-  const found = paletteSwatches.find((s) => normalizeHex(s.color) === normalizedHex);
-  return found?.label ?? hexLabel(hex);
-}
-
 export default function PalettePanel() {
   const { t } = useTranslation();
-  const { primaryColor, setColor, clear, setPixels, saveHistory } = useEditorStore();
-  const currentPixels = useEditorStore((s) => s.pixels);
+  const primaryColor = useEditorStore((state) => state.primaryColor);
+  const setColor = useEditorStore((state) => state.setColor);
+  const clear = useEditorStore((state) => state.clear);
+  const setPixels = useEditorStore((state) => state.setPixels);
+  const saveHistory = useEditorStore((state) => state.saveHistory);
   const committedPixels = useEditorStore((s) => s.history[s.historyIndex]?.pixels ?? s.pixels);
-  const { currentPaletteId, setCurrentPaletteId, activeTab: tab, setActiveTab: setTab, selectedUsedColor, setSelectedUsedColor, usedTabFlashAt } = usePaletteStore();
+  const currentPaletteId = usePaletteStore((state) => state.currentPaletteId);
+  const setCurrentPaletteId = usePaletteStore((state) => state.setCurrentPaletteId);
+  const tab = usePaletteStore((state) => state.activeTab);
+  const setTab = usePaletteStore((state) => state.setActiveTab);
+  const selectedUsedColor = usePaletteStore((state) => state.selectedUsedColor);
+  const setSelectedUsedColor = usePaletteStore((state) => state.setSelectedUsedColor);
+  const usedTabFlashAt = usePaletteStore((state) => state.usedTabFlashAt);
   const [isManageOpen, setIsManageOpen] = useState(false);
   const [isUsedFlashing, setIsUsedFlashing] = useState(false);
   const [pendingPaletteId, setPendingPaletteId] = useState<SystemPaletteId | null>(null);
@@ -64,28 +67,35 @@ export default function PalettePanel() {
   }, [tab, setTab]);
 
   const palette = getSystemPalette(currentPaletteId)!;
+  const paletteLabelMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const swatch of palette.swatches) {
+      map.set(normalizeHex(swatch.color), swatch.label);
+    }
+    return map;
+  }, [palette.swatches]);
 
-  const usedOrderRef = useRef<string[]>([]);
   const { canvasUsedColors, usedCounts } = useMemo(() => {
     const counts = new Map<string, number>();
     for (const color of Object.values(committedPixels)) {
       const key = `#${normalizeHex(color)}`;
       counts.set(key, (counts.get(key) ?? 0) + 1);
     }
-    const prev = usedOrderRef.current;
-    const kept = prev.filter((c) => counts.has(c));
-    const keptSet = new Set(kept);
-    for (const c of counts.keys()) {
-      if (!keptSet.has(c)) kept.push(c);
-    }
-    usedOrderRef.current = kept;
-    return { canvasUsedColors: kept, usedCounts: counts };
+    return { canvasUsedColors: Array.from(counts.keys()), usedCounts: counts };
   }, [committedPixels]);
 
   const visibleSwatches = useMemo((): PaletteSwatch[] => {
     if (tab === "all") return palette.swatches;
-    return canvasUsedColors.map((c) => ({ label: getLabelFromColor(c, palette.swatches), color: c }));
-  }, [palette.swatches, canvasUsedColors, tab]);
+    return canvasUsedColors.map((color) => ({
+      label: paletteLabelMap.get(normalizeHex(color)) ?? hexLabel(color),
+      color,
+    }));
+  }, [palette.swatches, canvasUsedColors, paletteLabelMap, tab]);
+
+  const getLabelFromColor = (hex: string) => {
+    const normalizedHex = normalizeHex(hex);
+    return paletteLabelMap.get(normalizedHex) ?? hexLabel(hex);
+  };
 
   const pendingPalette = useMemo(
     () => (pendingPaletteId ? getSystemPalette(pendingPaletteId) : null),
@@ -144,6 +154,7 @@ export default function PalettePanel() {
     }
 
     let changed = false;
+    const currentPixels = useEditorStore.getState().pixels;
     const nextPixels: Record<string, string> = {};
     for (const [key, color] of Object.entries(currentPixels)) {
       if (normalizeHex(color) === selectedColor) {
@@ -172,6 +183,7 @@ export default function PalettePanel() {
 
     const selectedColor = normalizeHex(selectedUsedColor);
     let changed = false;
+    const currentPixels = useEditorStore.getState().pixels;
     const nextPixels: Record<string, string> = {};
 
     for (const [key, color] of Object.entries(currentPixels)) {
@@ -504,7 +516,7 @@ export default function PalettePanel() {
                     <span>
                       {(palette.i18nKey ? t(palette.i18nKey) : palette.name)}
                       {"("}
-                      {getLabelFromColor(color, palette.swatches)}
+                      {getLabelFromColor(color)}
                       {")"}
                     </span>
                   </span>

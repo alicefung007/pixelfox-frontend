@@ -17,8 +17,18 @@ export default function AppLayout() {
   const isEditorPage = location.pathname === "/";
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const { setPixels, setSize, saveHistory, setColor, primaryColor, uploadOpen, setUploadOpen, exportOpen, setExportOpen } = useEditorStore();
-  const { setCurrentPaletteId, setActiveTab, flashUsedTab } = usePaletteStore();
+  const setPixels = useEditorStore((state) => state.setPixels);
+  const setSize = useEditorStore((state) => state.setSize);
+  const saveHistory = useEditorStore((state) => state.saveHistory);
+  const setColor = useEditorStore((state) => state.setColor);
+  const primaryColor = useEditorStore((state) => state.primaryColor);
+  const uploadOpen = useEditorStore((state) => state.uploadOpen);
+  const setUploadOpen = useEditorStore((state) => state.setUploadOpen);
+  const exportOpen = useEditorStore((state) => state.exportOpen);
+  const setExportOpen = useEditorStore((state) => state.setExportOpen);
+  const setCurrentPaletteId = usePaletteStore((state) => state.setCurrentPaletteId);
+  const setActiveTab = usePaletteStore((state) => state.setActiveTab);
+  const flashUsedTab = usePaletteStore((state) => state.flashUsedTab);
 
   const handleGenerate = useCallback((result: ColorMatchResult, paletteId: SystemPaletteId) => {
     const pixels: Record<string, string> = {};

@@ -37,7 +37,17 @@ type Props = {
 
 export default function Sidebar({ isOpen = true, onClose, onUpload, onPreview3D, onExport }: Props) {
   const { t } = useTranslation();
-  const { currentTool, setTool, undo, redo, clear, width, height, setSize, saveHistory, backgroundColor, setBackgroundColor } = useEditorStore();
+  const currentTool = useEditorStore((state) => state.currentTool);
+  const setTool = useEditorStore((state) => state.setTool);
+  const undo = useEditorStore((state) => state.undo);
+  const redo = useEditorStore((state) => state.redo);
+  const clear = useEditorStore((state) => state.clear);
+  const width = useEditorStore((state) => state.width);
+  const height = useEditorStore((state) => state.height);
+  const setSize = useEditorStore((state) => state.setSize);
+  const saveHistory = useEditorStore((state) => state.saveHistory);
+  const backgroundColor = useEditorStore((state) => state.backgroundColor);
+  const setBackgroundColor = useEditorStore((state) => state.setBackgroundColor);
 
   const actionButtons = [
     { icon: <Upload size={18} />, label: t("sidebar.upload"), shortcut: "⌘ U", onClick: onUpload },

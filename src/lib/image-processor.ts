@@ -253,8 +253,8 @@ export async function convertImageToPixelArt(
     poolSize = 2,
     ciede2000Threshold = 5,
     excludeColorCodes = [],
-    bgColorTolerance = 3,
-    bgOutputMode = "WHITE",
+    // bgColorTolerance = 3,
+    // bgOutputMode = "WHITE",
   } = options;
 
   // Load image

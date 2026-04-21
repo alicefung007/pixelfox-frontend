@@ -11,8 +11,21 @@ import { EDITOR_CONFIG, CANVAS_CONFIG, CURSOR_CONFIG } from '@/lib/constants';
 export default function PixelCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const { pixels, width, height, backgroundColor, zoom, setPixel, clearPixel, setPixels, currentTool, primaryColor, setZoom, saveHistory } = useEditorStore();
-  const { addUsedColor, addRecentColor, selectedUsedColor } = usePaletteStore();
+  const pixels = useEditorStore((state) => state.pixels);
+  const width = useEditorStore((state) => state.width);
+  const height = useEditorStore((state) => state.height);
+  const backgroundColor = useEditorStore((state) => state.backgroundColor);
+  const zoom = useEditorStore((state) => state.zoom);
+  const setPixel = useEditorStore((state) => state.setPixel);
+  const clearPixel = useEditorStore((state) => state.clearPixel);
+  const setPixels = useEditorStore((state) => state.setPixels);
+  const currentTool = useEditorStore((state) => state.currentTool);
+  const primaryColor = useEditorStore((state) => state.primaryColor);
+  const setZoom = useEditorStore((state) => state.setZoom);
+  const saveHistory = useEditorStore((state) => state.saveHistory);
+  const addUsedColor = usePaletteStore((state) => state.addUsedColor);
+  const addRecentColor = usePaletteStore((state) => state.addRecentColor);
+  const selectedUsedColor = usePaletteStore((state) => state.selectedUsedColor);
   const [isAutoZoom, setIsAutoZoom] = useState(true);
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
   const [viewOffset, setViewOffset] = useState({ x: 0, y: 0 });
@@ -25,6 +38,7 @@ export default function PixelCanvas() {
   const [cursorOverlay, setCursorOverlay] = useState<{ x: number; y: number; visible: boolean }>({ x: 0, y: 0, visible: false });
   const cursorRafRef = useRef<number | null>(null);
   const cursorPendingRef = useRef<{ x: number; y: number; visible: boolean }>(cursorOverlay);
+  const strokeColorRegisteredRef = useRef(false);
   const [primaryThemeColor, setPrimaryThemeColor] = useState('oklch(0.68 0.19 48)');
   const { theme } = useTheme();
   const [systemTheme, setSystemTheme] = useState<'dark' | 'light'>(() => {
@@ -327,14 +341,20 @@ export default function PixelCanvas() {
         else setPixel(coords.x, coords.y, primaryColor);
       }
       
-      if (!isErase) {
+      if (!isErase && !strokeColorRegisteredRef.current) {
         addUsedColor(primaryColor);
         addRecentColor(primaryColor);
+        strokeColorRegisteredRef.current = true;
       }
       setLastCoords(coords);
     } else if (currentTool === 'bucket') {
       const targetColor = pixels[`${coords.x},${coords.y}`] ?? null;
       floodFill(coords.x, coords.y, targetColor, primaryColor);
+      if (!strokeColorRegisteredRef.current) {
+        addUsedColor(primaryColor);
+        addRecentColor(primaryColor);
+        strokeColorRegisteredRef.current = true;
+      }
     } else if (currentTool === 'eyedropper') {
       const pickedColor = pixels[`${coords.x},${coords.y}`] || '#FFFFFF';
       useEditorStore.getState().setColor(pickedColor);
@@ -414,6 +434,7 @@ export default function PixelCanvas() {
         queueCursorOverlay({ x: cursorPendingRef.current.x, y: cursorPendingRef.current.y, visible: false });
         return;
       }
+      strokeColorRegisteredRef.current = false;
       setIsDrawing(true);
       handleDraw(getCoordinatesFromTouch(e));
     }
@@ -493,6 +514,7 @@ export default function PixelCanvas() {
       if (isDrawing) {
         saveHistory();
       }
+      strokeColorRegisteredRef.current = false;
       setIsDrawing(false);
       setLastCoords(null);
     }
@@ -509,6 +531,7 @@ export default function PixelCanvas() {
       queueCursorOverlay({ x: cursorPendingRef.current.x, y: cursorPendingRef.current.y, visible: false });
       return;
     }
+    strokeColorRegisteredRef.current = false;
     setIsDrawing(true);
     handleDraw(getCoordinates(e));
   };
@@ -539,6 +562,7 @@ export default function PixelCanvas() {
     if (isDrawing) {
       saveHistory();
     }
+    strokeColorRegisteredRef.current = false;
     setIsDrawing(false);
     setLastCoords(null);
   };
