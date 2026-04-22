@@ -40,6 +40,10 @@ export default function AppLayout() {
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
         const offset = (y * width + x) * 4;
+        const alpha = imageData.data[offset + 3];
+        if (alpha === 0) {
+          continue;
+        }
         const r = imageData.data[offset];
         const g = imageData.data[offset + 1];
         const b = imageData.data[offset + 2];
