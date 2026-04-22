@@ -16,7 +16,7 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { getSystemPalette } from "@/lib/palettes";
 import { createColorMatcher } from "@/lib/image-processor";
-import { cn, isDarkColor, normalizeHex } from "@/lib/utils";
+import { cn, isDarkColor, isLikelyMouseWheel, normalizeHex } from "@/lib/utils";
 import { useEditorStore } from "@/store/useEditorStore";
 import { usePaletteStore } from "@/store/usePaletteStore";
 
@@ -109,7 +109,7 @@ const COLOR_STATS_BADGE_DOT_SIZE = 12;
 const COLOR_STATS_BADGE_PADDING_X = 12;
 const COLOR_STATS_BADGE_MAX_LABEL_WIDTH = 120;
 const PREVIEW_MIN_SCALE = 0.5;
-const PREVIEW_MAX_SCALE = 5;
+const PREVIEW_MAX_SCALE = 10;
 const PREVIEW_SCALE_STEP = 0.12;
 const PREVIEW_PAN_SPEED = 1;
 const EXPORT_DIALOG_SETTINGS_STORAGE_KEY = "pixelfox-export-dialog-settings";
@@ -118,7 +118,7 @@ const DEFAULT_EXPORT_DIALOG_SETTINGS: ExportDialogSettings = {
   whiteBackground: true,
   showGrid: true,
   showMinorGrid: true,
-  gridInterval: 10,
+  gridInterval: 5,
   gridColor: GRID_COLORS[0],
   showAxis: false,
   showColorCode: true,
@@ -159,14 +159,6 @@ function loadExportDialogSettings(): ExportDialogSettings {
 
 function clampPreviewScale(scale: number) {
   return Math.min(PREVIEW_MAX_SCALE, Math.max(PREVIEW_MIN_SCALE, Number(scale.toFixed(2))));
-}
-
-function isLikelyMouseWheel(event: globalThis.WheelEvent) {
-  if (event.deltaMode !== 0) return true;
-  if (Math.abs(event.deltaX) > 0) return false;
-
-  const absDeltaY = Math.abs(event.deltaY);
-  return Number.isInteger(event.deltaY) && absDeltaY >= 40;
 }
 
 function getTouchDistance(touches: ReactTouchList) {

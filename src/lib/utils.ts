@@ -32,6 +32,14 @@ export function clampZoom(value: number) {
   return clamp(value, EDITOR_CONFIG.MIN_ZOOM, EDITOR_CONFIG.MAX_ZOOM)
 }
 
+export function isLikelyMouseWheel(event: WheelEvent) {
+  if (event.deltaMode !== 0) return true
+  if (Math.abs(event.deltaX) > 0) return false
+
+  const absDeltaY = Math.abs(event.deltaY)
+  return Number.isInteger(event.deltaY) && absDeltaY >= 40
+}
+
 export function getLinePoints(x0: number, y0: number, x1: number, y1: number) {
   const points: { x: number, y: number }[] = [];
   const dx = Math.abs(x1 - x0);

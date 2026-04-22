@@ -4,9 +4,10 @@ import { usePaletteStore } from '@/store/usePaletteStore';
 import { Minus, Plus, Maximize, Pencil, PaintBucket, Eraser, Pipette, Brush } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/components/theme-provider';
-import { clampZoom, getLinePoints, normalizeHex } from '@/lib/utils';
+import { clampZoom, getLinePoints, isLikelyMouseWheel, normalizeHex } from '@/lib/utils';
 import { EDITOR_CONFIG, CANVAS_CONFIG, CURSOR_CONFIG } from '@/lib/constants';
 
+type ResizeEdge = 'left' | 'right' | 'top' | 'bottom';
 
 export default function PixelCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -19,6 +20,7 @@ export default function PixelCanvas() {
   const setPixel = useEditorStore((state) => state.setPixel);
   const clearPixel = useEditorStore((state) => state.clearPixel);
   const setPixels = useEditorStore((state) => state.setPixels);
+  const resizeFromEdge = useEditorStore((state) => state.resizeFromEdge);
   const currentTool = useEditorStore((state) => state.currentTool);
   const primaryColor = useEditorStore((state) => state.primaryColor);
   const setZoom = useEditorStore((state) => state.setZoom);
@@ -30,6 +32,14 @@ export default function PixelCanvas() {
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
   const [viewOffset, setViewOffset] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
+  const [resizeDrag, setResizeDrag] = useState<{
+    edge: ResizeEdge;
+    startClientX: number;
+    startClientY: number;
+    startWidth: number;
+    startHeight: number;
+    startOffset: { x: number; y: number };
+  } | null>(null);
   const panLastRef = useRef<{ x: number; y: number } | null>(null);
   const zoomRef = useRef(zoom);
   const isGestureRef = useRef(false);
@@ -400,6 +410,7 @@ export default function PixelCanvas() {
   };
 
   const onTouchStart = (e: React.TouchEvent) => {
+    if (resizeDrag) return;
     if (e.touches.length >= 2) {
       // Two-finger gesture: pinch zoom + pan
       e.preventDefault();
@@ -441,6 +452,7 @@ export default function PixelCanvas() {
   };
 
   const onTouchMove = (e: React.TouchEvent) => {
+    if (resizeDrag) return;
     if (isGestureRef.current && e.touches.length >= 2) {
       e.preventDefault();
       const start = gestureStartRef.current;
@@ -498,6 +510,7 @@ export default function PixelCanvas() {
   };
 
   const onTouchEnd = (e: React.TouchEvent) => {
+    if (resizeDrag) return;
     if (e.touches.length < 2 && isGestureRef.current) {
       isGestureRef.current = false;
       gestureStartRef.current = null;
@@ -521,6 +534,7 @@ export default function PixelCanvas() {
   };
 
   const onMouseDown = (e: React.MouseEvent) => {
+    if (resizeDrag) return;
     if ((currentTool === 'hand' && e.button === 0) || e.button === 1 || e.button === 2) {
       e.preventDefault();
       setIsAutoZoom(false);
@@ -537,6 +551,7 @@ export default function PixelCanvas() {
   };
 
   const onMouseMove = (e: React.MouseEvent) => {
+    if (resizeDrag) return;
     if (isPanning) {
       e.preventDefault();
       const last = panLastRef.current;
@@ -561,6 +576,7 @@ export default function PixelCanvas() {
   };
 
   const onMouseUp = () => {
+    if (resizeDrag) return;
     if (isPanning) {
       setIsPanning(false);
       panLastRef.current = null;
@@ -624,6 +640,67 @@ export default function PixelCanvas() {
   }, [isDrawing, isPanning, saveHistory]);
 
   useEffect(() => {
+    if (!resizeDrag) return;
+
+    const handleWindowPointerMove = (event: PointerEvent) => {
+      const scale = zoomRef.current / 10;
+      if (scale <= 0) return;
+
+      if (resizeDrag.edge === 'left' || resizeDrag.edge === 'right') {
+        const deltaPixels = Math.round((event.clientX - resizeDrag.startClientX) / scale);
+        const nextWidth =
+          resizeDrag.edge === 'right'
+            ? resizeDrag.startWidth + deltaPixels
+            : resizeDrag.startWidth - deltaPixels;
+        const clampedWidth = Math.max(1, Math.min(200, nextWidth));
+        resizeFromEdge(resizeDrag.edge, clampedWidth);
+
+        if (resizeDrag.edge === 'left') {
+          const widthDelta = clampedWidth - resizeDrag.startWidth;
+          setViewOffset({
+            x: resizeDrag.startOffset.x - widthDelta * scale,
+            y: resizeDrag.startOffset.y,
+          });
+        }
+        return;
+      }
+
+      const deltaPixels = Math.round((event.clientY - resizeDrag.startClientY) / scale);
+      const nextHeight =
+        resizeDrag.edge === 'bottom'
+          ? resizeDrag.startHeight + deltaPixels
+          : resizeDrag.startHeight - deltaPixels;
+      const clampedHeight = Math.max(1, Math.min(200, nextHeight));
+      resizeFromEdge(resizeDrag.edge, clampedHeight);
+
+      if (resizeDrag.edge === 'top') {
+        const heightDelta = clampedHeight - resizeDrag.startHeight;
+        setViewOffset({
+          x: resizeDrag.startOffset.x,
+          y: resizeDrag.startOffset.y - heightDelta * scale,
+        });
+      }
+    };
+
+    const finishResize = () => {
+      saveHistory();
+      setResizeDrag(null);
+    };
+
+    window.addEventListener('pointermove', handleWindowPointerMove);
+    window.addEventListener('pointerup', finishResize);
+    window.addEventListener('pointercancel', finishResize);
+    window.addEventListener('blur', finishResize);
+
+    return () => {
+      window.removeEventListener('pointermove', handleWindowPointerMove);
+      window.removeEventListener('pointerup', finishResize);
+      window.removeEventListener('pointercancel', finishResize);
+      window.removeEventListener('blur', finishResize);
+    };
+  }, [resizeDrag, resizeFromEdge, saveHistory]);
+
+  useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
@@ -631,7 +708,7 @@ export default function PixelCanvas() {
       e.preventDefault();
       setIsAutoZoom(false);
 
-      if (e.ctrlKey || e.metaKey) {
+      if (e.ctrlKey || e.metaKey || isLikelyMouseWheel(e)) {
         const rect = container.getBoundingClientRect();
         const mouseX = e.clientX - rect.left;
         const mouseY = e.clientY - rect.top;
@@ -706,6 +783,13 @@ export default function PixelCanvas() {
 
   const cursorClass = isPanning ? 'cursor-grabbing' : currentTool === 'hand' ? 'cursor-grab' : currentTool === 'text' ? 'cursor-text' : isOverlayTool ? 'cursor-none' : 'cursor-crosshair';
   const scale = zoom / 10;
+  const canvasScreenRect = {
+    left: viewOffset.x,
+    top: viewOffset.y,
+    width: width * scale,
+    height: height * scale,
+  };
+  const resizeHandleThickness = 12;
   const cursorHotspot =
     currentTool === 'brush'
       ? CURSOR_CONFIG.BRUSH_HOTSPOT
@@ -722,6 +806,72 @@ export default function PixelCanvas() {
     if (!isPanning) onMouseUp();
     queueCursorOverlay({ x: cursorPendingRef.current.x, y: cursorPendingRef.current.y, visible: false });
   };
+
+  const startResize = (edge: ResizeEdge, event: React.PointerEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsAutoZoom(false);
+    setIsPanning(false);
+    setIsDrawing(false);
+    setLastCoords(null);
+    strokeColorRegisteredRef.current = false;
+    queueCursorOverlay({ x: cursorPendingRef.current.x, y: cursorPendingRef.current.y, visible: false });
+    setResizeDrag({
+      edge,
+      startClientX: event.clientX,
+      startClientY: event.clientY,
+      startWidth: width,
+      startHeight: height,
+      startOffset: viewOffsetRef.current,
+    });
+  };
+
+  const resizeHandles: Array<{
+    edge: ResizeEdge;
+    className: string;
+    style: React.CSSProperties;
+  }> = [
+    {
+      edge: 'left',
+      className: 'cursor-ew-resize',
+      style: {
+        left: canvasScreenRect.left - resizeHandleThickness / 2,
+        top: canvasScreenRect.top,
+        width: resizeHandleThickness,
+        height: canvasScreenRect.height,
+      },
+    },
+    {
+      edge: 'right',
+      className: 'cursor-ew-resize',
+      style: {
+        left: canvasScreenRect.left + canvasScreenRect.width - resizeHandleThickness / 2,
+        top: canvasScreenRect.top,
+        width: resizeHandleThickness,
+        height: canvasScreenRect.height,
+      },
+    },
+    {
+      edge: 'top',
+      className: 'cursor-ns-resize',
+      style: {
+        left: canvasScreenRect.left,
+        top: canvasScreenRect.top - resizeHandleThickness / 2,
+        width: canvasScreenRect.width,
+        height: resizeHandleThickness,
+      },
+    },
+    {
+      edge: 'bottom',
+      className: 'cursor-ns-resize',
+      style: {
+        left: canvasScreenRect.left,
+        top: canvasScreenRect.top + canvasScreenRect.height - resizeHandleThickness / 2,
+        width: canvasScreenRect.width,
+        height: resizeHandleThickness,
+      },
+    },
+  ];
 
   return (
     <div className="relative h-full w-full overflow-hidden">
@@ -740,6 +890,16 @@ export default function PixelCanvas() {
           onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}
         />
+        {resizeHandles.map((handle) => (
+          <div
+            key={handle.edge}
+            className={`absolute z-10 touch-none ${handle.className}`}
+            style={handle.style}
+            onPointerDown={(event) => startResize(handle.edge, event)}
+          >
+            <div className="pointer-events-none absolute inset-0 rounded-full bg-primary/20 opacity-0 transition-opacity hover:opacity-100" />
+          </div>
+        ))}
         {CursorIcon && cursorOverlay.visible && !isPanning && (
           <div
             className="pointer-events-none absolute z-10 text-foreground"

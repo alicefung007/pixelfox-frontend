@@ -29,6 +29,7 @@ interface EditorState {
   saveHistory: () => void;
   setPixels: (pixels: Record<string, string>) => void;
   setSize: (width: number, height: number) => void;
+  resizeFromEdge: (edge: 'left' | 'right' | 'top' | 'bottom', nextSize: number) => void;
   setTool: (tool: ToolType) => void;
   setColor: (color: string) => void;
   setBackgroundColor: (color: string | null) => void;
@@ -279,6 +280,39 @@ export const useEditorStore = create<EditorState>()(
     }
 
     return { width, height, pixels };
+  }),
+
+  resizeFromEdge: (edge, nextSize) => set((state) => {
+    const clampedSize = Math.max(1, Math.min(200, Math.floor(nextSize)));
+    const nextWidth = edge === 'left' || edge === 'right' ? clampedSize : state.width;
+    const nextHeight = edge === 'top' || edge === 'bottom' ? clampedSize : state.height;
+
+    if (state.width === nextWidth && state.height === nextHeight) return state;
+
+    const shiftX = edge === 'left' ? nextWidth - state.width : 0;
+    const shiftY = edge === 'top' ? nextHeight - state.height : 0;
+    const nextPixels: Record<string, string> = {};
+
+    for (const [key, color] of Object.entries(state.pixels)) {
+      const [x, y] = key.split(',').map(Number);
+      const translatedX = x + shiftX;
+      const translatedY = y + shiftY;
+
+      if (
+        translatedX >= 0 &&
+        translatedY >= 0 &&
+        translatedX < nextWidth &&
+        translatedY < nextHeight
+      ) {
+        nextPixels[`${translatedX},${translatedY}`] = color;
+      }
+    }
+
+    return {
+      width: nextWidth,
+      height: nextHeight,
+      pixels: nextPixels,
+    };
   }),
 
   saveHistory: () => set((state) => {

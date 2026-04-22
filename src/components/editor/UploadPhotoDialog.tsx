@@ -213,18 +213,20 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
     return `${name.slice(0, half)}...${name.slice(-half)}`;
   };
 
-  // Image preview URL for the currently selected file
-  const imagePreviewUrl = useMemo(() => {
-    if (!selectedFile) return null;
-    const url = URL.createObjectURL(selectedFile);
-    return url;
-  }, [selectedFile]);
-
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   useEffect(() => {
+    if (!open || !selectedFile) {
+      setImagePreviewUrl(null);
+      return;
+    }
+
+    const url = URL.createObjectURL(selectedFile);
+    setImagePreviewUrl(url);
+
     return () => {
-      if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
+      URL.revokeObjectURL(url);
     };
-  }, [imagePreviewUrl]);
+  }, [open, selectedFile]);
 
   // When a non-square image is uploaded, unlock aspect ratio and set height proportionally based on width
   useEffect(() => {
