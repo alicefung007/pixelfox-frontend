@@ -113,6 +113,7 @@ const PREVIEW_MAX_SCALE = 10;
 const PREVIEW_SCALE_STEP = 0.12;
 const PREVIEW_PAN_SPEED = 1;
 const EXPORT_DIALOG_SETTINGS_STORAGE_KEY = "pixelfox-export-dialog-settings";
+const BRAND_LOGO_SRC = "/logo.png";
 const DEFAULT_EXPORT_DIALOG_SETTINGS: ExportDialogSettings = {
   autoCrop: true,
   whiteBackground: true,
@@ -436,26 +437,23 @@ function drawBeadSummaryIcon(ctx: CanvasRenderingContext2D, x: number, y: number
   ctx.restore();
 }
 
-function drawBrandIcon(ctx: CanvasRenderingContext2D, x: number, y: number, color: string) {
+function drawBrandIcon(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  color: string,
+  logoImage: HTMLImageElement | null
+) {
   const size = BRAND_ICON_SIZE;
-  const pixelSize = size / 8;
+
+  if (logoImage) {
+    ctx.drawImage(logoImage, x, y, size, size);
+    return;
+  }
 
   ctx.save();
-  const pixels: { col: number; row: number }[] = [
-    { col: 2, row: 0 }, { col: 5, row: 0 },
-    { col: 1, row: 1 }, { col: 2, row: 1 }, { col: 3, row: 1 }, { col: 4, row: 1 }, { col: 5, row: 1 }, { col: 6, row: 1 },
-    { col: 0, row: 2 }, { col: 1, row: 2 }, { col: 2, row: 2 }, { col: 3, row: 2 }, { col: 4, row: 2 }, { col: 5, row: 2 }, { col: 6, row: 2 }, { col: 7, row: 2 },
-    { col: 0, row: 3 }, { col: 1, row: 3 }, { col: 3, row: 3 }, { col: 4, row: 3 }, { col: 6, row: 3 }, { col: 7, row: 3 },
-    { col: 0, row: 4 }, { col: 1, row: 4 }, { col: 2, row: 4 }, { col: 3, row: 4 }, { col: 4, row: 4 }, { col: 5, row: 4 }, { col: 6, row: 4 }, { col: 7, row: 4 },
-    { col: 1, row: 5 }, { col: 2, row: 5 }, { col: 5, row: 5 }, { col: 6, row: 5 },
-    { col: 2, row: 6 }, { col: 3, row: 6 }, { col: 4, row: 6 }, { col: 5, row: 6 },
-    { col: 3, row: 7 }, { col: 4, row: 7 },
-  ];
-
   ctx.fillStyle = color;
-  for (const p of pixels) {
-    ctx.fillRect(x + p.col * pixelSize, y + p.row * pixelSize, pixelSize + 0.5, pixelSize + 0.5);
-  }
+  ctx.fillRect(x, y, size, size);
   ctx.restore();
 }
 
@@ -536,6 +534,7 @@ function renderPatternImage(options: {
   showColorCode: boolean;
   mirrorFlip: boolean;
   summaryLabels: { palette: string; size: string; beadCount: string };
+  logoImage: HTMLImageElement | null;
 }): RenderResult | null {
   if (typeof document === "undefined") return null;
 
@@ -558,6 +557,7 @@ function renderPatternImage(options: {
     showColorCode,
     mirrorFlip,
     summaryLabels,
+    logoImage,
   } = options;
 
   const sourceBounds = autoCrop ? getPixelBounds(pixels, width, height) : null;
@@ -635,7 +635,7 @@ function renderPatternImage(options: {
   ctx.fillRect(0, BRAND_HEADER_HEIGHT - 1, exportWidth, 1);
 
   const brandIconY = (BRAND_HEADER_HEIGHT - BRAND_ICON_SIZE) / 2;
-  drawBrandIcon(ctx, BRAND_HEADER_PADDING_X, brandIconY, themePrimaryColor);
+  drawBrandIcon(ctx, BRAND_HEADER_PADDING_X, brandIconY, themePrimaryColor, logoImage);
   const brandTextX = BRAND_HEADER_PADDING_X + BRAND_ICON_SIZE + 10;
 
   ctx.font = BRAND_FONT;
@@ -871,6 +871,7 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
   const [showAxis, setShowAxis] = useState(persistedSettings.showAxis);
   const [showColorCode, setShowColorCode] = useState(persistedSettings.showColorCode);
   const [mirrorFlip, setMirrorFlip] = useState(persistedSettings.mirrorFlip);
+  const [brandLogoImage, setBrandLogoImage] = useState<HTMLImageElement | null>(null);
   const [previewScale, setPreviewScale] = useState(1);
   const [previewOffset, setPreviewOffset] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -898,6 +899,18 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
   useEffect(() => {
     previewOffsetRef.current = previewOffset;
   }, [previewOffset]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const image = new window.Image();
+    image.onload = () => setBrandLogoImage(image);
+    image.src = BRAND_LOGO_SRC;
+
+    return () => {
+      image.onload = null;
+    };
+  }, []);
 
   useEffect(() => {
     const nextSettings: ExportDialogSettings = {
@@ -991,6 +1004,7 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
         showAxis,
         showColorCode,
         mirrorFlip,
+        logoImage: brandLogoImage,
         summaryLabels: {
           palette: t("editor.exportDialog.summaryPalette"),
           size: t("editor.exportDialog.summarySize"),
@@ -1012,6 +1026,7 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
       showAxis,
       showColorCode,
       mirrorFlip,
+      brandLogoImage,
       t,
     ]
   );

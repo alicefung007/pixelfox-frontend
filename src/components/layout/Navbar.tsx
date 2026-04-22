@@ -62,9 +62,12 @@ export default function Navbar({ onMenuClick }: Props) {
           </Button>
         )}
 
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 sm:w-8 sm:h-8 bg-primary rounded flex items-center justify-center text-white font-bold text-[10px] sm:text-xs">PX</div>
-          <span className="font-bold text-base sm:text-lg tracking-tight hidden sm:inline">PixelFox<span className="text-primary">.art</span></span>
+        <div className="flex items-center">
+          <img
+            src="/logo_with_name.png"
+            alt="PixelFox logo"
+            className="h-7 w-auto object-contain sm:h-8"
+          />
         </div>
         
         <div className="hidden md:flex items-center gap-6">
