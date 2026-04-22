@@ -314,7 +314,7 @@ export async function convertImageToPixelArt(
   for (let py = 0; py < pooledHeight; py++) {
     for (let px = 0; px < pooledWidth; px++) {
       // Collect pixels in window
-      const pixels: { r: number; g: number; b: number }[] = [];
+      const pixels: { r: number; g: number; b: number; a: number }[] = [];
 
       for (let wy = 0; wy < poolSize; wy++) {
         for (let wx = 0; wx < poolSize; wx++) {
@@ -326,14 +326,27 @@ export async function convertImageToPixelArt(
               r: srcImageData.data[srcOffset],
               g: srcImageData.data[srcOffset + 1],
               b: srcImageData.data[srcOffset + 2],
+              a: srcImageData.data[srcOffset + 3],
             });
           }
         }
       }
 
-      // Get most common color
+      // Ignore fully transparent pixels so transparent regions do not get
+      // interpreted as solid black during palette matching.
+      const visiblePixels = pixels.filter((p) => p.a > 0);
+      if (visiblePixels.length === 0) {
+        const resultOffset = (py * pooledWidth + px) * 4;
+        resultImageData.data[resultOffset] = 0;
+        resultImageData.data[resultOffset + 1] = 0;
+        resultImageData.data[resultOffset + 2] = 0;
+        resultImageData.data[resultOffset + 3] = 0;
+        continue;
+      }
+
+      // Get most common visible color
       const colorCounts = new Map<string, number>();
-      for (const p of pixels) {
+      for (const p of visiblePixels) {
         const key = `${p.r},${p.g},${p.b}`;
         colorCounts.set(key, (colorCounts.get(key) || 0) + 1);
       }
@@ -376,6 +389,35 @@ export async function convertImageToPixelArt(
       region.push(i);
 
       const baseOffset = i * 4;
+      const baseAlpha = resultImageData.data[baseOffset + 3];
+
+      if (baseAlpha === 0) {
+        let head = 0;
+        while (head < queue.length) {
+          const currIdx = queue[head++];
+          const cx = currIdx % pooledWidth;
+          const cy = Math.floor(currIdx / pooledWidth);
+
+          for (const [dx, dy] of directions) {
+            const nx = cx + dx;
+            const ny = cy + dy;
+            if (nx < 0 || nx >= pooledWidth || ny < 0 || ny >= pooledHeight) continue;
+
+            const neighborIdx = ny * pooledWidth + nx;
+            if (visited[neighborIdx]) continue;
+
+            const neighborOffset = neighborIdx * 4;
+            if (resultImageData.data[neighborOffset + 3] !== 0) continue;
+
+            visited[neighborIdx] = 1;
+            queue.push(neighborIdx);
+            region.push(neighborIdx);
+          }
+        }
+
+        continue;
+      }
+
       const baseLab = rgbToLab(
         resultImageData.data[baseOffset],
         resultImageData.data[baseOffset + 1],
@@ -397,6 +439,8 @@ export async function convertImageToPixelArt(
           if (visited[neighborIdx]) continue;
 
           const neighborOffset = neighborIdx * 4;
+          if (resultImageData.data[neighborOffset + 3] === 0) continue;
+
           const neighborLab = rgbToLab(
             resultImageData.data[neighborOffset],
             resultImageData.data[neighborOffset + 1],

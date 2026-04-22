@@ -18,6 +18,7 @@
     "undo": "실행 취소",
     "redo": "다시 실행",
     "export": "내보내기",
+    "exportDisabledEmpty": "내보내기 전에 캔버스에 내용을 먼저 추가하세요",
     "clear": "지우기",
     "settings": "설정",
     "tools": "도구",

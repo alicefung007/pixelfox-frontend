@@ -48,6 +48,7 @@ export default function Sidebar({ isOpen = true, onClose, onUpload, onPreview3D,
   const saveHistory = useEditorStore((state) => state.saveHistory);
   const backgroundColor = useEditorStore((state) => state.backgroundColor);
   const setBackgroundColor = useEditorStore((state) => state.setBackgroundColor);
+  const hasPixels = useEditorStore((state) => Object.keys(state.pixels).length > 0);
 
   const actionButtons = [
     { icon: <Upload size={18} />, label: t("sidebar.upload"), shortcut: "⌘ U", onClick: onUpload },
@@ -87,6 +88,7 @@ export default function Sidebar({ isOpen = true, onClose, onUpload, onPreview3D,
             redo={redo}
             clear={clear}
             onExport={onExport}
+            hasExportableContent={hasPixels}
             t={t}
           />
         </ScrollArea>
@@ -127,6 +129,7 @@ export default function Sidebar({ isOpen = true, onClose, onUpload, onPreview3D,
             redo={redo}
             clear={clear}
             onExport={onExport}
+            hasExportableContent={hasPixels}
             t={t}
             onAction={onClose}
           />
@@ -151,6 +154,7 @@ type SidebarContentProps = {
   redo: () => void;
   clear: () => void;
   onExport?: () => void;
+  hasExportableContent: boolean;
   t: (key: string) => string;
   onAction?: () => void;
 };
@@ -170,6 +174,7 @@ function SidebarContent({
   redo,
   clear,
   onExport,
+  hasExportableContent,
   t,
   onAction
 }: SidebarContentProps) {
@@ -246,19 +251,26 @@ function SidebarContent({
       </div>
 
       <div className="space-y-2">
-        <Button
-          className="w-full justify-between h-10 bg-gradient-to-r from-primary to-primary/80 hover:opacity-90 border-none text-white font-medium"
-          onClick={() => {
-            onExport?.();
-            onAction?.();
-          }}
+        <span
+          className={cn("block w-full", !hasExportableContent && "cursor-not-allowed")}
+          tabIndex={hasExportableContent ? -1 : 0}
+          title={!hasExportableContent ? t("sidebar.exportDisabledEmpty") : undefined}
         >
-          <div className="flex items-center gap-2">
-            <Download size={18} />
-            <span>{t("sidebar.export")}</span>
-          </div>
-          <span className="text-[10px] opacity-80 uppercase hidden sm:inline">⌘ E</span>
-        </Button>
+          <Button
+            className="w-full justify-between h-10 bg-gradient-to-r from-primary to-primary/80 hover:opacity-90 border-none text-white font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={!hasExportableContent}
+            onClick={() => {
+              onExport?.();
+              onAction?.();
+            }}
+          >
+            <div className="flex items-center gap-2">
+              <Download size={18} />
+              <span>{t("sidebar.export")}</span>
+            </div>
+            <span className="text-[10px] opacity-80 uppercase hidden sm:inline">⌘ E</span>
+          </Button>
+        </span>
         <Button variant="outline" className="w-full justify-between h-9 px-2 text-sm font-normal" onClick={clear}>
           <div className="flex items-center gap-2 text-muted-foreground">
             <Trash2 size={18} />

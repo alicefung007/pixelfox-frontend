@@ -931,18 +931,21 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
           <DialogClose asChild>
             <Button variant="outline" className="w-full sm:w-auto">{t("editor.uploadDialog.cancel")}</Button>
           </DialogClose>
-          <Button
-            className="w-full sm:w-auto gap-2 bg-gradient-to-r from-primary to-primary/80 hover:opacity-90 border-none text-white font-medium"
-            onClick={() => {
-              if (effectiveResult) {
-                onGenerate(effectiveResult, colorPaletteId);
-                onOpenChange(false);
-              }
-            }}
-          >
-            <Sparkles className="size-4" />
-            {t("editor.uploadDialog.generate")}
-          </Button>
+          <span className={cn("w-full sm:w-auto", (!selectedFile || !effectiveResult || isProcessing) && "cursor-not-allowed")}>
+            <Button
+              className="w-full sm:w-auto gap-2 bg-gradient-to-r from-primary to-primary/80 hover:opacity-90 border-none text-white font-medium disabled:cursor-not-allowed"
+              disabled={!selectedFile || !effectiveResult || isProcessing}
+              onClick={() => {
+                if (effectiveResult) {
+                  onGenerate(effectiveResult, colorPaletteId);
+                  onOpenChange(false);
+                }
+              }}
+            >
+              <Sparkles className="size-4" />
+              {t("editor.uploadDialog.generate")}
+            </Button>
+          </span>
         </div>
       </DialogContent>
     </Dialog>
