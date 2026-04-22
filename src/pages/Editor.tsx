@@ -7,6 +7,8 @@ import UploadPhotoDialog from "@/components/editor/UploadPhotoDialog";
 import Preview3DDialog from "@/components/editor/Preview3DDialog";
 import ExportPatternDialog from "@/components/editor/ExportPatternDialog";
 import { useToolShortcuts } from "@/hooks/useToolShortcuts";
+import type { ColorMatchResult } from "@/lib/image-processor";
+import type { SystemPaletteId } from "@/lib/palettes";
 import {
   ResizableHandle,
   ResizablePanel,
@@ -20,7 +22,7 @@ type EditorContext = {
   setUploadOpen: (open: boolean) => void;
   exportOpen: boolean;
   setExportOpen: (open: boolean) => void;
-  handleGenerate: (result: any, paletteId: any) => void;
+  handleGenerate: (result: ColorMatchResult, paletteId: SystemPaletteId) => void;
 };
 
 export default function Editor() {

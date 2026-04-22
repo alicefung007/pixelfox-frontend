@@ -71,7 +71,7 @@ export default function PixelCanvas() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const nextPrimary = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
-    if (nextPrimary) setPrimaryThemeColor(nextPrimary);
+    if (nextPrimary) queueMicrotask(() => setPrimaryThemeColor(nextPrimary));
   }, [theme, systemTheme]);
 
   useEffect(() => {

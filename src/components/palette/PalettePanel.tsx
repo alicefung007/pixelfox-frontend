@@ -56,7 +56,7 @@ export default function PalettePanel() {
 
   useEffect(() => {
     if (!usedTabFlashAt) return;
-    setIsUsedFlashing(true);
+    queueMicrotask(() => setIsUsedFlashing(true));
     const timer = setTimeout(() => setIsUsedFlashing(false), 900);
     return () => clearTimeout(timer);
   }, [usedTabFlashAt]);
@@ -119,16 +119,21 @@ export default function PalettePanel() {
 
   useEffect(() => {
     if (!selectedUsedColor) return;
-    const hasSelection = canvasUsedColors.some((color) => normalizeHex(color) === normalizeHex(selectedUsedColor));
+    const hasSelection = canvasUsedColors.some(
+      (color) => normalizeHex(color) === normalizeHex(selectedUsedColor)
+    );
     if (!hasSelection) {
-      setSelectedUsedColor(null);
-      setUsedActionPopoverColor(null);
+      queueMicrotask(() => {
+        setSelectedUsedColor(null);
+        setUsedActionPopoverColor(null);
+      });
     }
-  }, [canvasUsedColors, selectedUsedColor, setSelectedUsedColor]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canvasUsedColors, selectedUsedColor]);
 
   useEffect(() => {
     if (tab !== "used") {
-      setUsedActionPopoverColor(null);
+      queueMicrotask(() => setUsedActionPopoverColor(null));
     }
   }, [tab]);
 
@@ -142,6 +147,7 @@ export default function PalettePanel() {
       palette,
       t,
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [palette, primaryColor, setColor]);
 
   const handleReplaceColor = (nextColor: string) => {

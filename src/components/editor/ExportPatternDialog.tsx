@@ -881,6 +881,7 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
   const [mirrorFlip, setMirrorFlip] = useState(persistedSettings.mirrorFlip);
   const [previewScale, setPreviewScale] = useState(1);
   const [previewOffset, setPreviewOffset] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
   const [previewViewportElement, setPreviewViewportElement] = useState<HTMLDivElement | null>(null);
   const previewViewportRef = useRef<HTMLDivElement | null>(null);
   const previewScaleRef = useRef(previewScale);
@@ -919,20 +920,22 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
       mirrorFlip,
     };
 
-    setPersistedSettings((current) => {
-      const unchanged =
-        current.autoCrop === nextSettings.autoCrop &&
-        current.whiteBackground === nextSettings.whiteBackground &&
-        current.showGrid === nextSettings.showGrid &&
-        current.showMinorGrid === nextSettings.showMinorGrid &&
-        current.gridInterval === nextSettings.gridInterval &&
-        current.gridColor === nextSettings.gridColor &&
-        current.showAxis === nextSettings.showAxis &&
-        current.showColorCode === nextSettings.showColorCode &&
-        current.mirrorFlip === nextSettings.mirrorFlip;
+    queueMicrotask(() =>
+      setPersistedSettings((current) => {
+        const unchanged =
+          current.autoCrop === nextSettings.autoCrop &&
+          current.whiteBackground === nextSettings.whiteBackground &&
+          current.showGrid === nextSettings.showGrid &&
+          current.showMinorGrid === nextSettings.showMinorGrid &&
+          current.gridInterval === nextSettings.gridInterval &&
+          current.gridColor === nextSettings.gridColor &&
+          current.showAxis === nextSettings.showAxis &&
+          current.showColorCode === nextSettings.showColorCode &&
+          current.mirrorFlip === nextSettings.mirrorFlip;
 
-      return unchanged ? current : nextSettings;
-    });
+        return unchanged ? current : nextSettings;
+      })
+    );
   }, [
     autoCrop,
     whiteBackground,
@@ -1017,6 +1020,7 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
       showAxis,
       showColorCode,
       mirrorFlip,
+      t,
     ]
   );
 
@@ -1029,7 +1033,7 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
 
   useEffect(() => {
     if (!open) return;
-    resetPreviewTransform();
+    queueMicrotask(() => resetPreviewTransform());
   }, [open, exportResult?.dataUrl]);
 
   const handleDownload = () => {
@@ -1091,6 +1095,7 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
 
   const stopPreviewDrag = () => {
     previewDragRef.current = null;
+    setIsDragging(false);
   };
 
   const handlePreviewPointerDown = (event: PointerEvent<HTMLDivElement>) => {
@@ -1105,6 +1110,7 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
       startY: event.clientY,
       offset: previewOffsetRef.current,
     };
+    setIsDragging(true);
 
     event.currentTarget.setPointerCapture(event.pointerId);
     event.preventDefault();
@@ -1461,7 +1467,7 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
               onPointerUp={handlePreviewPointerUp}
               onPointerCancel={handlePreviewPointerCancel}
               onLostPointerCapture={stopPreviewDrag}
-              style={{ cursor: exportResult ? (previewDragRef.current ? "grabbing" : "grab") : "default" }}
+              style={{ cursor: exportResult ? (isDragging ? "grabbing" : "grab") : "default" }}
             >
               {exportResult ? (
                 <div className="flex h-full w-full min-h-0 min-w-0 items-center justify-center overflow-hidden p-3">

@@ -41,9 +41,9 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } {
 }
 
 function rgbToLab(r: number, g: number, b: number): { L: number; a: number; b: number } {
-  let rNorm = r / 255;
-  let gNorm = g / 255;
-  let bNorm = b / 255;
+  const rNorm = r / 255;
+  const gNorm = g / 255;
+  const bNorm = b / 255;
 
   const rLin = rNorm > 0.04045 ? Math.pow((rNorm + 0.055) / 1.055, 2.4) : rNorm / 12.92;
   const gLin = gNorm > 0.04045 ? Math.pow((gNorm + 0.055) / 1.055, 2.4) : gNorm / 12.92;

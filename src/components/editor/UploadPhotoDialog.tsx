@@ -213,12 +213,12 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
     return `${name.slice(0, half)}...${name.slice(-half)}`;
   };
 
-  // Image preview URL - recreate when dialog opens with existing selectedFile
+  // Image preview URL for the currently selected file
   const imagePreviewUrl = useMemo(() => {
     if (!selectedFile) return null;
     const url = URL.createObjectURL(selectedFile);
     return url;
-  }, [selectedFile, open]);
+  }, [selectedFile]);
 
   useEffect(() => {
     return () => {
@@ -252,7 +252,7 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
 
   // Process image when file or palette changes
   useEffect(() => {
-    if (!imagePreviewUrl || !selectedFile) {
+    if (!imagePreviewUrl) {
       setProcessedResult(null);
       return;
     }
@@ -323,7 +323,7 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
     };
 
     processImage();
-  }, [imagePreviewUrl, selectedPalette, processingDimensions.width, processingDimensions.height, colorMergeThreshold, flipHorizontal, flipVertical, rotation]);
+  }, [imagePreviewUrl, selectedPalette, processingDimensions.width, processingDimensions.height, colorMerging, colorMergeThreshold, flipHorizontal, flipVertical, rotation]);
 
   const effectiveResult = useMemo(
     () => (processedResult && trimEdges ? trimColorMatchResult(processedResult) : processedResult),
