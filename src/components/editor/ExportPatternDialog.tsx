@@ -56,6 +56,18 @@ type SummarySegment = {
   icon?: "palette" | "size" | "bead";
 };
 
+type HeaderSummaryMetrics = {
+  headerHeight: number;
+  logoHeight: number;
+  lineHeight: number;
+  lineGap: number;
+  font: string;
+  fontSize: number;
+  iconSize: number;
+  iconGap: number;
+  itemGap: number;
+};
+
 type ExportDialogSettings = {
   autoCrop: boolean;
   whiteBackground: boolean;
@@ -86,11 +98,9 @@ const GRID_COLORS = [
 
 const CELL_SIZE = 40;
 const AXIS_SIZE = 40;
-const BRAND_HEADER_HEIGHT = 120;
+const BASE_BRAND_HEADER_HEIGHT = 120;
 const BRAND_HEADER_PADDING_X = 40;
-const BRAND_ICON_SIZE = 64;
-const BRAND_FONT = "600 72px Geist, sans-serif";
-const BRAND_URL_FONT = "400 32px Geist, sans-serif";
+const BASE_BRAND_LOGO_HEIGHT = 76;
 const MAX_EXPORT_EDGE = 4096;
 const MAJOR_GRID_WIDTH = 2;
 const MINOR_GRID_WIDTH = 2;
@@ -98,11 +108,12 @@ const COLOR_STATS_PADDING_X = 18;
 const COLOR_STATS_PADDING_Y = 18;
 const COLOR_STATS_GAP_X = 16;
 const COLOR_STATS_GAP_Y = 16;
-const COLOR_STATS_SUMMARY_GAP_Y = 12;
-const COLOR_STATS_SUMMARY_LINE_HEIGHT = 52;
-const COLOR_STATS_SUMMARY_FONT = "400 20px Geist, sans-serif";
-const COLOR_STATS_SUMMARY_ICON_SIZE = 22;
-const COLOR_STATS_SUMMARY_ICON_GAP = 8;
+const BASE_COLOR_STATS_SUMMARY_GAP_Y = 8;
+const BASE_COLOR_STATS_SUMMARY_LINE_HEIGHT = 28;
+const BASE_COLOR_STATS_SUMMARY_FONT_SIZE = 18;
+const BASE_COLOR_STATS_SUMMARY_ICON_SIZE = 22;
+const BASE_COLOR_STATS_SUMMARY_ICON_GAP = 8;
+const BASE_COLOR_STATS_SUMMARY_ITEM_GAP = 24;
 const COLOR_STATS_BADGE_HEIGHT = 28;
 const COLOR_STATS_BADGE_RADIUS = 8;
 const COLOR_STATS_BADGE_DOT_SIZE = 12;
@@ -113,7 +124,8 @@ const PREVIEW_MAX_SCALE = 10;
 const PREVIEW_SCALE_STEP = 0.12;
 const PREVIEW_PAN_SPEED = 1;
 const EXPORT_DIALOG_SETTINGS_STORAGE_KEY = "pixelfox-export-dialog-settings";
-const BRAND_LOGO_SRC = "/logo.png";
+const BRAND_LOGO_SRC = "/logo_with_name.png";
+const HEADER_SCALE_BASE_WIDTH = 30;
 const DEFAULT_EXPORT_DIALOG_SETTINGS: ExportDialogSettings = {
   autoCrop: true,
   whiteBackground: true,
@@ -290,13 +302,31 @@ function isWhiteLikeColor(hex: string) {
   return rgb.r >= 245 && rgb.g >= 245 && rgb.b >= 245;
 }
 
+function getHeaderSummaryMetrics(downloadWidth: number): HeaderSummaryMetrics {
+  const scale = Math.max(downloadWidth, 1) / HEADER_SCALE_BASE_WIDTH;
+  const fontSize = Math.max(12, Math.round(BASE_COLOR_STATS_SUMMARY_FONT_SIZE * scale));
+
+  return {
+    headerHeight: Math.max(72, Math.round(BASE_BRAND_HEADER_HEIGHT * scale)),
+    logoHeight: Math.max(24, Math.round(BASE_BRAND_LOGO_HEIGHT * scale)),
+    lineHeight: Math.max(20, Math.round(BASE_COLOR_STATS_SUMMARY_LINE_HEIGHT * scale)),
+    lineGap: Math.max(4, Math.round(BASE_COLOR_STATS_SUMMARY_GAP_Y * scale)),
+    font: `500 ${fontSize}px Geist, sans-serif`,
+    fontSize,
+    iconSize: Math.max(14, Math.round(BASE_COLOR_STATS_SUMMARY_ICON_SIZE * scale)),
+    iconGap: Math.max(4, Math.round(BASE_COLOR_STATS_SUMMARY_ICON_GAP * scale)),
+    itemGap: Math.max(8, Math.round(BASE_COLOR_STATS_SUMMARY_ITEM_GAP * scale)),
+  };
+}
+
 function createSummaryLayout(
   ctx: CanvasRenderingContext2D,
   summary: SummaryInfo,
-  totalWidth: number,
-  labels: { palette: string; size: string; beadCount: string }
+  availableWidth: number,
+  labels: { palette: string; size: string; beadCount: string },
+  metrics: HeaderSummaryMetrics
 ) {
-  const contentWidth = Math.max(0, totalWidth - COLOR_STATS_PADDING_X * 2);
+  const contentWidth = Math.max(0, availableWidth);
   const segments: SummarySegment[] = [
     { icon: "palette", text: `${labels.palette}: ${summary.paletteName}` },
     { icon: "size", text: `${labels.size}: ${summary.sizeText}` },
@@ -305,20 +335,20 @@ function createSummaryLayout(
 
   const lines: SummarySegment[][] = [];
   let currentLine: SummarySegment[] = [];
-  ctx.font = COLOR_STATS_SUMMARY_FONT;
+  ctx.font = metrics.font;
 
   for (const segment of segments) {
     const segmentWidth =
       ctx.measureText(segment.text).width +
-      (segment.icon ? COLOR_STATS_SUMMARY_ICON_SIZE + COLOR_STATS_SUMMARY_ICON_GAP : 0);
+      (segment.icon ? metrics.iconSize + metrics.iconGap : 0);
     const currentWidth = currentLine.reduce((sum, item, index) => {
       const itemWidth =
         ctx.measureText(item.text).width +
-        (item.icon ? COLOR_STATS_SUMMARY_ICON_SIZE + COLOR_STATS_SUMMARY_ICON_GAP : 0);
-      return sum + itemWidth + (index > 0 ? 24 : 0);
+        (item.icon ? metrics.iconSize + metrics.iconGap : 0);
+      return sum + itemWidth + (index > 0 ? metrics.itemGap : 0);
     }, 0);
 
-    if (currentLine.length === 0 || currentWidth + 24 + segmentWidth <= contentWidth) {
+    if (currentLine.length === 0 || currentWidth + metrics.itemGap + segmentWidth <= contentWidth) {
       currentLine.push(segment);
       continue;
     }
@@ -333,16 +363,16 @@ function createSummaryLayout(
   return {
     lines,
     height: lines.length > 0
-      ? lines.length * COLOR_STATS_SUMMARY_LINE_HEIGHT + COLOR_STATS_SUMMARY_GAP_Y
+      ? lines.length * metrics.lineHeight + Math.max(0, lines.length - 1) * metrics.lineGap
       : 0,
   };
 }
 
-function drawPaletteSummaryIcon(ctx: CanvasRenderingContext2D, x: number, y: number) {
-  const size = COLOR_STATS_SUMMARY_ICON_SIZE;
-  const radius = 4;
-  const innerPadding = 2;
-  const swatchGap = 2;
+function drawPaletteSummaryIcon(ctx: CanvasRenderingContext2D, x: number, y: number, metrics: HeaderSummaryMetrics) {
+  const size = metrics.iconSize;
+  const radius = Math.max(3, Math.round(size * 0.18));
+  const innerPadding = Math.max(1, Math.round(size * 0.09));
+  const swatchGap = Math.max(1, Math.round(size * 0.09));
   const swatchSize = (size - innerPadding * 2 - swatchGap) / 2;
   const swatches = [
     { color: "#FB7185", x: x + innerPadding, y: y + innerPadding },
@@ -377,19 +407,19 @@ function drawPaletteSummaryIcon(ctx: CanvasRenderingContext2D, x: number, y: num
   ctx.restore();
 }
 
-function drawSizeSummaryIcon(ctx: CanvasRenderingContext2D, x: number, y: number) {
-  const size = COLOR_STATS_SUMMARY_ICON_SIZE;
-  const radius = 4;
+function drawSizeSummaryIcon(ctx: CanvasRenderingContext2D, x: number, y: number, metrics: HeaderSummaryMetrics) {
+  const size = metrics.iconSize;
+  const radius = Math.max(3, Math.round(size * 0.18));
 
   ctx.save();
   ctx.strokeStyle = "#94A3B8";
-  ctx.lineWidth = 1.2;
+  ctx.lineWidth = Math.max(1, size * 0.055);
   ctx.beginPath();
   ctx.roundRect(x + 1, y + 1, size - 2, size - 2, radius);
   ctx.stroke();
 
   ctx.strokeStyle = "#475569";
-  ctx.lineWidth = 1.4;
+  ctx.lineWidth = Math.max(1, size * 0.064);
   ctx.beginPath();
   ctx.moveTo(x + size * 0.28, y + size * 0.36);
   ctx.lineTo(x + size * 0.72, y + size * 0.36);
@@ -403,9 +433,15 @@ function drawSizeSummaryIcon(ctx: CanvasRenderingContext2D, x: number, y: number
   ctx.restore();
 }
 
-function drawBeadSummaryIcon(ctx: CanvasRenderingContext2D, x: number, y: number, color: string) {
-  const size = COLOR_STATS_SUMMARY_ICON_SIZE;
-  const radius = 4;
+function drawBeadSummaryIcon(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  color: string,
+  metrics: HeaderSummaryMetrics
+) {
+  const size = metrics.iconSize;
+  const radius = Math.max(3, Math.round(size * 0.18));
   const centerX = x + size / 2;
   const centerY = y + size / 2;
   const beadRadius = size * 0.32;
@@ -442,18 +478,19 @@ function drawBrandIcon(
   x: number,
   y: number,
   color: string,
-  logoImage: HTMLImageElement | null
+  logoImage: HTMLImageElement | null,
+  metrics: HeaderSummaryMetrics
 ) {
-  const size = BRAND_ICON_SIZE;
-
   if (logoImage) {
-    ctx.drawImage(logoImage, x, y, size, size);
+    const aspectRatio = logoImage.naturalWidth / Math.max(logoImage.naturalHeight, 1);
+    const width = metrics.logoHeight * aspectRatio;
+    ctx.drawImage(logoImage, x, y, width, metrics.logoHeight);
     return;
   }
 
   ctx.save();
   ctx.fillStyle = color;
-  ctx.fillRect(x, y, size, size);
+  ctx.fillRect(x, y, metrics.logoHeight, metrics.logoHeight);
   ctx.restore();
 }
 
@@ -576,6 +613,7 @@ function renderPatternImage(options: {
 
   const axisSize = showAxis ? AXIS_SIZE : 0;
   const colorUsage = getColorUsage(pixels, paletteLabels);
+  const headerMetrics = getHeaderSummaryMetrics(cols);
   const summaryInfo: SummaryInfo = {
     paletteName,
     sizeText: `${cols} × ${rows}`,
@@ -585,28 +623,43 @@ function renderPatternImage(options: {
   const measureCanvas = document.createElement("canvas");
   const measureCtx = measureCanvas.getContext("2d");
   if (!measureCtx) return null;
+  const brandLogoWidth = logoImage
+    ? headerMetrics.logoHeight * (logoImage.naturalWidth / Math.max(logoImage.naturalHeight, 1))
+    : headerMetrics.logoHeight;
 
   let cellSize = clampCellSize(CELL_SIZE, cols, rows, axisSize);
   let exportWidth = cols * cellSize + axisSize * 2;
-  let summaryLayout = createSummaryLayout(measureCtx, summaryInfo, exportWidth, summaryLabels);
-  let colorStatsLayout = createColorBadgeLayout(measureCtx, colorUsage, exportWidth, summaryLayout.height);
+  let summaryLayout = createSummaryLayout(
+    measureCtx,
+    summaryInfo,
+    exportWidth - BRAND_HEADER_PADDING_X * 2 - brandLogoWidth - 32,
+    summaryLabels,
+    headerMetrics
+  );
+  let colorStatsLayout = createColorBadgeLayout(measureCtx, colorUsage, exportWidth);
 
   for (let iteration = 0; iteration < 4; iteration += 1) {
     const maxByHeight = Math.floor(
-      (MAX_EXPORT_EDGE - BRAND_HEADER_HEIGHT - axisSize * 2 - colorStatsLayout.height) / Math.max(rows, 1)
+      (MAX_EXPORT_EDGE - headerMetrics.headerHeight - axisSize * 2 - colorStatsLayout.height) / Math.max(rows, 1)
     );
     const nextCellSize = Math.max(8, Math.min(cellSize, maxByHeight));
     if (nextCellSize === cellSize) break;
 
     cellSize = nextCellSize;
     exportWidth = cols * cellSize + axisSize * 2;
-    summaryLayout = createSummaryLayout(measureCtx, summaryInfo, exportWidth, summaryLabels);
-    colorStatsLayout = createColorBadgeLayout(measureCtx, colorUsage, exportWidth, summaryLayout.height);
+    summaryLayout = createSummaryLayout(
+      measureCtx,
+      summaryInfo,
+      exportWidth - BRAND_HEADER_PADDING_X * 2 - brandLogoWidth - 32,
+      summaryLabels,
+      headerMetrics
+    );
+    colorStatsLayout = createColorBadgeLayout(measureCtx, colorUsage, exportWidth);
   }
 
   exportWidth = cols * cellSize + axisSize * 2;
   const gridHeight = rows * cellSize + axisSize * 2;
-  const exportHeight = BRAND_HEADER_HEIGHT + gridHeight + colorStatsLayout.height;
+  const exportHeight = headerMetrics.headerHeight + gridHeight + colorStatsLayout.height;
 
   const canvas = document.createElement("canvas");
   canvas.width = exportWidth;
@@ -616,10 +669,10 @@ function renderPatternImage(options: {
   ctx.imageSmoothingEnabled = false;
 
   const gridOriginX = axisSize;
-  const gridOriginY = BRAND_HEADER_HEIGHT + axisSize;
+  const gridOriginY = headerMetrics.headerHeight + axisSize;
   const contentWidth = cols * cellSize;
   const contentHeight = rows * cellSize;
-  const colorStatsTop = BRAND_HEADER_HEIGHT + gridHeight;
+  const colorStatsTop = headerMetrics.headerHeight + gridHeight;
 
   if (whiteBackground) {
     ctx.fillStyle = "#FFFFFF";
@@ -630,58 +683,54 @@ function renderPatternImage(options: {
 
   // Brand header
   ctx.fillStyle = whiteBackground ? "#F8FAFC" : "rgba(248,250,252,0.96)";
-  ctx.fillRect(0, 0, exportWidth, BRAND_HEADER_HEIGHT);
+  ctx.fillRect(0, 0, exportWidth, headerMetrics.headerHeight);
   ctx.fillStyle = "rgba(148,163,184,0.2)";
-  ctx.fillRect(0, BRAND_HEADER_HEIGHT - 1, exportWidth, 1);
+  ctx.fillRect(0, headerMetrics.headerHeight - 1, exportWidth, 1);
 
-  const brandIconY = (BRAND_HEADER_HEIGHT - BRAND_ICON_SIZE) / 2;
-  drawBrandIcon(ctx, BRAND_HEADER_PADDING_X, brandIconY, themePrimaryColor, logoImage);
-  const brandTextX = BRAND_HEADER_PADDING_X + BRAND_ICON_SIZE + 10;
-
-  ctx.font = BRAND_FONT;
-  ctx.textAlign = "left";
-  ctx.textBaseline = "middle";
-  ctx.fillStyle = "#1E293B";
-  ctx.fillText("PixelFox", brandTextX, BRAND_HEADER_HEIGHT / 2);
-
-  const brandNameWidth = ctx.measureText("PixelFox").width;
-  ctx.font = BRAND_URL_FONT;
-  ctx.fillStyle = "#94A3B8";
-  ctx.fillText("pixelfox.art", brandTextX + brandNameWidth + 30, BRAND_HEADER_HEIGHT / 2);
-
-  if (colorStatsLayout.height > 0) {
-    ctx.fillStyle = whiteBackground ? "#F8FAFC" : "rgba(248,250,252,0.96)";
-    ctx.fillRect(0, colorStatsTop, exportWidth, colorStatsLayout.height);
-    ctx.fillStyle = "rgba(148,163,184,0.32)";
-    ctx.fillRect(0, colorStatsTop, exportWidth, 1);
-  }
+  const brandIconY = (headerMetrics.headerHeight - headerMetrics.logoHeight) / 2;
+  drawBrandIcon(ctx, BRAND_HEADER_PADDING_X, brandIconY, themePrimaryColor, logoImage, headerMetrics);
 
   if (summaryLayout.lines.length > 0) {
-    ctx.font = COLOR_STATS_SUMMARY_FONT;
+    const summaryRightX = exportWidth - BRAND_HEADER_PADDING_X;
+    const summaryBlockHeight =
+      summaryLayout.lines.length * headerMetrics.lineHeight +
+      Math.max(0, summaryLayout.lines.length - 1) * headerMetrics.lineGap;
+    const summaryStartY = Math.max(
+      0,
+      Math.round((headerMetrics.headerHeight - summaryBlockHeight) / 2)
+    );
+
+    ctx.font = headerMetrics.font;
     ctx.textAlign = "left";
     ctx.textBaseline = "top";
     ctx.fillStyle = "#334155";
 
     summaryLayout.lines.forEach((line, index) => {
-      let cursorX = COLOR_STATS_PADDING_X;
-      const lineY = colorStatsTop + COLOR_STATS_PADDING_Y + index * COLOR_STATS_SUMMARY_LINE_HEIGHT;
-      const iconY = lineY + (COLOR_STATS_SUMMARY_LINE_HEIGHT - COLOR_STATS_SUMMARY_ICON_SIZE) / 2;
-      const textY = lineY + (COLOR_STATS_SUMMARY_LINE_HEIGHT - 20) / 2;
+      const lineY = summaryStartY + index * (headerMetrics.lineHeight + headerMetrics.lineGap);
+      const iconY = lineY + (headerMetrics.lineHeight - headerMetrics.iconSize) / 2;
+      const textY = lineY + (headerMetrics.lineHeight - headerMetrics.fontSize) / 2;
+      const lineWidth = line.reduce((sum, segment, segmentIndex) => {
+        const segmentWidth =
+          ctx.measureText(segment.text).width +
+          (segment.icon ? headerMetrics.iconSize + headerMetrics.iconGap : 0);
+        return sum + segmentWidth + (segmentIndex > 0 ? headerMetrics.itemGap : 0);
+      }, 0);
+      let cursorX = summaryRightX - lineWidth;
 
       line.forEach((segment, segmentIndex) => {
         if (segmentIndex > 0) {
-          cursorX += 24;
+          cursorX += headerMetrics.itemGap;
         }
 
         if (segment.icon === "palette") {
-          drawPaletteSummaryIcon(ctx, cursorX, iconY);
-          cursorX += COLOR_STATS_SUMMARY_ICON_SIZE + COLOR_STATS_SUMMARY_ICON_GAP;
+          drawPaletteSummaryIcon(ctx, cursorX, iconY, headerMetrics);
+          cursorX += headerMetrics.iconSize + headerMetrics.iconGap;
         } else if (segment.icon === "size") {
-          drawSizeSummaryIcon(ctx, cursorX, iconY);
-          cursorX += COLOR_STATS_SUMMARY_ICON_SIZE + COLOR_STATS_SUMMARY_ICON_GAP;
+          drawSizeSummaryIcon(ctx, cursorX, iconY, headerMetrics);
+          cursorX += headerMetrics.iconSize + headerMetrics.iconGap;
         } else if (segment.icon === "bead") {
-          drawBeadSummaryIcon(ctx, cursorX, iconY, themePrimaryColor);
-          cursorX += COLOR_STATS_SUMMARY_ICON_SIZE + COLOR_STATS_SUMMARY_ICON_GAP;
+          drawBeadSummaryIcon(ctx, cursorX, iconY, themePrimaryColor, headerMetrics);
+          cursorX += headerMetrics.iconSize + headerMetrics.iconGap;
         }
 
         ctx.fillText(segment.text, cursorX, textY);
@@ -690,12 +739,19 @@ function renderPatternImage(options: {
     });
   }
 
+  if (colorStatsLayout.height > 0) {
+    ctx.fillStyle = whiteBackground ? "#F8FAFC" : "rgba(248,250,252,0.96)";
+    ctx.fillRect(0, colorStatsTop, exportWidth, colorStatsLayout.height);
+    ctx.fillStyle = "rgba(148,163,184,0.32)";
+    ctx.fillRect(0, colorStatsTop, exportWidth, 1);
+  }
+
   if (showAxis) {
     ctx.fillStyle = whiteBackground ? "#F8FAFC" : "rgba(248,250,252,0.96)";
-    ctx.fillRect(0, BRAND_HEADER_HEIGHT, exportWidth, axisSize);
-    ctx.fillRect(0, BRAND_HEADER_HEIGHT + gridHeight - axisSize, exportWidth, axisSize);
-    ctx.fillRect(0, BRAND_HEADER_HEIGHT, axisSize, gridHeight);
-    ctx.fillRect(exportWidth - axisSize, BRAND_HEADER_HEIGHT, axisSize, gridHeight);
+    ctx.fillRect(0, headerMetrics.headerHeight, exportWidth, axisSize);
+    ctx.fillRect(0, headerMetrics.headerHeight + gridHeight - axisSize, exportWidth, axisSize);
+    ctx.fillRect(0, headerMetrics.headerHeight, axisSize, gridHeight);
+    ctx.fillRect(exportWidth - axisSize, headerMetrics.headerHeight, axisSize, gridHeight);
   }
 
   for (let row = 0; row < rows; row += 1) {
@@ -788,8 +844,8 @@ function renderPatternImage(options: {
         ? String(col + 1)
         : String(mirrorFlip ? bounds.maxX - col + 1 : bounds.minX + col + 1);
       const x = gridOriginX + col * cellSize + cellSize / 2;
-      ctx.fillText(text, x, BRAND_HEADER_HEIGHT + axisSize / 2);
-      ctx.fillText(text, x, BRAND_HEADER_HEIGHT + gridHeight - axisSize / 2);
+      ctx.fillText(text, x, headerMetrics.headerHeight + axisSize / 2);
+      ctx.fillText(text, x, headerMetrics.headerHeight + gridHeight - axisSize / 2);
     }
 
     for (let row = 0; row < rows; row += 1) {
@@ -903,14 +959,19 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
+    setBrandLogoImage(null);
     const image = new window.Image();
     image.onload = () => setBrandLogoImage(image);
     image.src = BRAND_LOGO_SRC;
 
+    if (image.complete && image.naturalWidth > 0) {
+      setBrandLogoImage(image);
+    }
+
     return () => {
       image.onload = null;
     };
-  }, []);
+  }, [BRAND_LOGO_SRC]);
 
   useEffect(() => {
     const nextSettings: ExportDialogSettings = {
