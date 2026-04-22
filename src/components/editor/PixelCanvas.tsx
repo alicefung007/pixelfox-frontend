@@ -39,6 +39,7 @@ export default function PixelCanvas() {
     startWidth: number;
     startHeight: number;
     startOffset: { x: number; y: number };
+    previewSize: number;
   } | null>(null);
   const panLastRef = useRef<{ x: number; y: number } | null>(null);
   const zoomRef = useRef(zoom);
@@ -646,44 +647,61 @@ export default function PixelCanvas() {
       const scale = zoomRef.current / 10;
       if (scale <= 0) return;
 
-      if (resizeDrag.edge === 'left' || resizeDrag.edge === 'right') {
-        const deltaPixels = Math.round((event.clientX - resizeDrag.startClientX) / scale);
-        const nextWidth =
-          resizeDrag.edge === 'right'
-            ? resizeDrag.startWidth + deltaPixels
-            : resizeDrag.startWidth - deltaPixels;
-        const clampedWidth = Math.max(1, Math.min(200, nextWidth));
-        resizeFromEdge(resizeDrag.edge, clampedWidth);
+      setResizeDrag((current) => {
+        if (!current) return current;
 
-        if (resizeDrag.edge === 'left') {
-          const widthDelta = clampedWidth - resizeDrag.startWidth;
-          setViewOffset({
-            x: resizeDrag.startOffset.x - widthDelta * scale,
-            y: resizeDrag.startOffset.y,
-          });
+        if (current.edge === 'left' || current.edge === 'right') {
+          const deltaPixels = Math.round((event.clientX - current.startClientX) / scale);
+          const nextWidth =
+            current.edge === 'right'
+              ? current.startWidth + deltaPixels
+              : current.startWidth - deltaPixels;
+          const clampedWidth = Math.max(1, Math.min(200, nextWidth));
+          return clampedWidth === current.previewSize
+            ? current
+            : { ...current, previewSize: clampedWidth };
         }
-        return;
-      }
 
-      const deltaPixels = Math.round((event.clientY - resizeDrag.startClientY) / scale);
-      const nextHeight =
-        resizeDrag.edge === 'bottom'
-          ? resizeDrag.startHeight + deltaPixels
-          : resizeDrag.startHeight - deltaPixels;
-      const clampedHeight = Math.max(1, Math.min(200, nextHeight));
-      resizeFromEdge(resizeDrag.edge, clampedHeight);
-
-      if (resizeDrag.edge === 'top') {
-        const heightDelta = clampedHeight - resizeDrag.startHeight;
-        setViewOffset({
-          x: resizeDrag.startOffset.x,
-          y: resizeDrag.startOffset.y - heightDelta * scale,
-        });
-      }
+        const deltaPixels = Math.round((event.clientY - current.startClientY) / scale);
+        const nextHeight =
+          current.edge === 'bottom'
+            ? current.startHeight + deltaPixels
+            : current.startHeight - deltaPixels;
+        const clampedHeight = Math.max(1, Math.min(200, nextHeight));
+        return clampedHeight === current.previewSize
+          ? current
+          : { ...current, previewSize: clampedHeight };
+      });
     };
 
     const finishResize = () => {
-      saveHistory();
+      const activeDrag = resizeDrag;
+      if (!activeDrag) return;
+
+      if (activeDrag.previewSize !== (activeDrag.edge === 'left' || activeDrag.edge === 'right' ? activeDrag.startWidth : activeDrag.startHeight)) {
+        resizeFromEdge(activeDrag.edge, activeDrag.previewSize);
+
+        if (activeDrag.edge === 'left') {
+          const widthDelta = activeDrag.previewSize - activeDrag.startWidth;
+          const scale = zoomRef.current / 10;
+          setViewOffset({
+            x: activeDrag.startOffset.x - widthDelta * scale,
+            y: activeDrag.startOffset.y,
+          });
+        }
+
+        if (activeDrag.edge === 'top') {
+          const heightDelta = activeDrag.previewSize - activeDrag.startHeight;
+          const scale = zoomRef.current / 10;
+          setViewOffset({
+            x: activeDrag.startOffset.x,
+            y: activeDrag.startOffset.y - heightDelta * scale,
+          });
+        }
+
+        saveHistory();
+      }
+
       setResizeDrag(null);
     };
 
@@ -781,7 +799,19 @@ export default function PixelCanvas() {
             ? Pipette
             : null;
 
-  const cursorClass = isPanning ? 'cursor-grabbing' : currentTool === 'hand' ? 'cursor-grab' : currentTool === 'text' ? 'cursor-text' : isOverlayTool ? 'cursor-none' : 'cursor-crosshair';
+  const cursorClass = resizeDrag
+    ? resizeDrag.edge === 'left' || resizeDrag.edge === 'right'
+      ? 'cursor-ew-resize'
+      : 'cursor-ns-resize'
+    : isPanning
+      ? 'cursor-grabbing'
+      : currentTool === 'hand'
+        ? 'cursor-grab'
+        : currentTool === 'text'
+          ? 'cursor-text'
+          : isOverlayTool
+            ? 'cursor-none'
+            : 'cursor-crosshair';
   const scale = zoom / 10;
   const canvasScreenRect = {
     left: viewOffset.x,
@@ -790,6 +820,86 @@ export default function PixelCanvas() {
     height: height * scale,
   };
   const resizeHandleThickness = 12;
+  const resizeHandleGap = 4;
+  const resizePreview = resizeDrag
+    ? (() => {
+        const startSize = resizeDrag.edge === 'left' || resizeDrag.edge === 'right' ? resizeDrag.startWidth : resizeDrag.startHeight;
+        const delta = resizeDrag.previewSize - startSize;
+        if (delta === 0) return null;
+
+        const magnitude = Math.abs(delta) * scale;
+        const isGrow = delta > 0;
+        const colorClass = isGrow
+          ? 'border-blue-500/90 bg-blue-400/25 text-blue-600'
+          : 'border-red-500/90 bg-red-400/20 text-red-500';
+
+        if (resizeDrag.edge === 'left') {
+          return {
+            panelStyle: {
+              left: isGrow ? canvasScreenRect.left - magnitude : canvasScreenRect.left,
+              top: canvasScreenRect.top,
+              width: magnitude,
+              height: canvasScreenRect.height,
+            } as React.CSSProperties,
+            labelStyle: {
+              left: isGrow ? canvasScreenRect.left - magnitude / 2 : canvasScreenRect.left + magnitude / 2,
+              top: canvasScreenRect.top + canvasScreenRect.height / 2,
+            } as React.CSSProperties,
+            colorClass,
+            value: `${delta > 0 ? '+' : ''}${delta}`,
+          };
+        }
+
+        if (resizeDrag.edge === 'right') {
+          return {
+            panelStyle: {
+              left: isGrow ? canvasScreenRect.left + canvasScreenRect.width : canvasScreenRect.left + canvasScreenRect.width - magnitude,
+              top: canvasScreenRect.top,
+              width: magnitude,
+              height: canvasScreenRect.height,
+            } as React.CSSProperties,
+            labelStyle: {
+              left: isGrow ? canvasScreenRect.left + canvasScreenRect.width + magnitude / 2 : canvasScreenRect.left + canvasScreenRect.width - magnitude / 2,
+              top: canvasScreenRect.top + canvasScreenRect.height / 2,
+            } as React.CSSProperties,
+            colorClass,
+            value: `${delta > 0 ? '+' : ''}${delta}`,
+          };
+        }
+
+        if (resizeDrag.edge === 'top') {
+          return {
+            panelStyle: {
+              left: canvasScreenRect.left,
+              top: isGrow ? canvasScreenRect.top - magnitude : canvasScreenRect.top,
+              width: canvasScreenRect.width,
+              height: magnitude,
+            } as React.CSSProperties,
+            labelStyle: {
+              left: canvasScreenRect.left + canvasScreenRect.width / 2,
+              top: isGrow ? canvasScreenRect.top - magnitude / 2 : canvasScreenRect.top + magnitude / 2,
+            } as React.CSSProperties,
+            colorClass,
+            value: `${delta > 0 ? '+' : ''}${delta}`,
+          };
+        }
+
+        return {
+          panelStyle: {
+            left: canvasScreenRect.left,
+            top: isGrow ? canvasScreenRect.top + canvasScreenRect.height : canvasScreenRect.top + canvasScreenRect.height - magnitude,
+            width: canvasScreenRect.width,
+            height: magnitude,
+          } as React.CSSProperties,
+          labelStyle: {
+            left: canvasScreenRect.left + canvasScreenRect.width / 2,
+            top: isGrow ? canvasScreenRect.top + canvasScreenRect.height + magnitude / 2 : canvasScreenRect.top + canvasScreenRect.height - magnitude / 2,
+          } as React.CSSProperties,
+          colorClass,
+          value: `${delta > 0 ? '+' : ''}${delta}`,
+        };
+      })()
+    : null;
   const cursorHotspot =
     currentTool === 'brush'
       ? CURSOR_CONFIG.BRUSH_HOTSPOT
@@ -823,6 +933,7 @@ export default function PixelCanvas() {
       startWidth: width,
       startHeight: height,
       startOffset: viewOffsetRef.current,
+      previewSize: edge === 'left' || edge === 'right' ? width : height,
     });
   };
 
@@ -830,25 +941,40 @@ export default function PixelCanvas() {
     edge: ResizeEdge;
     className: string;
     style: React.CSSProperties;
+    barStyle: React.CSSProperties;
   }> = [
     {
       edge: 'left',
       className: 'cursor-ew-resize',
       style: {
-        left: canvasScreenRect.left - resizeHandleThickness / 2,
+        left: canvasScreenRect.left - resizeHandleThickness - resizeHandleGap,
         top: canvasScreenRect.top,
         width: resizeHandleThickness,
         height: canvasScreenRect.height,
+      },
+      barStyle: {
+        left: resizeHandleThickness / 2,
+        top: canvasScreenRect.height / 2,
+        width: 5,
+        height: 64,
+        transform: 'translate(-50%, -50%)',
       },
     },
     {
       edge: 'right',
       className: 'cursor-ew-resize',
       style: {
-        left: canvasScreenRect.left + canvasScreenRect.width - resizeHandleThickness / 2,
+        left: canvasScreenRect.left + canvasScreenRect.width + resizeHandleGap,
         top: canvasScreenRect.top,
         width: resizeHandleThickness,
         height: canvasScreenRect.height,
+      },
+      barStyle: {
+        left: resizeHandleThickness / 2,
+        top: canvasScreenRect.height / 2,
+        width: 5,
+        height: 64,
+        transform: 'translate(-50%, -50%)',
       },
     },
     {
@@ -856,9 +982,16 @@ export default function PixelCanvas() {
       className: 'cursor-ns-resize',
       style: {
         left: canvasScreenRect.left,
-        top: canvasScreenRect.top - resizeHandleThickness / 2,
+        top: canvasScreenRect.top - resizeHandleThickness - resizeHandleGap,
         width: canvasScreenRect.width,
         height: resizeHandleThickness,
+      },
+      barStyle: {
+        left: canvasScreenRect.width / 2,
+        top: resizeHandleThickness / 2,
+        width: 64,
+        height: 5,
+        transform: 'translate(-50%, -50%)',
       },
     },
     {
@@ -866,9 +999,16 @@ export default function PixelCanvas() {
       className: 'cursor-ns-resize',
       style: {
         left: canvasScreenRect.left,
-        top: canvasScreenRect.top + canvasScreenRect.height - resizeHandleThickness / 2,
+        top: canvasScreenRect.top + canvasScreenRect.height + resizeHandleGap,
         width: canvasScreenRect.width,
         height: resizeHandleThickness,
+      },
+      barStyle: {
+        left: canvasScreenRect.width / 2,
+        top: resizeHandleThickness / 2,
+        width: 64,
+        height: 5,
+        transform: 'translate(-50%, -50%)',
       },
     },
   ];
@@ -893,14 +1033,35 @@ export default function PixelCanvas() {
         {resizeHandles.map((handle) => (
           <div
             key={handle.edge}
-            className={`absolute z-10 touch-none ${handle.className}`}
+            className={`group absolute z-10 touch-none ${handle.className}`}
             style={handle.style}
             onPointerDown={(event) => startResize(handle.edge, event)}
           >
-            <div className="pointer-events-none absolute inset-0 rounded-full bg-primary/20 opacity-0 transition-opacity hover:opacity-100" />
+            <div
+              className={`pointer-events-none absolute rounded-full transition-all ${
+                resizeDrag?.edge === handle.edge
+                  ? 'bg-primary shadow-[0_0_0_4px_color-mix(in_oklab,var(--primary)_14%,transparent)]'
+                  : 'bg-primary/70 group-hover:bg-primary group-hover:shadow-[0_0_0_4px_color-mix(in_oklab,var(--primary)_14%,transparent)]'
+              }`}
+              style={handle.barStyle}
+            />
           </div>
         ))}
-        {CursorIcon && cursorOverlay.visible && !isPanning && (
+        {resizePreview && (
+          <>
+            <div
+              className={`pointer-events-none absolute z-10 border-2 border-dashed ${resizePreview.colorClass}`}
+              style={resizePreview.panelStyle}
+            />
+            <div
+              className={`pointer-events-none absolute z-20 text-xl font-semibold tabular-nums ${resizePreview.colorClass.split(' ').at(-1)}`}
+              style={{ ...resizePreview.labelStyle, transform: 'translate(-50%, -50%)' }}
+            >
+              {resizePreview.value}
+            </div>
+          </>
+        )}
+        {CursorIcon && cursorOverlay.visible && !isPanning && !resizeDrag && (
           <div
             className="pointer-events-none absolute z-10 text-foreground"
             style={{
