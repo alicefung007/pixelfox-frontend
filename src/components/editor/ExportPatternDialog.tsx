@@ -1,4 +1,4 @@
-import { type TouchEvent, useEffect, useMemo, useRef, useState } from "react";
+import { type PointerEvent, type TouchEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Download, Minus, X, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -159,6 +159,14 @@ function loadExportDialogSettings(): ExportDialogSettings {
 
 function clampPreviewScale(scale: number) {
   return Math.min(PREVIEW_MAX_SCALE, Math.max(PREVIEW_MIN_SCALE, Number(scale.toFixed(2))));
+}
+
+function isLikelyMouseWheel(event: globalThis.WheelEvent) {
+  if (event.deltaMode !== 0) return true;
+  if (Math.abs(event.deltaX) > 0) return false;
+
+  const absDeltaY = Math.abs(event.deltaY);
+  return Number.isInteger(event.deltaY) && absDeltaY >= 40;
 }
 
 function getTouchDistance(touches: ReactTouchList) {
@@ -883,6 +891,12 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
     scale: number;
     offset: { x: number; y: number };
   } | null>(null);
+  const previewDragRef = useRef<{
+    pointerId: number;
+    startX: number;
+    startY: number;
+    offset: { x: number; y: number };
+  } | null>(null);
 
   useEffect(() => {
     previewScaleRef.current = previewScale;
@@ -1006,6 +1020,13 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
     ]
   );
 
+  function resetPreviewTransform() {
+    previewScaleRef.current = 1;
+    previewOffsetRef.current = { x: 0, y: 0 };
+    setPreviewScale(1);
+    setPreviewOffset({ x: 0, y: 0 });
+  }
+
   useEffect(() => {
     if (!open) return;
     resetPreviewTransform();
@@ -1068,11 +1089,54 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
     });
   };
 
-  const resetPreviewTransform = () => {
-    previewScaleRef.current = 1;
-    previewOffsetRef.current = { x: 0, y: 0 };
-    setPreviewScale(1);
-    setPreviewOffset({ x: 0, y: 0 });
+  const stopPreviewDrag = () => {
+    previewDragRef.current = null;
+  };
+
+  const handlePreviewPointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    if (!exportResult) return;
+    if (event.pointerType !== "mouse") return;
+    if (event.button !== 0) return;
+    if (event.target instanceof HTMLElement && event.target.closest("button")) return;
+
+    previewDragRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      offset: previewOffsetRef.current,
+    };
+
+    event.currentTarget.setPointerCapture(event.pointerId);
+    event.preventDefault();
+  };
+
+  const handlePreviewPointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    const drag = previewDragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+
+    const nextOffset = {
+      x: drag.offset.x + (event.clientX - drag.startX),
+      y: drag.offset.y + (event.clientY - drag.startY),
+    };
+
+    previewOffsetRef.current = nextOffset;
+    setPreviewOffset(nextOffset);
+  };
+
+  const handlePreviewPointerUp = (event: PointerEvent<HTMLDivElement>) => {
+    const drag = previewDragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    stopPreviewDrag();
+  };
+
+  const handlePreviewPointerCancel = (event: PointerEvent<HTMLDivElement>) => {
+    const drag = previewDragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    stopPreviewDrag();
   };
 
   const handlePreviewTouchStart = (event: TouchEvent<HTMLDivElement>) => {
@@ -1142,7 +1206,7 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
       if (!exportResult) return;
       event.preventDefault();
       event.stopPropagation();
-      if (event.ctrlKey || event.metaKey) {
+      if (event.ctrlKey || event.metaKey || isLikelyMouseWheel(event)) {
         const factor = Math.exp(-event.deltaY / 80);
         zoomPreviewAtPoint(previewScaleRef.current * factor, { x: event.clientX, y: event.clientY });
         return;
@@ -1168,7 +1232,7 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
 
       event.preventDefault();
       event.stopPropagation();
-      if (event.ctrlKey || event.metaKey) {
+      if (event.ctrlKey || event.metaKey || isLikelyMouseWheel(event)) {
         const factor = Math.exp(-event.deltaY / 80);
         zoomPreviewAtPoint(previewScaleRef.current * factor, { x: event.clientX, y: event.clientY });
         return;
@@ -1392,6 +1456,12 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
               onTouchMove={handlePreviewTouchMove}
               onTouchEnd={handlePreviewTouchEnd}
               onTouchCancel={handlePreviewTouchEnd}
+              onPointerDown={handlePreviewPointerDown}
+              onPointerMove={handlePreviewPointerMove}
+              onPointerUp={handlePreviewPointerUp}
+              onPointerCancel={handlePreviewPointerCancel}
+              onLostPointerCapture={stopPreviewDrag}
+              style={{ cursor: exportResult ? (previewDragRef.current ? "grabbing" : "grab") : "default" }}
             >
               {exportResult ? (
                 <div className="flex h-full w-full min-h-0 min-w-0 items-center justify-center overflow-hidden p-3">
