@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { PaletteTabId } from "@/store/usePaletteStore";
 import { useTranslation } from "react-i18next";
 import {
@@ -52,6 +52,7 @@ export default function PalettePanel() {
   const [pendingPaletteId, setPendingPaletteId] = useState<SystemPaletteId | null>(null);
   const [isReplaceOpen, setIsReplaceOpen] = useState(false);
   const [usedActionPopoverColor, setUsedActionPopoverColor] = useState<string | null>(null);
+  const replaceSourceRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!usedTabFlashAt) return;
@@ -144,12 +145,14 @@ export default function PalettePanel() {
   }, [palette, primaryColor, setColor]);
 
   const handleReplaceColor = (nextColor: string) => {
-    if (!selectedUsedColor) return;
+    const sourceColor = replaceSourceRef.current;
+    if (!sourceColor) return;
 
-    const selectedColor = normalizeHex(selectedUsedColor);
+    const selectedColor = normalizeHex(sourceColor);
     const replacementColor = `#${normalizeHex(nextColor)}`;
     if (selectedColor === normalizeHex(replacementColor)) {
       setIsReplaceOpen(false);
+      replaceSourceRef.current = null;
       return;
     }
 
@@ -167,6 +170,7 @@ export default function PalettePanel() {
 
     if (!changed) {
       setIsReplaceOpen(false);
+      replaceSourceRef.current = null;
       return;
     }
 
@@ -176,6 +180,7 @@ export default function PalettePanel() {
     setSelectedUsedColor(replacementColor);
     setUsedActionPopoverColor(normalizeHex(replacementColor));
     setIsReplaceOpen(false);
+    replaceSourceRef.current = null;
   };
 
   const handleClearSelectedColor = () => {
@@ -343,7 +348,10 @@ export default function PalettePanel() {
                     variant="ghost"
                     size="sm"
                     className="h-7 gap-1.5 rounded-md px-2.5 text-xs"
-                    onClick={() => setIsReplaceOpen(true)}
+                    onClick={() => {
+                      replaceSourceRef.current = selectedUsedColor;
+                      setIsReplaceOpen(true);
+                    }}
                   >
                     <Replace className="size-3.5" />
                     <span>{t("palette.usedActions.replace")}</span>
