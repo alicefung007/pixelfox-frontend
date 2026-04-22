@@ -1041,7 +1041,7 @@ export default function PixelCanvas() {
               className={`pointer-events-none absolute rounded-full transition-all ${
                 resizeDrag?.edge === handle.edge
                   ? 'bg-primary shadow-[0_0_0_4px_color-mix(in_oklab,var(--primary)_14%,transparent)]'
-                  : 'bg-primary/70 group-hover:bg-primary group-hover:shadow-[0_0_0_4px_color-mix(in_oklab,var(--primary)_14%,transparent)]'
+                  : 'bg-primary/45 group-hover:bg-primary group-hover:shadow-[0_0_0_4px_color-mix(in_oklab,var(--primary)_14%,transparent)]'
               }`}
               style={handle.barStyle}
             />
