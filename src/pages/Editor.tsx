@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import PixelCanvas from "@/components/editor/PixelCanvas";
+import MobileEditorQuickActions from "@/components/editor/MobileEditorQuickActions";
 import PalettePanel from "@/components/palette/PalettePanel";
 import Sidebar from "@/components/layout/Sidebar";
 import UploadPhotoDialog from "@/components/editor/UploadPhotoDialog";
@@ -71,8 +72,13 @@ export default function Editor() {
             autoSaveId="pixelfox-editor-layout-mobile-bottom-palette"
             className="h-full"
           >
-            <ResizablePanel defaultSize="45%" minSize="45%" className="relative overflow-hidden">
-              <PixelCanvas />
+            <ResizablePanel defaultSize="45%" minSize="45%" className="overflow-hidden">
+              <div className="flex h-full flex-col">
+                <MobileEditorQuickActions onExport={() => setExportOpen(true)} />
+                <div className="relative min-h-0 flex-1 overflow-hidden">
+                  <PixelCanvas />
+                </div>
+              </div>
             </ResizablePanel>
             <ResizableHandle withHandle className="aria-[orientation=horizontal]:h-2" />
             <ResizablePanel defaultSize="55%" minSize="20%" maxSize="55%" className="overflow-hidden bg-background">

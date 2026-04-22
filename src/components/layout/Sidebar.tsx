@@ -251,6 +251,13 @@ function SidebarContent({
       </div>
 
       <div className="space-y-2">
+        <Button variant="outline" className="w-full justify-between h-9 px-2 text-sm font-normal" onClick={clear}>
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Trash2 size={18} />
+            <span>{t("sidebar.clear")}</span>
+          </div>
+          <span className="text-[10px] text-muted-foreground uppercase hidden sm:inline">⌘ ⌫</span>
+        </Button>
         <span
           className={cn("block w-full", !hasExportableContent && "cursor-not-allowed")}
           tabIndex={hasExportableContent ? -1 : 0}
@@ -271,13 +278,6 @@ function SidebarContent({
             <span className="text-[10px] opacity-80 uppercase hidden sm:inline">⌘ E</span>
           </Button>
         </span>
-        <Button variant="outline" className="w-full justify-between h-9 px-2 text-sm font-normal" onClick={clear}>
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Trash2 size={18} />
-            <span>{t("sidebar.clear")}</span>
-          </div>
-          <span className="text-[10px] text-muted-foreground uppercase hidden sm:inline">⌘ ⌫</span>
-        </Button>
       </div>
 
       <Separator />

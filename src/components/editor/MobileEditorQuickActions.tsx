@@ -1,0 +1,95 @@
+import { useTranslation } from "react-i18next";
+import { Brush, Download, Eraser, Hand, PaintBucket, Pipette, Redo2, Trash2, Undo2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { useEditorStore } from "@/store/useEditorStore";
+import type { ToolType } from "@/store/useEditorStore";
+
+type Props = {
+  onExport?: () => void;
+  className?: string;
+};
+
+const tools: { id: ToolType; icon: React.ReactNode; labelKey: string }[] = [
+  { id: "brush", icon: <Brush size={16} />, labelKey: "sidebar.brush" },
+  { id: "bucket", icon: <PaintBucket size={16} />, labelKey: "sidebar.bucket" },
+  { id: "hand", icon: <Hand size={16} />, labelKey: "sidebar.hand" },
+  { id: "eraser", icon: <Eraser size={16} />, labelKey: "sidebar.eraser" },
+  { id: "eyedropper", icon: <Pipette size={16} />, labelKey: "sidebar.eyedropper" },
+];
+
+export default function MobileEditorQuickActions({ onExport, className }: Props) {
+  const { t } = useTranslation();
+  const currentTool = useEditorStore((state) => state.currentTool);
+  const setTool = useEditorStore((state) => state.setTool);
+  const undo = useEditorStore((state) => state.undo);
+  const redo = useEditorStore((state) => state.redo);
+  const clear = useEditorStore((state) => state.clear);
+  const hasPixels = useEditorStore((state) => Object.keys(state.pixels).length > 0);
+
+  return (
+    <div className={cn("border-b bg-background/95 px-2 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/80", className)}>
+      <div className="flex items-center gap-1.5 overflow-x-auto">
+        <Button
+          variant="outline"
+          size="icon-sm"
+          className="h-8 w-8 shrink-0"
+          onClick={undo}
+          aria-label={t("sidebar.undo")}
+          title={t("sidebar.undo")}
+        >
+          <Undo2 size={16} />
+        </Button>
+        <Button
+          variant="outline"
+          size="icon-sm"
+          className="h-8 w-8 shrink-0"
+          onClick={redo}
+          aria-label={t("sidebar.redo")}
+          title={t("sidebar.redo")}
+        >
+          <Redo2 size={16} />
+        </Button>
+        <Button
+          variant="outline"
+          size="icon-sm"
+          className="h-8 w-8 shrink-0"
+          onClick={clear}
+          aria-label={t("sidebar.clear")}
+          title={t("sidebar.clear")}
+        >
+          <Trash2 size={16} />
+        </Button>
+        <Button
+          size="icon-sm"
+          className="h-8 w-8 shrink-0 bg-gradient-to-r from-primary to-primary/80 text-white hover:opacity-90"
+          disabled={!hasPixels}
+          onClick={onExport}
+          aria-label={t("sidebar.export")}
+          title={t("sidebar.export")}
+        >
+          <Download size={16} />
+        </Button>
+
+        <div className="ml-auto flex shrink-0 items-center rounded-md border border-border bg-background p-1">
+          {tools.map((tool) => (
+            <Button
+              key={tool.id}
+              variant={currentTool === tool.id ? "secondary" : "ghost"}
+              size="icon-sm"
+              onClick={() => setTool(tool.id)}
+              className={cn(
+                "h-8 w-8 shrink-0",
+                currentTool === tool.id && "bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary"
+              )}
+              aria-label={t(tool.labelKey)}
+              title={t(tool.labelKey)}
+            >
+              {tool.icon}
+            </Button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
