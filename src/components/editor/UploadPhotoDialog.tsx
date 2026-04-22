@@ -228,23 +228,42 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
     };
   }, [open, selectedFile]);
 
-  // When a non-square image is uploaded, unlock aspect ratio and set height proportionally based on width
+  // Recalculate processing dimensions whenever a new image is uploaded so the
+  // preview uses the new image's aspect ratio instead of the previous file's.
   useEffect(() => {
     if (!selectedFile) return;
+
+    let cancelled = false;
     const url = URL.createObjectURL(selectedFile);
     const img = new Image();
     img.onload = () => {
-      if (img.width !== img.height) {
-        setAspectRatioLocked(false);
-        const currentWidth = parseInt(widthBeadsRef.current, 10) || 60;
-        const newHeight = Math.round(currentWidth * (img.height / img.width));
-        const nextHeight = String(clamp(newHeight, 1, 200));
-        setHeightBeads(nextHeight);
-        setProcessingDimensions((prev) => ({ ...prev, height: nextHeight }));
+      if (cancelled) {
+        URL.revokeObjectURL(url);
+        return;
       }
+
+      const currentWidth = parseInt(widthBeadsRef.current, 10) || 60;
+      const nextWidth = String(clamp(currentWidth, 1, 200));
+      const nextHeight = String(
+        clamp(Math.round(currentWidth * (img.height / img.width)), 1, 200)
+      );
+
+      setWidthBeads(nextWidth);
+      setHeightBeads(nextHeight);
+      setProcessingDimensions({ width: nextWidth, height: nextHeight });
+      setAspectRatioLocked(img.width === img.height);
+
+      URL.revokeObjectURL(url);
+    };
+    img.onerror = () => {
       URL.revokeObjectURL(url);
     };
     img.src = url;
+
+    return () => {
+      cancelled = true;
+      URL.revokeObjectURL(url);
+    };
   }, [selectedFile]);
 
   const selectedPalette = useMemo(
