@@ -45,12 +45,29 @@ const DEFAULT_HEIGHT = EDITOR_CONFIG.DEFAULT_HEIGHT;
 const EDITOR_STORAGE_KEY = 'pixelfox-editor-storage';
 const EDITOR_CANVAS_STORAGE_KEY = 'pixelfox-editor-canvas-storage';
 const LEGACY_DEFAULT_PRIMARY_COLOR = '#FF61A6';
+const MAX_HISTORY_ENTRIES = 30;
 
 const createInitialHistoryEntry = (): HistoryEntry => ({
   pixels: {},
   width: DEFAULT_WIDTH,
   height: DEFAULT_HEIGHT,
 });
+
+const limitHistory = (
+  history: HistoryEntry[],
+  historyIndex: number
+): { history: HistoryEntry[]; historyIndex: number } => {
+  if (history.length <= MAX_HISTORY_ENTRIES) {
+    return { history, historyIndex };
+  }
+
+  const overflow = history.length - MAX_HISTORY_ENTRIES;
+  const nextHistory = history.slice(overflow);
+  return {
+    history: nextHistory,
+    historyIndex: Math.max(0, historyIndex - overflow),
+  };
+};
 
 const sanitizeHistory = (
   history: HistoryEntry[] | undefined,
@@ -80,10 +97,7 @@ const sanitizeHistory = (
     };
   }
 
-  return {
-    history: sanitizedHistory,
-    historyIndex: sanitizedHistory.length - 1,
-  };
+  return limitHistory(sanitizedHistory, sanitizedHistory.length - 1);
 };
 
 const sanitizePersistedEditorState = (
@@ -177,16 +191,39 @@ const loadPersistedCanvasState = (fallback?: Partial<EditorState>): PersistedCan
 const persistCanvasState = (state: PersistedCanvasState) => {
   if (typeof window === 'undefined') return;
 
-  window.localStorage.setItem(
-    EDITOR_CANVAS_STORAGE_KEY,
+  const persistAttempt = (history: HistoryEntry[], historyIndex: number) =>
     JSON.stringify({
       pixels: state.pixels,
       width: state.width,
       height: state.height,
-      history: state.history,
-      historyIndex: state.historyIndex,
-    })
-  );
+      history,
+      historyIndex,
+    });
+
+  const limited = limitHistory(state.history, state.historyIndex);
+  let history = limited.history;
+  let historyIndex = limited.historyIndex;
+
+  while (history.length > 0) {
+    try {
+      window.localStorage.setItem(
+        EDITOR_CANVAS_STORAGE_KEY,
+        persistAttempt(history, Math.min(historyIndex, history.length - 1))
+      );
+      return;
+    } catch (error) {
+      if (!(error instanceof DOMException) || error.name !== 'QuotaExceededError') {
+        return;
+      }
+
+      if (history.length === 1) {
+        return;
+      }
+
+      history = history.slice(1);
+      historyIndex = Math.max(0, historyIndex - 1);
+    }
+  }
 };
 
 const initialCanvasState = loadPersistedCanvasState(getDefaultCanvasState());
@@ -258,16 +295,17 @@ export const useEditorStore = create<EditorState>()(
 
     const newHistory = state.history.slice(0, state.historyIndex + 1);
     newHistory.push({ pixels: { ...currentPixels }, width: state.width, height: state.height });
+    const limitedHistory = limitHistory(newHistory, newHistory.length - 1);
     const nextState = {
-      history: newHistory,
-      historyIndex: newHistory.length - 1,
+      history: limitedHistory.history,
+      historyIndex: limitedHistory.historyIndex,
     };
     persistCanvasState({
       pixels: currentPixels,
       width: state.width,
       height: state.height,
-      history: newHistory,
-      historyIndex: newHistory.length - 1,
+      history: limitedHistory.history,
+      historyIndex: limitedHistory.historyIndex,
     });
     return nextState;
   }),
@@ -327,17 +365,18 @@ export const useEditorStore = create<EditorState>()(
   clear: () => set((state) => {
     const newHistory = state.history.slice(0, state.historyIndex + 1);
     newHistory.push({ pixels: {}, width: state.width, height: state.height });
+    const limitedHistory = limitHistory(newHistory, newHistory.length - 1);
     const nextState = {
       pixels: {},
-      history: newHistory,
-      historyIndex: newHistory.length - 1,
+      history: limitedHistory.history,
+      historyIndex: limitedHistory.historyIndex,
     };
     persistCanvasState({
       pixels: {},
       width: state.width,
       height: state.height,
-      history: newHistory,
-      historyIndex: newHistory.length - 1,
+      history: limitedHistory.history,
+      historyIndex: limitedHistory.historyIndex,
     });
     return nextState;
   }),

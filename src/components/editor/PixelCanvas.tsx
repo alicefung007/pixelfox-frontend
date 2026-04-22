@@ -548,6 +548,13 @@ export default function PixelCanvas() {
       return;
     }
     updateCursorFromMouseEvent(e);
+    if (isDrawing && e.buttons === 0) {
+      saveHistory();
+      strokeColorRegisteredRef.current = false;
+      setIsDrawing(false);
+      setLastCoords(null);
+      return;
+    }
     if (isDrawing) {
       handleDraw(getCoordinates(e));
     }
@@ -593,6 +600,28 @@ export default function PixelCanvas() {
       window.removeEventListener('blur', endPan);
     };
   }, [isPanning]);
+
+  useEffect(() => {
+    if (!isDrawing || isPanning) return;
+
+    const finishDrawing = () => {
+      strokeColorRegisteredRef.current = false;
+      setIsDrawing((drawing) => {
+        if (!drawing) return drawing;
+        saveHistory();
+        return false;
+      });
+      setLastCoords(null);
+    };
+
+    window.addEventListener('mouseup', finishDrawing);
+    window.addEventListener('blur', finishDrawing);
+
+    return () => {
+      window.removeEventListener('mouseup', finishDrawing);
+      window.removeEventListener('blur', finishDrawing);
+    };
+  }, [isDrawing, isPanning, saveHistory]);
 
   useEffect(() => {
     const container = containerRef.current;

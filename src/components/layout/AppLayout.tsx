@@ -34,6 +34,9 @@ export default function AppLayout() {
     const pixels: Record<string, string> = {};
     const { imageData, width, height } = result;
 
+    // Close the upload dialog before applying store updates triggered by generation.
+    setUploadOpen(false);
+
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
         const offset = (y * width + x) * 4;
@@ -64,7 +67,7 @@ export default function AppLayout() {
       setActiveTab("used");
       flashUsedTab();
     }, 350);
-  }, [setPixels, setSize, saveHistory, setColor, primaryColor, setCurrentPaletteId, setActiveTab, flashUsedTab, t]);
+  }, [setPixels, setSize, saveHistory, setColor, primaryColor, setUploadOpen, setCurrentPaletteId, setActiveTab, flashUsedTab, t]);
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-background">
