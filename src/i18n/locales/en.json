@@ -72,8 +72,10 @@
       "exclude": "Exclude"
     },
     "replaceDialog": {
-      "title": "Palette Replace Color",
+      "title": "Replace Color",
       "description": "Choose a swatch from {{palette}}. Selecting one will immediately replace the current used color.",
+      "searchPlaceholder": "Search color name or HEX...",
+      "empty": "No matching colors found.",
       "cancel": "Cancel"
     },
     "manageDialog": {

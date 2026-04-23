@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import PixelCanvas from "@/components/editor/PixelCanvas";
 import MobileEditorQuickActions from "@/components/editor/MobileEditorQuickActions";
 import PalettePanel from "@/components/palette/PalettePanel";
+import PaletteReplaceColorDialog from "@/components/palette/PaletteReplaceColorDialog";
 import Sidebar from "@/components/layout/Sidebar";
 import UploadPhotoDialog from "@/components/editor/UploadPhotoDialog";
 import Preview3DDialog from "@/components/editor/Preview3DDialog";
@@ -30,6 +31,25 @@ export default function Editor() {
   useToolShortcuts();
   const { sidebarOpen, setSidebarOpen, uploadOpen, setUploadOpen, exportOpen, setExportOpen, handleGenerate } = useOutletContext<EditorContext>();
   const [preview3DOpen, setPreview3DOpen] = useState(false);
+  const [replaceSourceColor, setReplaceSourceColor] = useState<string | null>(null);
+  const [isDesktopViewport, setIsDesktopViewport] = useState(() => {
+    if (typeof window === "undefined") return true;
+    return window.matchMedia("(min-width: 768px)").matches;
+  });
+
+  const handleReplaceDialogOpenChange = (open: boolean) => {
+    if (open) return;
+    setReplaceSourceColor(null);
+  };
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mediaQuery = window.matchMedia("(min-width: 768px)");
+    const updateViewportMode = () => setIsDesktopViewport(mediaQuery.matches);
+    updateViewportMode();
+    mediaQuery.addEventListener("change", updateViewportMode);
+    return () => mediaQuery.removeEventListener("change", updateViewportMode);
+  }, []);
 
   return (
     <div className="h-full flex">
@@ -42,7 +62,7 @@ export default function Editor() {
       />
 
       <div className="flex-1 h-full">
-        <div className="hidden h-full md:block">
+        {isDesktopViewport ? (
           <ResizablePanelGroup
             direction="horizontal"
             autoSaveId="pixelfox-editor-layout-desktop-right-palette"
@@ -61,12 +81,10 @@ export default function Editor() {
               maxSize="45%"
               className="overflow-hidden bg-background"
             >
-              <PalettePanel />
+              <PalettePanel onOpenReplaceColorDialog={setReplaceSourceColor} />
             </ResizablePanel>
           </ResizablePanelGroup>
-        </div>
-
-        <div className="h-full md:hidden">
+        ) : (
           <ResizablePanelGroup
             direction="vertical"
             autoSaveId="pixelfox-editor-layout-mobile-bottom-palette"
@@ -82,15 +100,20 @@ export default function Editor() {
             </ResizablePanel>
             <ResizableHandle withHandle className="aria-[orientation=horizontal]:h-2" />
             <ResizablePanel defaultSize="55%" minSize="20%" maxSize="55%" className="overflow-hidden bg-background">
-              <PalettePanel />
+              <PalettePanel onOpenReplaceColorDialog={setReplaceSourceColor} />
             </ResizablePanel>
           </ResizablePanelGroup>
-        </div>
+        )}
       </div>
 
       <UploadPhotoDialog open={uploadOpen} onOpenChange={setUploadOpen} onGenerate={handleGenerate} />
       <Preview3DDialog open={preview3DOpen} onOpenChange={setPreview3DOpen} />
       <ExportPatternDialog open={exportOpen} onOpenChange={setExportOpen} />
+      <PaletteReplaceColorDialog
+        open={replaceSourceColor !== null}
+        sourceColor={replaceSourceColor}
+        onOpenChange={handleReplaceDialogOpenChange}
+      />
     </div>
   );
 }

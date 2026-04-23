@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { PaletteTabId } from "@/store/usePaletteStore";
 import { useTranslation } from "react-i18next";
 import {
@@ -10,13 +10,11 @@ import {
   SwatchBook,
   Trash2,
   TriangleAlert,
-  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -32,7 +30,11 @@ import { resolvePaletteColor } from "@/lib/palette-color";
 import { showPaletteRemapToast } from "@/lib/palette-notice";
 import { cn, normalizeHex, hexLabel, isDarkColor } from "@/lib/utils";
 
-export default function PalettePanel() {
+type PalettePanelProps = {
+  onOpenReplaceColorDialog: (sourceColor: string) => void;
+};
+
+export default function PalettePanel({ onOpenReplaceColorDialog }: PalettePanelProps) {
   const { t } = useTranslation();
   const primaryColor = useEditorStore((state) => state.primaryColor);
   const setColor = useEditorStore((state) => state.setColor);
@@ -50,9 +52,7 @@ export default function PalettePanel() {
   const [isManageOpen, setIsManageOpen] = useState(false);
   const [isUsedFlashing, setIsUsedFlashing] = useState(false);
   const [pendingPaletteId, setPendingPaletteId] = useState<SystemPaletteId | null>(null);
-  const [isReplaceOpen, setIsReplaceOpen] = useState(false);
   const [usedActionPopoverColor, setUsedActionPopoverColor] = useState<string | null>(null);
-  const replaceSourceRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!usedTabFlashAt) return;
@@ -132,6 +132,16 @@ export default function PalettePanel() {
   }, [canvasUsedColors, selectedUsedColor]);
 
   useEffect(() => {
+    if (tab !== "used" || !selectedUsedColor) return;
+    const normalizedSelectedColor = normalizeHex(selectedUsedColor);
+    const hasSelection = canvasUsedColors.some(
+      (color) => normalizeHex(color) === normalizedSelectedColor
+    );
+    if (!hasSelection || usedActionPopoverColor === normalizedSelectedColor) return;
+    queueMicrotask(() => setUsedActionPopoverColor(normalizedSelectedColor));
+  }, [canvasUsedColors, selectedUsedColor, tab, usedActionPopoverColor]);
+
+  useEffect(() => {
     if (tab !== "used") {
       queueMicrotask(() => setUsedActionPopoverColor(null));
     }
@@ -149,45 +159,6 @@ export default function PalettePanel() {
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [palette, primaryColor, setColor]);
-
-  const handleReplaceColor = (nextColor: string) => {
-    const sourceColor = replaceSourceRef.current;
-    if (!sourceColor) return;
-
-    const selectedColor = normalizeHex(sourceColor);
-    const replacementColor = `#${normalizeHex(nextColor)}`;
-    if (selectedColor === normalizeHex(replacementColor)) {
-      setIsReplaceOpen(false);
-      replaceSourceRef.current = null;
-      return;
-    }
-
-    let changed = false;
-    const currentPixels = useEditorStore.getState().pixels;
-    const nextPixels: Record<string, string> = {};
-    for (const [key, color] of Object.entries(currentPixels)) {
-      if (normalizeHex(color) === selectedColor) {
-        nextPixels[key] = replacementColor;
-        changed = true;
-      } else {
-        nextPixels[key] = color;
-      }
-    }
-
-    if (!changed) {
-      setIsReplaceOpen(false);
-      replaceSourceRef.current = null;
-      return;
-    }
-
-    setPixels(nextPixels);
-    saveHistory();
-    setColor(replacementColor);
-    setSelectedUsedColor(replacementColor);
-    setUsedActionPopoverColor(normalizeHex(replacementColor));
-    setIsReplaceOpen(false);
-    replaceSourceRef.current = null;
-  };
 
   const handleClearSelectedColor = () => {
     if (!selectedUsedColor) return;
@@ -355,8 +326,8 @@ export default function PalettePanel() {
                     size="sm"
                     className="h-7 gap-1.5 rounded-md px-2.5 text-xs"
                     onClick={() => {
-                      replaceSourceRef.current = selectedUsedColor;
-                      setIsReplaceOpen(true);
+                      if (!selectedUsedColor) return;
+                      onOpenReplaceColorDialog(selectedUsedColor);
                     }}
                   >
                     <Replace className="size-3.5" />
@@ -420,77 +391,6 @@ export default function PalettePanel() {
           setTab("all");
         }}
       />
-
-      <Dialog open={isReplaceOpen} onOpenChange={setIsReplaceOpen}>
-        <DialogContent className="max-w-2xl p-0 overflow-hidden">
-          <DialogHeader className="px-6 pt-6 pb-3">
-            <div className="flex items-start justify-between gap-4">
-              <div className="min-w-0">
-                <DialogTitle className="flex items-center gap-2">
-                  <span className="inline-flex size-7 items-center justify-center rounded-full bg-primary/10 text-primary">
-                    <Palette className="size-4" />
-                  </span>
-                  <span>{t("palette.replaceDialog.title")}</span>
-                </DialogTitle>
-                <DialogDescription className="mt-1">
-                  {t("palette.replaceDialog.description", {
-                    palette: palette.i18nKey ? t(palette.i18nKey) : palette.name,
-                  })}
-                </DialogDescription>
-              </div>
-              <DialogClose asChild>
-                <Button variant="ghost" size="icon" className="rounded-full">
-                  <X className="size-4" />
-                </Button>
-              </DialogClose>
-            </div>
-          </DialogHeader>
-
-          <div className="max-h-[60vh] overflow-y-auto px-6 pb-6">
-            <div className="grid grid-cols-7 gap-2 py-1 sm:gap-3 sm:[grid-template-columns:repeat(auto-fill,minmax(52px,1fr))]">
-              {palette.swatches.map((swatch) => {
-                const isCurrent = selectedUsedColor
-                  ? normalizeHex(selectedUsedColor) === normalizeHex(swatch.color)
-                  : false;
-
-                return (
-                  <div
-                    key={`${swatch.label}-${normalizeHex(swatch.color)}`}
-                    className="flex flex-col items-center gap-1 p-0.5 transition-transform hover:scale-105 active:scale-95 sm:p-1"
-                  >
-                    <button
-                      type="button"
-                      className={cn(
-                        "relative flex aspect-square w-full items-center justify-center rounded-md border-2",
-                        isCurrent
-                          ? "border-primary ring-2 ring-primary/25"
-                          : "border-gray-400/20"
-                      )}
-                      style={{ backgroundColor: swatch.color }}
-                      onClick={() => handleReplaceColor(swatch.color)}
-                    >
-                      <span
-                        className={cn(
-                          "text-[8px] font-bold transition-colors sm:text-[9px] md:text-[10px]",
-                          isDarkColor(swatch.color) ? "text-white" : "text-black/60"
-                        )}
-                      >
-                        {swatch.label}
-                      </span>
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          <DialogFooter className="border-t border-border/60 bg-muted/20 px-6 py-4">
-            <Button variant="outline" onClick={() => setIsReplaceOpen(false)}>
-              {t("palette.replaceDialog.cancel")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       <Dialog open={Boolean(pendingPaletteId)} onOpenChange={(open) => {
         if (!open) setPendingPaletteId(null);

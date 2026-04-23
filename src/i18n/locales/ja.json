@@ -72,8 +72,10 @@
       "exclude": "Exclude"
     },
     "replaceDialog": {
-      "title": "Palette Replace Color",
+      "title": "色を置換",
       "description": "{{palette}} の色カードを選択すると、現在選択中の使用色がすぐに置き換わります。",
+      "searchPlaceholder": "色名または HEX を検索...",
+      "empty": "一致する色が見つかりません。",
       "cancel": "Cancel"
     },
     "manageDialog": {

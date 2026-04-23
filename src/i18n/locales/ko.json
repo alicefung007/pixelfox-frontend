@@ -72,8 +72,10 @@
       "exclude": "Exclude"
     },
     "replaceDialog": {
-      "title": "Palette Replace Color",
+      "title": "색상 교체",
       "description": "{{palette}} 팔레트에서 색상을 선택하면 현재 선택한 사용 색상이 바로 대체됩니다.",
+      "searchPlaceholder": "색상명 또는 HEX 검색...",
+      "empty": "일치하는 색상이 없습니다.",
       "cancel": "Cancel"
     },
     "manageDialog": {
