@@ -75,6 +75,8 @@
       "title": "替换颜色",
       "description": "从 {{palette}} 色盘中选择一个色卡，选中后会立即替换当前已选颜色。",
       "searchPlaceholder": "搜索颜色名或 HEX...",
+      "similarGroup": "相近颜色",
+      "allGroup": "全部颜色",
       "empty": "没有找到匹配的颜色。",
       "cancel": "Cancel"
     },

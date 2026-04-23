@@ -75,6 +75,8 @@
       "title": "Replace Color",
       "description": "Choose a swatch from {{palette}}. Selecting one will immediately replace the current used color.",
       "searchPlaceholder": "Search color name or HEX...",
+      "similarGroup": "Similar Colors",
+      "allGroup": "All Colors",
       "empty": "No matching colors found.",
       "cancel": "Cancel"
     },

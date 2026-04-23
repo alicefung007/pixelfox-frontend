@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Separator } from "@/components/ui/separator"
 import { useEditorStore } from "@/store/useEditorStore"
 import { usePaletteStore } from "@/store/usePaletteStore"
 import { getSystemPalette } from "@/lib/palettes"
@@ -23,6 +24,46 @@ type PaletteReplaceColorDialogProps = {
   onOpenChange: (open: boolean) => void
 }
 
+function hexToRgb(hex: string) {
+  const normalized = normalizeHex(hex)
+  return {
+    r: parseInt(normalized.slice(0, 2), 16),
+    g: parseInt(normalized.slice(2, 4), 16),
+    b: parseInt(normalized.slice(4, 6), 16),
+  }
+}
+
+function getColorDistance(colorA: string, colorB: string) {
+  const a = hexToRgb(colorA)
+  const b = hexToRgb(colorB)
+  const dr = a.r - b.r
+  const dg = a.g - b.g
+  const db = a.b - b.b
+  return dr * dr + dg * dg + db * db
+}
+
+function getColorSimilarity(colorA: string, colorB: string) {
+  return -getColorDistance(colorA, colorB)
+}
+
+function isHexSearchMatch(swatchColor: string, keyword: string) {
+  const normalizedKeyword = keyword.trim().toLowerCase()
+  if (!normalizedKeyword) return false
+
+  const normalizedColor = normalizeHex(swatchColor).toLowerCase()
+  const hashColor = `#${normalizedColor}`
+  return (
+    hashColor.includes(normalizedKeyword) ||
+    normalizedColor.includes(normalizedKeyword)
+  )
+}
+
+function isNameSearchMatch(swatchLabel: string, keyword: string) {
+  const normalizedKeyword = keyword.trim().toLowerCase()
+  if (!normalizedKeyword) return false
+  return swatchLabel.toLowerCase().includes(normalizedKeyword)
+}
+
 export default function PaletteReplaceColorDialog({
   open,
   sourceColor,
@@ -30,6 +71,7 @@ export default function PaletteReplaceColorDialog({
 }: PaletteReplaceColorDialogProps) {
   const { t } = useTranslation()
   const [search, setSearch] = useState("")
+  const hasSearch = search.trim().length > 0
   const currentPaletteId = usePaletteStore((state) => state.currentPaletteId)
   const setSelectedUsedColor = usePaletteStore(
     (state) => state.setSelectedUsedColor
@@ -55,6 +97,18 @@ export default function PaletteReplaceColorDialog({
       )
     })
   }, [palette.swatches, search])
+  const similarSwatches = useMemo(() => {
+    if (!normalizedSourceColor) return []
+
+    return [...filteredSwatches]
+      .filter((swatch) => normalizeHex(swatch.color) !== normalizedSourceColor)
+      .sort(
+        (a, b) =>
+          getColorSimilarity(b.color, normalizedSourceColor) -
+          getColorSimilarity(a.color, normalizedSourceColor)
+      )
+      .slice(0, 9)
+  }, [filteredSwatches, normalizedSourceColor])
 
   useEffect(() => {
     if (!open && search) {
@@ -94,6 +148,53 @@ export default function PaletteReplaceColorDialog({
     setSelectedUsedColor(replacementColor)
     onOpenChange(false)
   }
+
+  const renderSwatchGrid = (
+    swatches: typeof filteredSwatches,
+    keyPrefix: string
+  ) => (
+    <div className="grid grid-cols-6 gap-2 sm:[grid-template-columns:repeat(auto-fill,minmax(52px,1fr))] sm:gap-3">
+      {swatches.map((swatch) => {
+        const isCurrent = normalizedSourceColor === normalizeHex(swatch.color)
+        const isNameMatched = hasSearch && isNameSearchMatch(swatch.label, search)
+        const isHexMatched =
+          hasSearch && !isNameMatched && isHexSearchMatch(swatch.color, search)
+
+        return (
+          <div
+            key={`${keyPrefix}-${swatch.label}-${normalizeHex(swatch.color)}`}
+            className="flex flex-col items-center gap-1 p-1 transition-transform hover:scale-105 active:scale-95"
+          >
+            <button
+              type="button"
+              className={cn(
+                "relative flex h-9 w-9 items-center justify-center rounded-md border-2 sm:aspect-square sm:h-auto sm:w-full",
+                isCurrent
+                  ? "border-primary ring-2 ring-primary/25"
+                  : "border-gray-400/20"
+              )}
+              style={{ backgroundColor: swatch.color }}
+              onClick={() => handleReplaceColor(swatch.color)}
+            >
+              <span
+                className={cn(
+                  "text-[8px] font-bold transition-colors sm:text-[9px] md:text-[10px]",
+                  isDarkColor(swatch.color) ? "text-white" : "text-black/60"
+                )}
+              >
+                {swatch.label}
+              </span>
+              {isHexMatched && (
+                <span className="absolute -right-1 -bottom-1 rounded-full bg-foreground/85 px-1 py-0.5 text-[8px] font-semibold leading-none text-background shadow-sm">
+                  HEX
+                </span>
+              )}
+            </button>
+          </div>
+        )
+      })}
+    </div>
+  )
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -139,41 +240,28 @@ export default function PaletteReplaceColorDialog({
               {t("palette.replaceDialog.empty")}
             </div>
           ) : (
-            <div className="grid grid-cols-6 gap-2 py-1 sm:[grid-template-columns:repeat(auto-fill,minmax(52px,1fr))] sm:gap-3">
-              {filteredSwatches.map((swatch) => {
-                const isCurrent =
-                  normalizedSourceColor === normalizeHex(swatch.color)
-
-                return (
-                  <div
-                    key={`${swatch.label}-${normalizeHex(swatch.color)}`}
-                    className="flex flex-col items-center gap-1 p-1 transition-transform hover:scale-105 active:scale-95"
-                  >
-                    <button
-                      type="button"
-                      className={cn(
-                        "relative flex h-9 w-9 items-center justify-center rounded-md border-2 sm:aspect-square sm:h-auto sm:w-full",
-                        isCurrent
-                          ? "border-primary ring-2 ring-primary/25"
-                          : "border-gray-400/20"
-                      )}
-                      style={{ backgroundColor: swatch.color }}
-                      onClick={() => handleReplaceColor(swatch.color)}
-                    >
-                      <span
-                        className={cn(
-                          "text-[8px] font-bold transition-colors sm:text-[9px] md:text-[10px]",
-                          isDarkColor(swatch.color)
-                            ? "text-white"
-                            : "text-black/60"
-                        )}
-                      >
-                        {swatch.label}
-                      </span>
-                    </button>
+            <div className="flex flex-col gap-5 py-1">
+              {!hasSearch && similarSwatches.length > 0 && (
+                <section className="flex flex-col gap-3">
+                  <div className="flex items-center gap-3">
+                    <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                      {t("palette.replaceDialog.similarGroup")}
+                    </span>
+                    <Separator className="flex-1" />
                   </div>
-                )
-              })}
+                  {renderSwatchGrid(similarSwatches, "similar")}
+                </section>
+              )}
+
+              <section className="flex flex-col gap-3">
+                <div className="flex items-center gap-3">
+                  <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                    {t("palette.replaceDialog.allGroup")}
+                  </span>
+                  <Separator className="flex-1" />
+                </div>
+                {renderSwatchGrid(filteredSwatches, "all")}
+              </section>
             </div>
           )}
         </div>
