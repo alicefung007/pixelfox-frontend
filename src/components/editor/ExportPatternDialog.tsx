@@ -104,10 +104,9 @@ type ExportDialogSettings = {
 type ReactTouchList = TouchEvent<HTMLDivElement>["touches"];
 
 const GRID_COLORS = [
+  "#DCE6F2",
   "#000000",
   "#374151",
-  "#9CA3AF",
-  "#F9FAFB",
   "#EF4444",
   "#2563EB",
   "#22C55E",
@@ -115,6 +114,8 @@ const GRID_COLORS = [
   "#A855F7",
   "#EC4899",
   "#06B6D4",
+  "#E6D8B5",
+  "#F9FAFB",
 ];
 
 const CELL_SIZE = 40;
