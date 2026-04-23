@@ -68,6 +68,27 @@ type HeaderSummaryMetrics = {
   itemGap: number;
 };
 
+type ColorStatsMetrics = {
+  paddingX: number;
+  paddingY: number;
+  gapX: number;
+  gapY: number;
+  badgeHeight: number;
+  badgeRadius: number;
+  dotSize: number;
+  badgePaddingX: number;
+  badgeMaxLabelWidth: number;
+  labelFont: string;
+  countFont: string;
+  labelFontSize: number;
+  countFontSize: number;
+  countMinWidth: number;
+  countPaddingX: number;
+  countHeight: number;
+  countRadius: number;
+  labelGap: number;
+};
+
 type ExportDialogSettings = {
   autoCrop: boolean;
   whiteBackground: boolean;
@@ -101,24 +122,31 @@ const AXIS_SIZE = 40;
 const BASE_BRAND_HEADER_HEIGHT = 120;
 const BRAND_HEADER_PADDING_X = 40;
 const BASE_BRAND_LOGO_HEIGHT = 76;
-const MAX_EXPORT_EDGE = 4096;
+const MAX_EXPORT_EDGE = 122880;
 const MAJOR_GRID_WIDTH = 2;
 const MINOR_GRID_WIDTH = 2;
-const COLOR_STATS_PADDING_X = 18;
-const COLOR_STATS_PADDING_Y = 18;
-const COLOR_STATS_GAP_X = 16;
-const COLOR_STATS_GAP_Y = 16;
+const BASE_COLOR_STATS_PADDING_X = 18;
+const BASE_COLOR_STATS_PADDING_Y = 18;
+const BASE_COLOR_STATS_GAP_X = 16;
+const BASE_COLOR_STATS_GAP_Y = 16;
 const BASE_COLOR_STATS_SUMMARY_GAP_Y = 8;
 const BASE_COLOR_STATS_SUMMARY_LINE_HEIGHT = 28;
 const BASE_COLOR_STATS_SUMMARY_FONT_SIZE = 18;
 const BASE_COLOR_STATS_SUMMARY_ICON_SIZE = 22;
 const BASE_COLOR_STATS_SUMMARY_ICON_GAP = 8;
 const BASE_COLOR_STATS_SUMMARY_ITEM_GAP = 24;
-const COLOR_STATS_BADGE_HEIGHT = 28;
-const COLOR_STATS_BADGE_RADIUS = 8;
-const COLOR_STATS_BADGE_DOT_SIZE = 12;
-const COLOR_STATS_BADGE_PADDING_X = 12;
-const COLOR_STATS_BADGE_MAX_LABEL_WIDTH = 120;
+const BASE_COLOR_STATS_BADGE_HEIGHT = 28;
+const BASE_COLOR_STATS_BADGE_RADIUS = 8;
+const BASE_COLOR_STATS_BADGE_DOT_SIZE = 12;
+const BASE_COLOR_STATS_BADGE_PADDING_X = 12;
+const BASE_COLOR_STATS_BADGE_MAX_LABEL_WIDTH = 120;
+const BASE_COLOR_STATS_LABEL_FONT_SIZE = 12;
+const BASE_COLOR_STATS_COUNT_FONT_SIZE = 11;
+const BASE_COLOR_STATS_COUNT_MIN_WIDTH = 24;
+const BASE_COLOR_STATS_COUNT_PADDING_X = 7;
+const BASE_COLOR_STATS_COUNT_HEIGHT = 20;
+const BASE_COLOR_STATS_COUNT_RADIUS = 10;
+const BASE_COLOR_STATS_LABEL_GAP = 8;
 const PREVIEW_MIN_SCALE = 0.5;
 const PREVIEW_MAX_SCALE = 10;
 const PREVIEW_SCALE_STEP = 0.12;
@@ -288,14 +316,6 @@ function fitTextToWidth(ctx: CanvasRenderingContext2D, text: string, maxWidth: n
   return `${result}${ellipsis}`;
 }
 
-function getPreferredColorBadgeWidth(totalWidth: number) {
-  if (totalWidth <= 480) return 72;
-  if (totalWidth <= 720) return 84;
-  if (totalWidth <= 960) return 96;
-  if (totalWidth <= 1280) return 108;
-  return 120;
-}
-
 function isWhiteLikeColor(hex: string) {
   const rgb = hexToRgbTuple(hex);
   if (!rgb) return false;
@@ -316,6 +336,33 @@ function getHeaderSummaryMetrics(downloadWidth: number): HeaderSummaryMetrics {
     iconSize: Math.max(14, Math.round(BASE_COLOR_STATS_SUMMARY_ICON_SIZE * scale)),
     iconGap: Math.max(4, Math.round(BASE_COLOR_STATS_SUMMARY_ICON_GAP * scale)),
     itemGap: Math.max(8, Math.round(BASE_COLOR_STATS_SUMMARY_ITEM_GAP * scale)),
+  };
+}
+
+function getColorStatsMetrics(downloadWidth: number): ColorStatsMetrics {
+  const scale = Math.max(downloadWidth, 1) / HEADER_SCALE_BASE_WIDTH;
+  const labelFontSize = Math.max(10, Math.round(BASE_COLOR_STATS_LABEL_FONT_SIZE * scale));
+  const countFontSize = Math.max(9, Math.round(BASE_COLOR_STATS_COUNT_FONT_SIZE * scale));
+
+  return {
+    paddingX: Math.max(8, Math.round(BASE_COLOR_STATS_PADDING_X * scale)),
+    paddingY: Math.max(8, Math.round(BASE_COLOR_STATS_PADDING_Y * scale)),
+    gapX: Math.max(8, Math.round(BASE_COLOR_STATS_GAP_X * scale)),
+    gapY: Math.max(8, Math.round(BASE_COLOR_STATS_GAP_Y * scale)),
+    badgeHeight: Math.max(22, Math.round(BASE_COLOR_STATS_BADGE_HEIGHT * scale)),
+    badgeRadius: Math.max(6, Math.round(BASE_COLOR_STATS_BADGE_RADIUS * scale)),
+    dotSize: Math.max(8, Math.round(BASE_COLOR_STATS_BADGE_DOT_SIZE * scale)),
+    badgePaddingX: Math.max(8, Math.round(BASE_COLOR_STATS_BADGE_PADDING_X * scale)),
+    badgeMaxLabelWidth: Math.max(48, Math.round(BASE_COLOR_STATS_BADGE_MAX_LABEL_WIDTH * scale)),
+    labelFont: `600 ${labelFontSize}px Geist, sans-serif`,
+    countFont: `700 ${countFontSize}px Geist, sans-serif`,
+    labelFontSize,
+    countFontSize,
+    countMinWidth: Math.max(18, Math.round(BASE_COLOR_STATS_COUNT_MIN_WIDTH * scale)),
+    countPaddingX: Math.max(4, Math.round(BASE_COLOR_STATS_COUNT_PADDING_X * scale)),
+    countHeight: Math.max(16, Math.round(BASE_COLOR_STATS_COUNT_HEIGHT * scale)),
+    countRadius: Math.max(8, Math.round(BASE_COLOR_STATS_COUNT_RADIUS * scale)),
+    labelGap: Math.max(4, Math.round(BASE_COLOR_STATS_LABEL_GAP * scale)),
   };
 }
 
@@ -498,22 +545,31 @@ function createColorBadgeLayout(
   ctx: CanvasRenderingContext2D,
   items: ColorUsageItem[],
   totalWidth: number,
+  metrics: ColorStatsMetrics,
   offsetY = 0
 ) {
   if (items.length === 0) {
-    return { badges: [], height: offsetY > 0 ? COLOR_STATS_PADDING_Y * 2 + offsetY : 0 };
+    return { badges: [], height: offsetY > 0 ? metrics.paddingY * 2 + offsetY : 0 };
   }
 
-  const contentWidth = Math.max(0, totalWidth - COLOR_STATS_PADDING_X * 2);
-  const minBadgeWidth = COLOR_STATS_BADGE_PADDING_X * 2 + COLOR_STATS_BADGE_DOT_SIZE + 24;
-  const preferredColumnWidth = Math.max(minBadgeWidth, getPreferredColorBadgeWidth(totalWidth));
+  const contentWidth = Math.max(0, totalWidth - metrics.paddingX * 2);
+  const minBadgeWidth = metrics.badgePaddingX * 2 + metrics.dotSize + metrics.countMinWidth;
+  const preferredColumnWidth = Math.max(
+    minBadgeWidth,
+    metrics.badgePaddingX * 2 +
+      metrics.dotSize +
+      metrics.labelGap +
+      Math.round(metrics.badgeMaxLabelWidth * 0.36) +
+      metrics.labelGap +
+      metrics.countMinWidth
+  );
   const maxColumns = Math.max(
     1,
-    Math.floor((contentWidth + COLOR_STATS_GAP_X) / (preferredColumnWidth + COLOR_STATS_GAP_X))
+    Math.floor((contentWidth + metrics.gapX) / (preferredColumnWidth + metrics.gapX))
   );
   const columnWidth = Math.max(
     minBadgeWidth,
-    Math.floor((contentWidth - COLOR_STATS_GAP_X * (maxColumns - 1)) / maxColumns)
+    Math.floor((contentWidth - metrics.gapX * (maxColumns - 1)) / maxColumns)
   );
   const badges: Array<{
     x: number;
@@ -523,22 +579,28 @@ function createColorBadgeLayout(
     item: ColorUsageItem;
   }> = [];
 
-  ctx.font = "600 12px Geist, sans-serif";
+  ctx.font = metrics.labelFont;
   items.forEach((item, index) => {
     const countText = String(item.count);
-    ctx.font = "700 11px Geist, sans-serif";
-    const countWidth = Math.max(24, Math.ceil(ctx.measureText(countText).width) + 14);
+    ctx.font = metrics.countFont;
+    const countWidth = Math.max(
+      metrics.countMinWidth,
+      Math.ceil(ctx.measureText(countText).width) + metrics.countPaddingX * 2
+    );
 
-    ctx.font = "600 12px Geist, sans-serif";
+    ctx.font = metrics.labelFont;
     const maxLabelWidth = Math.min(
-      COLOR_STATS_BADGE_MAX_LABEL_WIDTH,
-      Math.max(20, columnWidth - COLOR_STATS_BADGE_PADDING_X * 2 - COLOR_STATS_BADGE_DOT_SIZE - countWidth - 20)
+      metrics.badgeMaxLabelWidth,
+      Math.max(
+        20,
+        columnWidth - metrics.badgePaddingX * 2 - metrics.dotSize - countWidth - metrics.labelGap * 2
+      )
     );
     const label = fitTextToWidth(ctx, item.label, maxLabelWidth);
     const columnIndex = index % maxColumns;
     const rowIndex = Math.floor(index / maxColumns);
-    const x = COLOR_STATS_PADDING_X + columnIndex * (columnWidth + COLOR_STATS_GAP_X);
-    const y = COLOR_STATS_PADDING_Y + offsetY + rowIndex * (COLOR_STATS_BADGE_HEIGHT + COLOR_STATS_GAP_Y);
+    const x = metrics.paddingX + columnIndex * (columnWidth + metrics.gapX);
+    const y = metrics.paddingY + offsetY + rowIndex * (metrics.badgeHeight + metrics.gapY);
 
     badges.push({ x, y, width: columnWidth, label, item });
   });
@@ -548,10 +610,10 @@ function createColorBadgeLayout(
   return {
     badges,
     height:
-      COLOR_STATS_PADDING_Y * 2 +
+      metrics.paddingY * 2 +
       offsetY +
-      rowCount * COLOR_STATS_BADGE_HEIGHT +
-      Math.max(0, rowCount - 1) * COLOR_STATS_GAP_Y,
+      rowCount * metrics.badgeHeight +
+      Math.max(0, rowCount - 1) * metrics.gapY,
   };
 }
 
@@ -614,6 +676,7 @@ function renderPatternImage(options: {
   const axisSize = showAxis ? AXIS_SIZE : 0;
   const colorUsage = getColorUsage(pixels, paletteLabels);
   const headerMetrics = getHeaderSummaryMetrics(cols);
+  const colorStatsMetrics = getColorStatsMetrics(cols);
   const summaryInfo: SummaryInfo = {
     paletteName,
     sizeText: `${cols} × ${rows}`,
@@ -636,7 +699,7 @@ function renderPatternImage(options: {
     summaryLabels,
     headerMetrics
   );
-  let colorStatsLayout = createColorBadgeLayout(measureCtx, colorUsage, exportWidth);
+  let colorStatsLayout = createColorBadgeLayout(measureCtx, colorUsage, exportWidth, colorStatsMetrics);
 
   for (let iteration = 0; iteration < 4; iteration += 1) {
     const maxByHeight = Math.floor(
@@ -654,7 +717,7 @@ function renderPatternImage(options: {
       summaryLabels,
       headerMetrics
     );
-    colorStatsLayout = createColorBadgeLayout(measureCtx, colorUsage, exportWidth);
+    colorStatsLayout = createColorBadgeLayout(measureCtx, colorUsage, exportWidth, colorStatsMetrics);
   }
 
   exportWidth = cols * cellSize + axisSize * 2;
@@ -864,42 +927,57 @@ function renderPatternImage(options: {
 
       ctx.fillStyle = whiteBackground ? "#FFFFFF" : "rgba(255,255,255,0.88)";
       ctx.beginPath();
-      ctx.roundRect(badgeX, badgeY, badge.width, COLOR_STATS_BADGE_HEIGHT, COLOR_STATS_BADGE_RADIUS);
+      ctx.roundRect(
+        badgeX,
+        badgeY,
+        badge.width,
+        colorStatsMetrics.badgeHeight,
+        colorStatsMetrics.badgeRadius
+      );
       ctx.fill();
 
       ctx.strokeStyle = "rgba(148,163,184,0.38)";
       ctx.lineWidth = 1;
       ctx.stroke();
 
-      const dotX = badgeX + COLOR_STATS_BADGE_PADDING_X + COLOR_STATS_BADGE_DOT_SIZE / 2;
-      const dotY = badgeY + COLOR_STATS_BADGE_HEIGHT / 2;
+      const dotX = badgeX + colorStatsMetrics.badgePaddingX + colorStatsMetrics.dotSize / 2;
+      const dotY = badgeY + colorStatsMetrics.badgeHeight / 2;
       ctx.fillStyle = badge.item.color;
       ctx.beginPath();
-      ctx.arc(dotX, dotY, COLOR_STATS_BADGE_DOT_SIZE / 2, 0, Math.PI * 2);
+      ctx.arc(dotX, dotY, colorStatsMetrics.dotSize / 2, 0, Math.PI * 2);
       ctx.fill();
       ctx.strokeStyle = "rgba(15,23,42,0.12)";
       ctx.stroke();
 
-      ctx.font = "600 12px Geist, sans-serif";
+      ctx.font = colorStatsMetrics.labelFont;
       ctx.textAlign = "left";
       ctx.textBaseline = "middle";
       ctx.fillStyle = "#0F172A";
-      const labelX = badgeX + COLOR_STATS_BADGE_PADDING_X + COLOR_STATS_BADGE_DOT_SIZE + 8;
-      ctx.fillText(badge.label, labelX, badgeY + COLOR_STATS_BADGE_HEIGHT / 2);
+      const labelX = badgeX + colorStatsMetrics.badgePaddingX + colorStatsMetrics.dotSize + colorStatsMetrics.labelGap;
+      ctx.fillText(badge.label, labelX, badgeY + colorStatsMetrics.badgeHeight / 2);
 
-      ctx.font = "700 11px Geist, sans-serif";
-      const countWidth = Math.max(24, Math.ceil(ctx.measureText(countText).width) + 14);
-      const countX = badgeX + badge.width - COLOR_STATS_BADGE_PADDING_X - countWidth;
-      const countY = badgeY + (COLOR_STATS_BADGE_HEIGHT - 20) / 2;
+      ctx.font = colorStatsMetrics.countFont;
+      const countWidth = Math.max(
+        colorStatsMetrics.countMinWidth,
+        Math.ceil(ctx.measureText(countText).width) + colorStatsMetrics.countPaddingX * 2
+      );
+      const countX = badgeX + badge.width - colorStatsMetrics.badgePaddingX - countWidth;
+      const countY = badgeY + (colorStatsMetrics.badgeHeight - colorStatsMetrics.countHeight) / 2;
 
       ctx.fillStyle = "rgba(226,232,240,0.96)";
       ctx.beginPath();
-      ctx.roundRect(countX, countY, countWidth, 20, 10);
+      ctx.roundRect(
+        countX,
+        countY,
+        countWidth,
+        colorStatsMetrics.countHeight,
+        colorStatsMetrics.countRadius
+      );
       ctx.fill();
 
       ctx.fillStyle = "#475569";
       ctx.textAlign = "center";
-      ctx.fillText(countText, countX + countWidth / 2, badgeY + COLOR_STATS_BADGE_HEIGHT / 2 + 0.5);
+      ctx.fillText(countText, countX + countWidth / 2, badgeY + colorStatsMetrics.badgeHeight / 2 + 0.5);
     }
   }
 
