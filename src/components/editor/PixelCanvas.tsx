@@ -903,14 +903,15 @@ export default function PixelCanvas() {
   const cursorHotspot =
     currentTool === 'brush'
       ? CURSOR_CONFIG.BRUSH_HOTSPOT
+      : currentTool === 'bucket'
+        ? CURSOR_CONFIG.BUCKET_HOTSPOT
+      : currentTool === 'eraser'
+        ? CURSOR_CONFIG.ERASER_HOTSPOT
       : currentTool === 'eyedropper'
         ? CURSOR_CONFIG.EYEDROPPER_HOTSPOT
         : { x: CURSOR_CONFIG.ICON_SIZE / 2, y: CURSOR_CONFIG.ICON_SIZE / 2 };
-  const cursorIconSize = currentTool === 'eraser' || currentTool === 'bucket' ? scale : CURSOR_CONFIG.ICON_SIZE;
-  const cursorHotspotScaled =
-    currentTool === 'eraser' || currentTool === 'bucket'
-      ? { x: cursorIconSize / 2, y: cursorIconSize / 2 }
-      : cursorHotspot;
+  const cursorIconSize = CURSOR_CONFIG.ICON_SIZE;
+  const cursorHotspotScaled = cursorHotspot;
 
   const onCanvasLeave = () => {
     if (!isPanning) onMouseUp();
@@ -1096,6 +1097,18 @@ export default function PixelCanvas() {
                 }
               />
             )}
+            <div
+              className="absolute rounded-full border border-white/70 shadow-[0_0_0_1px_rgba(0,0,0,0.12)]"
+              style={{
+                left: cursorHotspotScaled.x,
+                top: cursorHotspotScaled.y,
+                width: 5,
+                height: 5,
+                backgroundColor: primaryThemeColor,
+                opacity: 0.6,
+                transform: 'translate(-50%, -50%)',
+              }}
+            />
           </div>
         )}
       </div>
