@@ -2,6 +2,7 @@
   "nav": {
     "editor": "편집기",
     "explore": "탐색",
+    "comingSoon": "(곧 출시...)",
     "theme": {
       "light": "라이트 모드",
       "dark": "다크 모드",
@@ -9,6 +10,7 @@
     }
   },
   "sidebar": {
+    "menu": "메뉴",
     "upload": "업로드",
     "save": "저장",
     "share": "공유",

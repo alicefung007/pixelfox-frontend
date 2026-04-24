@@ -2,6 +2,7 @@
   "nav": {
     "editor": "エディター",
     "explore": "探索",
+    "comingSoon": "（近日公開…）",
     "theme": {
       "light": "ライトモード",
       "dark": "ダークモード",
@@ -9,6 +10,7 @@
     }
   },
   "sidebar": {
+    "menu": "メニュー",
     "upload": "アップロード",
     "save": "保存",
     "share": "共有",

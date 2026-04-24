@@ -83,7 +83,9 @@ export default function Navbar({ onMenuClick }: Props) {
               aria-disabled="true"
             >
               <span className="leading-none">{item.label}</span>
-              <span className="text-[10px] font-medium leading-none text-muted-foreground/50">(Coming soon...)</span>
+              <span className="text-[10px] font-medium leading-none text-muted-foreground/50">
+                {t("nav.comingSoon")}
+              </span>
             </span>
           ) : (
             <Link

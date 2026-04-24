@@ -2,6 +2,7 @@
   "nav": {
     "editor": "编辑器",
     "explore": "探索",
+    "comingSoon": "（即将推出…）",
     "theme": {
       "light": "浅色模式",
       "dark": "深色模式",
@@ -9,6 +10,7 @@
     }
   },
   "sidebar": {
+    "menu": "菜单",
     "upload": "上传",
     "save": "保存",
     "share": "分享",

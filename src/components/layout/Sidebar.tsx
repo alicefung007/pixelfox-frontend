@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Link as RouterLink, useLocation } from "react-router-dom";
 import {
   Upload,
   Save,
@@ -37,6 +38,7 @@ type Props = {
 
 export default function Sidebar({ isOpen = true, onClose, onUpload, onPreview3D, onExport }: Props) {
   const { t } = useTranslation();
+  const location = useLocation();
   const currentTool = useEditorStore((state) => state.currentTool);
   const setTool = useEditorStore((state) => state.setTool);
   const undo = useEditorStore((state) => state.undo);
@@ -108,10 +110,33 @@ export default function Sidebar({ isOpen = true, onClose, onUpload, onPreview3D,
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="flex items-center justify-between p-3 border-b">
-          <span className="text-sm font-semibold">{t("sidebar.tools")}</span>
+          <span className="text-sm font-semibold">{t("sidebar.menu")}</span>
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onClose}>
             <X size={18} />
           </Button>
+        </div>
+        <div className="border-b p-3">
+          <div className="space-y-1">
+            <RouterLink
+              to="/"
+              onClick={onClose}
+              className={cn(
+                "flex h-9 items-center rounded-md px-2 text-sm font-medium transition-colors hover:bg-primary/10 hover:text-primary",
+                location.pathname === "/" ? "bg-primary/10 text-primary" : "text-muted-foreground"
+              )}
+            >
+              {t("nav.editor")}
+            </RouterLink>
+            <span
+              className="flex h-9 cursor-not-allowed items-end gap-1.5 rounded-md px-2 py-2 text-sm font-medium text-muted-foreground/60"
+              aria-disabled="true"
+            >
+              <span className="leading-none">{t("nav.explore")}</span>
+              <span className="text-[10px] font-medium leading-none text-muted-foreground/50">
+                {t("nav.comingSoon")}
+              </span>
+            </span>
+          </div>
         </div>
         <ScrollArea className="flex-1">
           <SidebarContent

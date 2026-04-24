@@ -2,6 +2,7 @@
   "nav": {
     "editor": "Editor",
     "explore": "Explore",
+    "comingSoon": "(Coming soon...)",
     "theme": {
       "light": "Light Mode",
       "dark": "Dark Mode",
@@ -9,6 +10,7 @@
     }
   },
   "sidebar": {
+    "menu": "Menu",
     "upload": "Upload",
     "save": "Save",
     "share": "Share",
