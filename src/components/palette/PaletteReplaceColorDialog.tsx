@@ -16,7 +16,7 @@ import { Separator } from "@/components/ui/separator"
 import { useEditorStore } from "@/store/useEditorStore"
 import { usePaletteStore } from "@/store/usePaletteStore"
 import { getSystemPalette } from "@/lib/palettes"
-import { cn, isDarkColor, normalizeHex } from "@/lib/utils"
+import { cn, getRgbColorDistance, isDarkColor, normalizeHex } from "@/lib/utils"
 
 type PaletteReplaceColorDialogProps = {
   open: boolean
@@ -24,26 +24,8 @@ type PaletteReplaceColorDialogProps = {
   onOpenChange: (open: boolean) => void
 }
 
-function hexToRgb(hex: string) {
-  const normalized = normalizeHex(hex)
-  return {
-    r: parseInt(normalized.slice(0, 2), 16),
-    g: parseInt(normalized.slice(2, 4), 16),
-    b: parseInt(normalized.slice(4, 6), 16),
-  }
-}
-
-function getColorDistance(colorA: string, colorB: string) {
-  const a = hexToRgb(colorA)
-  const b = hexToRgb(colorB)
-  const dr = a.r - b.r
-  const dg = a.g - b.g
-  const db = a.b - b.b
-  return dr * dr + dg * dg + db * db
-}
-
 function getColorSimilarity(colorA: string, colorB: string) {
-  return -getColorDistance(colorA, colorB)
+  return -getRgbColorDistance(colorA, colorB)
 }
 
 function isHexSearchMatch(swatchColor: string, keyword: string) {

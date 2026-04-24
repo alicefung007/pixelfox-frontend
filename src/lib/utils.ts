@@ -10,16 +10,38 @@ export function normalizeHex(hex: string) {
   return hex.trim().toUpperCase().replace(/^#/, "")
 }
 
+export function hexToRgb(hex: string) {
+  const normalized = normalizeHex(hex)
+  if (normalized.length !== 6) return null
+
+  const r = parseInt(normalized.slice(0, 2), 16)
+  const g = parseInt(normalized.slice(2, 4), 16)
+  const b = parseInt(normalized.slice(4, 6), 16)
+
+  if ([r, g, b].some(Number.isNaN)) return null
+  return { r, g, b }
+}
+
+export function getRgbColorDistance(colorA: string, colorB: string) {
+  const a = hexToRgb(colorA)
+  const b = hexToRgb(colorB)
+  if (!a || !b) return Number.POSITIVE_INFINITY
+
+  const dr = a.r - b.r
+  const dg = a.g - b.g
+  const db = a.b - b.b
+  return dr * dr + dg * dg + db * db
+}
+
 export function hexLabel(hex: string) {
   const v = normalizeHex(hex);
   return v.startsWith("#") ? v.slice(1) : v;
 }
 
 export function isDarkColor(hex: string): boolean {
-  const h = hex.replace("#", "");
-  const r = parseInt(h.slice(0, 2), 16);
-  const g = parseInt(h.slice(2, 4), 16);
-  const b = parseInt(h.slice(4, 6), 16);
+  const rgb = hexToRgb(hex);
+  if (!rgb) return false;
+  const { r, g, b } = rgb;
   const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
   return luminance < 0.5;
 }

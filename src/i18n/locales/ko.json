@@ -166,6 +166,7 @@
       "palettePlanUsed": "사용한 색상",
       "palettePlanNone": "표시 안 함",
       "showColorCode": "색상 코드 표시",
+      "excludeColors": "제외할 색상",
       "mirrorFlip": "좌우 반전",
       "mirrorFlipHint": "뒷면에서 비즈 작업할 때 유용합니다",
       "preview": "미리보기",

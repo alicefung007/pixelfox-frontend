@@ -166,6 +166,7 @@
       "palettePlanUsed": "已用颜色",
       "palettePlanNone": "不显示",
       "showColorCode": "显示颜色编码",
+      "excludeColors": "排除颜色",
       "mirrorFlip": "镜像翻转",
       "mirrorFlipHint": "适合从背面串豆",
       "preview": "预览",

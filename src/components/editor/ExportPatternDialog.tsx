@@ -1,6 +1,6 @@
 import { type PointerEvent, type TouchEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Download, Minus, X, Plus } from "lucide-react";
+import { Check, Download, Minus, X, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -14,9 +14,9 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import { getSystemPalette } from "@/lib/palettes";
+import { getSystemPalette, type PaletteSwatch } from "@/lib/palettes";
 import { createColorMatcher } from "@/lib/image-processor";
-import { cn, isDarkColor, isLikelyMouseWheel, normalizeHex } from "@/lib/utils";
+import { cn, getRgbColorDistance, hexToRgb, isDarkColor, isLikelyMouseWheel, normalizeHex } from "@/lib/utils";
 import { useEditorStore } from "@/store/useEditorStore";
 import { usePaletteStore } from "@/store/usePaletteStore";
 
@@ -272,25 +272,17 @@ function drawHorizontalGridLine(
   ctx.fillRect(Math.round(x), startY, Math.round(width), alignedHeight);
 }
 
-function hexToRgbTuple(hex: string) {
-  const normalized = normalizeHex(hex);
-  if (normalized.length !== 6) return null;
-  return {
-    r: parseInt(normalized.slice(0, 2), 16),
-    g: parseInt(normalized.slice(2, 4), 16),
-    b: parseInt(normalized.slice(4, 6), 16),
-  };
-}
-
 function getColorUsage(
   pixels: Record<string, string>,
-  paletteLabels: Map<string, string>
+  paletteLabels: Map<string, string>,
+  excludedColorCodes: Set<string>
 ): ColorUsageItem[] {
   const usageMap = new Map<string, number>();
 
   Object.values(pixels).forEach((color) => {
     const normalized = normalizeHex(color);
     if (!normalized) return;
+    if (excludedColorCodes.has(normalized)) return;
     usageMap.set(normalized, (usageMap.get(normalized) ?? 0) + 1);
   });
 
@@ -318,7 +310,7 @@ function fitTextToWidth(ctx: CanvasRenderingContext2D, text: string, maxWidth: n
 }
 
 function isWhiteLikeColor(hex: string) {
-  const rgb = hexToRgbTuple(hex);
+  const rgb = hexToRgb(hex);
   if (!rgb) return false;
   return rgb.r >= 245 && rgb.g >= 245 && rgb.b >= 245;
 }
@@ -632,6 +624,7 @@ function renderPatternImage(options: {
   gridColor: string;
   showAxis: boolean;
   showColorCode: boolean;
+  excludedColorCodes: string[];
   mirrorFlip: boolean;
   summaryLabels: { palette: string; size: string; beadCount: string };
   logoImage: HTMLImageElement | null;
@@ -655,10 +648,12 @@ function renderPatternImage(options: {
     gridColor,
     showAxis,
     showColorCode,
+    excludedColorCodes,
     mirrorFlip,
     summaryLabels,
     logoImage,
   } = options;
+  const excludedColorCodeSet = new Set(excludedColorCodes.map(normalizeHex));
 
   const sourceBounds = autoCrop ? getPixelBounds(pixels, width, height) : null;
   if (autoCrop && !sourceBounds) return null;
@@ -675,7 +670,7 @@ function renderPatternImage(options: {
   if (cols <= 0 || rows <= 0) return null;
 
   const axisSize = showAxis ? AXIS_SIZE : 0;
-  const colorUsage = getColorUsage(pixels, paletteLabels);
+  const colorUsage = getColorUsage(pixels, paletteLabels, excludedColorCodeSet);
   const headerMetrics = getHeaderSummaryMetrics(cols);
   const colorStatsMetrics = getColorStatsMetrics(cols);
   const summaryInfo: SummaryInfo = {
@@ -846,6 +841,7 @@ function renderPatternImage(options: {
         if (!color) continue;
 
         const normalized = normalizeHex(color);
+        if (excludedColorCodeSet.has(normalized)) continue;
         const label = paletteLabels.get(normalized);
         if (!label) continue;
         const text = label;
@@ -996,6 +992,15 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
   const height = useEditorStore((state) => state.height);
   const currentPaletteId = usePaletteStore((state) => state.currentPaletteId);
   const currentPalette = useMemo(() => getSystemPalette(currentPaletteId), [currentPaletteId]);
+  const nearWhiteSwatches = useMemo<PaletteSwatch[]>(() => {
+    return [...(currentPalette?.swatches ?? [])]
+      .sort((a, b) => {
+        const distance = getRgbColorDistance(a.color, "#FFFFFF") - getRgbColorDistance(b.color, "#FFFFFF");
+        if (distance !== 0) return distance;
+        return a.label.localeCompare(b.label);
+      })
+      .slice(0, 6);
+  }, [currentPalette]);
   const [persistedSettings, setPersistedSettings] = useState<ExportDialogSettings>(() => loadExportDialogSettings());
   const [autoCrop, setAutoCrop] = useState(persistedSettings.autoCrop);
   const [whiteBackground, setWhiteBackground] = useState(persistedSettings.whiteBackground);
@@ -1005,6 +1010,7 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
   const [gridColor, setGridColor] = useState(persistedSettings.gridColor);
   const [showAxis, setShowAxis] = useState(persistedSettings.showAxis);
   const [showColorCode, setShowColorCode] = useState(persistedSettings.showColorCode);
+  const [excludedColorCodes, setExcludedColorCodes] = useState<Set<string>>(() => new Set());
   const [mirrorFlip, setMirrorFlip] = useState(persistedSettings.mirrorFlip);
   const [brandLogoImage, setBrandLogoImage] = useState<HTMLImageElement | null>(null);
   const [previewScale, setPreviewScale] = useState(1);
@@ -1020,6 +1026,26 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
     scale: number;
     offset: { x: number; y: number };
   } | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const defaultColor = nearWhiteSwatches[0]?.color;
+    queueMicrotask(() => {
+      setExcludedColorCodes(defaultColor ? new Set([normalizeHex(defaultColor)]) : new Set());
+    });
+  }, [open, currentPaletteId, nearWhiteSwatches]);
+
+  const excludedColorCodeList = useMemo(() => Array.from(excludedColorCodes), [excludedColorCodes]);
+
+  const handleToggleExcludedColor = (color: string) => {
+    const key = normalizeHex(color);
+    setExcludedColorCodes((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
   const previewDragRef = useRef<{
     pointerId: number;
     startX: number;
@@ -1038,19 +1064,19 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    setBrandLogoImage(null);
+    queueMicrotask(() => setBrandLogoImage(null));
     const image = new window.Image();
     image.onload = () => setBrandLogoImage(image);
     image.src = BRAND_LOGO_SRC;
 
     if (image.complete && image.naturalWidth > 0) {
-      setBrandLogoImage(image);
+      queueMicrotask(() => setBrandLogoImage(image));
     }
 
     return () => {
       image.onload = null;
     };
-  }, [BRAND_LOGO_SRC]);
+  }, []);
 
   useEffect(() => {
     const nextSettings: ExportDialogSettings = {
@@ -1107,7 +1133,7 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
     const uniqueColors = new Set(Object.values(pixels).map((color) => normalizeHex(color)));
 
     uniqueColors.forEach((color) => {
-      const rgb = hexToRgbTuple(color);
+      const rgb = hexToRgb(color);
       if (!rgb) return;
       const exactLabel = palette.swatches.find((swatch) => normalizeHex(swatch.color) === color)?.label;
       if (exactLabel) {
@@ -1143,6 +1169,7 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
         gridColor,
         showAxis,
         showColorCode,
+        excludedColorCodes: excludedColorCodeList,
         mirrorFlip,
         logoImage: brandLogoImage,
         summaryLabels: {
@@ -1165,6 +1192,7 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
       gridColor,
       showAxis,
       showColorCode,
+      excludedColorCodeList,
       mirrorFlip,
       brandLogoImage,
       t,
@@ -1482,14 +1510,6 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
                   />
                 </div>
                 <div className="flex items-center justify-between gap-3">
-                  <Label className="text-[11px] font-semibold">{t("editor.exportDialog.showColorCode")}</Label>
-                  <Switch
-                    checked={showColorCode}
-                    onCheckedChange={setShowColorCode}
-                    className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                  />
-                </div>
-                <div className="flex items-center justify-between gap-3">
                   <div className="space-y-0.5">
                     <Label className="text-[11px] font-semibold">{t("editor.exportDialog.showAxis")}</Label>
                     <div className="text-[10px] text-muted-foreground">
@@ -1514,6 +1534,63 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
                     onCheckedChange={setMirrorFlip}
                     className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                   />
+                </div>
+              </div>
+            </div>
+
+            <Separator className="shrink-0" />
+
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold">Color Code</h3>
+
+              <div className="flex items-center justify-between gap-3">
+                <Label className="text-[11px] font-semibold">{t("editor.exportDialog.showColorCode")}</Label>
+                <Switch
+                  checked={showColorCode}
+                  onCheckedChange={setShowColorCode}
+                  className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className={cn("text-[11px] font-semibold", !showColorCode && "text-muted-foreground")}>
+                  {t("editor.exportDialog.excludeColors")}
+                </Label>
+                <div className={cn("grid grid-cols-6 gap-2", !showColorCode && "pointer-events-none opacity-50")}>
+                  {nearWhiteSwatches.map((swatch) => {
+                    const key = normalizeHex(swatch.color);
+                    const isSelected = excludedColorCodes.has(key);
+                    return (
+                      <button
+                        key={`${swatch.label}-${key}`}
+                        type="button"
+                        onClick={() => handleToggleExcludedColor(swatch.color)}
+                        className="group relative flex flex-col items-center gap-1 p-0.5 transition-transform hover:scale-105 active:scale-95"
+                      >
+                        <div
+                          className={cn(
+                            "relative flex h-9 w-9 items-center justify-center rounded-md border-2 transition-shadow",
+                            isSelected ? "border-primary" : "border-gray-400/20"
+                          )}
+                          style={{ backgroundColor: swatch.color }}
+                        >
+                          <span
+                            className={cn(
+                              "text-[8px] font-bold transition-colors",
+                              isDarkColor(swatch.color) ? "text-white" : "text-black/60"
+                            )}
+                          >
+                            {swatch.label}
+                          </span>
+                          {isSelected && (
+                            <div className="absolute -right-0.5 -top-0.5 flex size-3 items-center justify-center rounded-full bg-primary text-white shadow-sm">
+                              <Check className="size-2" />
+                            </div>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </div>

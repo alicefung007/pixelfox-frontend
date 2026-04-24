@@ -166,6 +166,7 @@
       "palettePlanUsed": "使用した色",
       "palettePlanNone": "表示しない",
       "showColorCode": "カラーコードを表示",
+      "excludeColors": "除外する色",
       "mirrorFlip": "左右反転",
       "mirrorFlipHint": "裏面からビーズを置くときに便利です",
       "preview": "プレビュー",
