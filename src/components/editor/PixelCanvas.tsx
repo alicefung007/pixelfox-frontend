@@ -912,6 +912,15 @@ export default function PixelCanvas() {
         : { x: CURSOR_CONFIG.ICON_SIZE / 2, y: CURSOR_CONFIG.ICON_SIZE / 2 };
   const cursorIconSize = CURSOR_CONFIG.ICON_SIZE;
   const cursorHotspotScaled = cursorHotspot;
+  const usesPrimaryColorCursor = currentTool === 'brush' || currentTool === 'bucket';
+  const cursorShadowColor = (() => {
+    const hex = primaryColor.replace('#', '');
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return luminance > 0.5 ? '#bbbbbb' : '#ffffff';
+  })();
 
   const onCanvasLeave = () => {
     if (!isPanning) onMouseUp();
@@ -1068,31 +1077,23 @@ export default function PixelCanvas() {
             style={{
               left: cursorOverlay.x - cursorHotspotScaled.x,
               top: cursorOverlay.y - cursorHotspotScaled.y,
-              color: currentTool === 'brush' ? primaryColor : undefined,
+              color: usesPrimaryColorCursor ? primaryColor : undefined,
             }}
           >
             {currentTool === 'brush' ? (
-              (() => {
-                const hex = primaryColor.replace('#', '');
-                const r = parseInt(hex.substring(0, 2), 16);
-                const g = parseInt(hex.substring(2, 4), 16);
-                const b = parseInt(hex.substring(4, 6), 16);
-                const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-                const shadowColor = luminance > 0.5 ? '#bbbbbb' : '#ffffff';
-                return (
-                  <Brush
-                    size={CURSOR_CONFIG.ICON_SIZE}
-                    strokeWidth={2}
-                    style={{ color: primaryColor, filter: `drop-shadow(0 0 1px ${shadowColor}) drop-shadow(0 0 1px ${shadowColor})` }}
-                  />
-                );
-              })()
+              <Brush
+                size={CURSOR_CONFIG.ICON_SIZE}
+                strokeWidth={2}
+                style={{ color: primaryColor, filter: `drop-shadow(0 0 1px ${cursorShadowColor}) drop-shadow(0 0 1px ${cursorShadowColor})` }}
+              />
             ) : (
               <CursorIcon
                 size={cursorIconSize}
                 style={
-                  currentTool === 'eraser' || currentTool === 'bucket' || currentTool === 'eyedropper'
-                    ? { filter: 'drop-shadow(0 0 1px white) drop-shadow(0 0 1px white)' }
+                  currentTool === 'bucket'
+                    ? { color: primaryColor, filter: `drop-shadow(0 0 1px ${cursorShadowColor}) drop-shadow(0 0 1px ${cursorShadowColor})` }
+                    : currentTool === 'eraser' || currentTool === 'eyedropper'
+                      ? { filter: 'drop-shadow(0 0 1px white) drop-shadow(0 0 1px white)' }
                     : undefined
                 }
               />

@@ -7,7 +7,6 @@ import {
   Palette,
   Replace,
   Settings,
-  SwatchBook,
   Trash2,
   TriangleAlert,
 } from "lucide-react";
@@ -223,7 +222,7 @@ export default function PalettePanel({ onOpenReplaceColorDialog }: PalettePanelP
               value="all"
               className="h-7 flex-none cursor-pointer gap-1.5 rounded-md px-2.5 text-xs font-medium text-muted-foreground transition-all hover:bg-accent/70 hover:text-foreground data-active:bg-background data-active:text-foreground data-active:shadow-xs"
             >
-              <SwatchBook className="size-3.5" />
+              <Palette className="size-3.5" />
               <span className="hidden sm:inline">{t("palette.allColors")}</span>
             </TabsTrigger>
           </TabsList>

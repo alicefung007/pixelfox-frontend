@@ -1,8 +1,7 @@
 {
   "nav": {
     "editor": "エディター",
-    "gallery": "ギャラリー",
-    "upscaler": "アップスケーラー",
+    "explore": "探索",
     "theme": {
       "light": "ライトモード",
       "dark": "ダークモード",

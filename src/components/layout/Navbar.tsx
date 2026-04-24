@@ -26,6 +26,10 @@ type Props = {
   onMenuClick?: () => void;
 };
 
+type NavItem =
+  | { label: string; path: string; disabled?: false }
+  | { label: string; disabled: true };
+
 export default function Navbar({ onMenuClick }: Props) {
   const { t } = useTranslation();
   const location = useLocation();
@@ -42,14 +46,13 @@ export default function Navbar({ onMenuClick }: Props) {
     i18n.changeLanguage(lng);
   };
 
-  const navItems = [
+  const navItems: NavItem[] = [
     { label: t("nav.editor"), path: "/" },
-    { label: t("nav.gallery"), path: "/gallery" },
-    { label: t("nav.upscaler"), path: "/upscaler" },
+    { label: t("nav.explore"), disabled: true },
   ];
 
   return (
-    <nav className="h-14 sm:h-16 border-b flex items-center justify-between px-3 sm:px-4 bg-background z-50">
+    <nav className="relative h-14 sm:h-16 border-b flex items-center justify-between px-3 sm:px-4 bg-background z-50">
       <div className="flex items-center gap-2 sm:gap-4 md:gap-8">
         {onMenuClick && (
           <Button
@@ -69,20 +72,31 @@ export default function Navbar({ onMenuClick }: Props) {
             className="h-7 w-auto object-contain sm:h-8"
           />
         </div>
-        
-        <div className="hidden md:flex items-center gap-6">
-          {navItems.map((item) => (
-            <Link 
-              key={item.path} 
+      </div>
+
+      <div className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-2 md:flex">
+        {navItems.map((item) =>
+          item.disabled ? (
+            <span
+              key={item.label}
+              className="flex cursor-not-allowed items-end gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground/60"
+              aria-disabled="true"
+            >
+              <span className="leading-none">{item.label}</span>
+              <span className="text-[10px] font-medium leading-none text-muted-foreground/50">(Coming soon...)</span>
+            </span>
+          ) : (
+            <Link
+              key={item.path}
               to={item.path}
-              className={`text-sm font-medium transition-colors hover:text-primary ${
-                location.pathname === item.path ? "text-primary" : "text-muted-foreground"
+              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors hover:bg-primary/10 hover:text-primary ${
+                location.pathname === item.path ? "bg-primary/10 text-primary" : "text-muted-foreground"
               }`}
             >
               {item.label}
             </Link>
-          ))}
-        </div>
+          )
+        )}
       </div>
 
       <div className="flex items-center gap-1 sm:gap-2">

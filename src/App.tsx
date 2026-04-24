@@ -8,8 +8,6 @@ function App() {
       <Routes>
         <Route element={<AppLayout />}>
           <Route path="/" element={<Editor />} />
-          <Route path="/gallery" element={<div className="p-8">Gallery coming soon...</div>} />
-          <Route path="/upscaler" element={<div className="p-8">Upscaler coming soon...</div>} />
         </Route>
       </Routes>
     </Router>

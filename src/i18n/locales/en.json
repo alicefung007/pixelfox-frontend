@@ -1,8 +1,7 @@
 {
   "nav": {
     "editor": "Editor",
-    "gallery": "Gallery",
-    "upscaler": "Upscaler",
+    "explore": "Explore",
     "theme": {
       "light": "Light Mode",
       "dark": "Dark Mode",
