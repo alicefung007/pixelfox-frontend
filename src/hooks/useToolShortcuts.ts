@@ -15,7 +15,10 @@ export function useToolShortcuts() {
   const setTool = useEditorStore((state) => state.setTool);
   const undo = useEditorStore((state) => state.undo);
   const redo = useEditorStore((state) => state.redo);
+  const clear = useEditorStore((state) => state.clear);
   const setUploadOpen = useEditorStore((state) => state.setUploadOpen);
+  const setExportOpen = useEditorStore((state) => state.setExportOpen);
+  const hasPixels = useEditorStore((state) => Object.keys(state.pixels).length > 0);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -50,6 +53,22 @@ export function useToolShortcuts() {
         return;
       }
 
+      // Check for Ctrl/Cmd + Backspace/Delete (clear canvas)
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'Backspace' || e.key === 'Delete')) {
+        e.preventDefault();
+        clear();
+        return;
+      }
+
+      // Check for Ctrl/Cmd + E (export pattern)
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'e') {
+        e.preventDefault();
+        if (hasPixels) {
+          setExportOpen(true);
+        }
+        return;
+      }
+
       // Tool shortcuts (only when no modifier keys are pressed)
       if (e.metaKey || e.ctrlKey || e.altKey) {
         return;
@@ -65,5 +84,5 @@ export function useToolShortcuts() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [setTool, undo, redo, setUploadOpen]);
+  }, [setTool, undo, redo, clear, setUploadOpen, setExportOpen, hasPixels]);
 }
