@@ -3,7 +3,7 @@ import type { PaletteTabId } from "@/store/usePaletteStore";
 import { useTranslation } from "react-i18next";
 import {
   Ban,
-  CheckCircle2,
+  Flower,
   Palette,
   Replace,
   Settings,
@@ -208,19 +208,22 @@ export default function PalettePanel({ onOpenReplaceColorDialog }: PalettePanelP
         </div>
 
         <Tabs value={tab} onValueChange={(v) => setTab(v as PaletteTabId)}>
-          <TabsList className="h-8 bg-muted/50 p-1">
+          <TabsList className="h-auto gap-0 rounded-lg border bg-background/95 p-0.5 shadow-sm backdrop-blur-sm">
             <TabsTrigger
               value="used"
               className={cn(
-                "text-[10px] h-6 px-2 sm:px-3 gap-1 cursor-pointer transition-all",
+                "h-7 flex-none cursor-pointer gap-1.5 rounded-md px-2.5 text-xs font-medium text-muted-foreground transition-all hover:bg-accent/70 hover:text-foreground data-active:bg-background data-active:text-foreground data-active:shadow-xs",
                 isUsedFlashing && "ring-2 ring-primary ring-offset-1 ring-offset-background scale-110"
               )}
             >
-              <CheckCircle2 size={12} />
+              <Flower className="size-3.5" />
               <span className="hidden sm:inline">{t("palette.usedColors")}</span>
             </TabsTrigger>
-            <TabsTrigger value="all" className="text-[10px] h-6 px-2 sm:px-3 gap-1 cursor-pointer">
-              <SwatchBook size={12} />
+            <TabsTrigger
+              value="all"
+              className="h-7 flex-none cursor-pointer gap-1.5 rounded-md px-2.5 text-xs font-medium text-muted-foreground transition-all hover:bg-accent/70 hover:text-foreground data-active:bg-background data-active:text-foreground data-active:shadow-xs"
+            >
+              <SwatchBook className="size-3.5" />
               <span className="hidden sm:inline">{t("palette.allColors")}</span>
             </TabsTrigger>
           </TabsList>

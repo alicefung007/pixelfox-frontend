@@ -53,7 +53,7 @@ export default function MobileEditorQuickActions({ onExport, className }: Props)
         <Button
           variant="outline"
           size="icon-sm"
-          className="h-8 w-8 shrink-0"
+          className="h-8 w-8 shrink-0 text-destructive hover:text-destructive"
           onClick={clear}
           aria-label={t("sidebar.clear")}
           title={t("sidebar.clear")}

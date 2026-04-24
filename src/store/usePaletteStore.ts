@@ -64,6 +64,7 @@ export const usePaletteStore = create<PaletteState>()(
         recentColors: state.recentColors,
         usedColors: state.usedColors,
         customPalette: state.customPalette,
+        activeTab: state.activeTab,
       }),
     }
   )
