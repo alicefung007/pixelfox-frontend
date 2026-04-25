@@ -244,7 +244,7 @@ export default function PalettePanel({ onOpenReplaceColorDialog }: PalettePanelP
               tab === "used" && usedActionPopoverColor === normalizedSwatch;
 
             return (
-            <div key={i} className="relative flex flex-col items-center gap-1 p-0.5 sm:p-1 transition-transform hover:scale-105 active:scale-95">
+            <div key={i} className="relative flex flex-col items-center gap-1 p-0.5 sm:p-1">
               <Popover
                 open={isUsedActionPopoverOpen}
                 onOpenChange={(open) => {
@@ -259,10 +259,11 @@ export default function PalettePanel({ onOpenReplaceColorDialog }: PalettePanelP
                 }}
               >
                 <PopoverAnchor asChild>
+                  <div className="w-full">
                   <button
                     type="button"
                     className={cn(
-                      "w-full aspect-square rounded-md border-2 relative flex items-center justify-center",
+                      "w-full aspect-square rounded-md border-2 relative flex items-center justify-center transition-transform hover:scale-105 active:scale-95",
                       isSelectedUsedColor
                         ? "border-primary ring-2 ring-primary/25"
                         : primaryColor === swatch.color
@@ -315,6 +316,7 @@ export default function PalettePanel({ onOpenReplaceColorDialog }: PalettePanelP
                       </span>
                     )}
                   </button>
+                  </div>
                 </PopoverAnchor>
                 <PopoverContent
                   side="top"
