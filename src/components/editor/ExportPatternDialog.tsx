@@ -155,6 +155,9 @@ const PREVIEW_PAN_SPEED = 1;
 const EXPORT_DIALOG_SETTINGS_STORAGE_KEY = "pixelfox-export-dialog-settings";
 const BRAND_LOGO_SRC = "/logo_with_name.png";
 const HEADER_SCALE_BASE_WIDTH = 30;
+const EXPORT_CORNER_RADIUS = 20;
+const EXPORT_BORDER_WIDTH = 1;
+const EXPORT_BORDER_COLOR = "rgba(0, 0, 0, 0.1)";
 const DEFAULT_EXPORT_DIALOG_SETTINGS: ExportDialogSettings = {
   autoCrop: true,
   whiteBackground: true,
@@ -242,6 +245,19 @@ function clampCellSize(cellSize: number, cols: number, rows: number, axisSize: n
   const maxByWidth = Math.floor((MAX_EXPORT_EDGE - maxAxis) / Math.max(cols, 1));
   const maxByHeight = Math.floor((MAX_EXPORT_EDGE - maxAxis) / Math.max(rows, 1));
   return Math.max(8, Math.min(cellSize, maxByWidth, maxByHeight));
+}
+
+function clipRoundedCanvas(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  radius: number
+) {
+  const roundedRadius = Math.max(0, Math.min(radius, width / 2, height / 2));
+  ctx.save();
+  ctx.beginPath();
+  ctx.roundRect(0, 0, width, height, roundedRadius);
+  ctx.clip();
 }
 
 function getContrastText(color: string) {
@@ -726,6 +742,7 @@ function renderPatternImage(options: {
   const ctx = canvas.getContext("2d");
   if (!ctx) return null;
   ctx.imageSmoothingEnabled = false;
+  clipRoundedCanvas(ctx, exportWidth, exportHeight, EXPORT_CORNER_RADIUS);
 
   const gridOriginX = axisSize;
   const gridOriginY = headerMetrics.headerHeight + axisSize;
@@ -977,6 +994,20 @@ function renderPatternImage(options: {
       ctx.fillText(countText, countX + countWidth / 2, badgeY + colorStatsMetrics.badgeHeight / 2 + 0.5);
     }
   }
+
+  ctx.strokeStyle = EXPORT_BORDER_COLOR;
+  ctx.lineWidth = EXPORT_BORDER_WIDTH;
+  ctx.beginPath();
+  ctx.roundRect(
+    EXPORT_BORDER_WIDTH / 2,
+    EXPORT_BORDER_WIDTH / 2,
+    exportWidth - EXPORT_BORDER_WIDTH,
+    exportHeight - EXPORT_BORDER_WIDTH,
+    Math.max(0, EXPORT_CORNER_RADIUS - EXPORT_BORDER_WIDTH / 2)
+  );
+  ctx.stroke();
+
+  ctx.restore();
 
   return {
     dataUrl: canvas.toDataURL("image/png"),
@@ -1698,7 +1729,7 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
                   <img
                     src={exportResult.dataUrl}
                     alt={t("editor.exportDialog.previewTitle")}
-                    className="max-h-full max-w-full object-contain mx-auto border border-black/10 shadow-[0_12px_30px_rgba(15,23,42,0.12),0_2px_8px_rgba(15,23,42,0.08)] [image-rendering:pixelated]"
+                    className="max-h-full max-w-full rounded-xl object-contain mx-auto border border-black/10 shadow-[0_12px_30px_rgba(15,23,42,0.12),0_2px_8px_rgba(15,23,42,0.08)] [image-rendering:pixelated]"
                     style={{
                       transform: `translate(${previewOffset.x}px, ${previewOffset.y}px) scale(${previewScale})`,
                       transformOrigin: "center center",

@@ -781,7 +781,7 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
                 </div>
               </div>
 
-              <div className="space-y-2">
+              <div className="hidden space-y-2">
                 <Label className="text-[11px] font-semibold">{t("editor.uploadDialog.offsetPx")}</Label>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="space-y-1">
