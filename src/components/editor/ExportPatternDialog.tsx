@@ -14,9 +14,15 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
+import {
+  clampPatternGridInterval,
+  getNearWhiteSwatches,
+  PATTERN_GRID_COLORS,
+  sanitizePatternGridColor,
+} from "@/components/editor/pattern-dialog-shared";
 import { getSystemPalette, type PaletteSwatch } from "@/lib/palettes";
 import { createColorMatcher } from "@/lib/image-processor";
-import { cn, getRgbColorDistance, hexToRgb, isDarkColor, isLikelyMouseWheel, normalizeHex } from "@/lib/utils";
+import { cn, hexToRgb, isDarkColor, isLikelyMouseWheel, normalizeHex } from "@/lib/utils";
 import { useEditorStore } from "@/store/useEditorStore";
 import { usePaletteStore } from "@/store/usePaletteStore";
 
@@ -103,21 +109,6 @@ type ExportDialogSettings = {
 
 type ReactTouchList = TouchEvent<HTMLDivElement>["touches"];
 
-const GRID_COLORS = [
-  "#DCE6F2",
-  "#000000",
-  "#374151",
-  "#EF4444",
-  "#2563EB",
-  "#22C55E",
-  "#F59E0B",
-  "#A855F7",
-  "#EC4899",
-  "#06B6D4",
-  "#E6D8B5",
-  "#F9FAFB",
-];
-
 const CELL_SIZE = 40;
 const AXIS_SIZE = 40;
 const BASE_BRAND_HEADER_HEIGHT = 120;
@@ -164,7 +155,7 @@ const DEFAULT_EXPORT_DIALOG_SETTINGS: ExportDialogSettings = {
   showGrid: true,
   showMinorGrid: true,
   gridInterval: 5,
-  gridColor: GRID_COLORS[0],
+  gridColor: PATTERN_GRID_COLORS[0],
   showAxis: false,
   showColorCode: true,
   mirrorFlip: false,
@@ -179,20 +170,17 @@ function loadExportDialogSettings(): ExportDialogSettings {
     const raw = window.localStorage.getItem(EXPORT_DIALOG_SETTINGS_STORAGE_KEY);
     if (!raw) return DEFAULT_EXPORT_DIALOG_SETTINGS;
     const parsed = JSON.parse(raw) as Partial<ExportDialogSettings>;
-    const nextGridColor = typeof parsed.gridColor === "string" && GRID_COLORS.includes(parsed.gridColor)
-      ? parsed.gridColor
-      : DEFAULT_EXPORT_DIALOG_SETTINGS.gridColor;
-    const nextGridInterval = typeof parsed.gridInterval === "number"
-      ? Math.min(30, Math.max(1, Math.round(parsed.gridInterval)))
-      : DEFAULT_EXPORT_DIALOG_SETTINGS.gridInterval;
 
     return {
       autoCrop: parsed.autoCrop ?? DEFAULT_EXPORT_DIALOG_SETTINGS.autoCrop,
       whiteBackground: parsed.whiteBackground ?? DEFAULT_EXPORT_DIALOG_SETTINGS.whiteBackground,
       showGrid: parsed.showGrid ?? DEFAULT_EXPORT_DIALOG_SETTINGS.showGrid,
       showMinorGrid: parsed.showMinorGrid ?? DEFAULT_EXPORT_DIALOG_SETTINGS.showMinorGrid,
-      gridInterval: nextGridInterval,
-      gridColor: nextGridColor,
+      gridInterval: clampPatternGridInterval(
+        typeof parsed.gridInterval === "number" ? parsed.gridInterval : Number.NaN,
+        DEFAULT_EXPORT_DIALOG_SETTINGS.gridInterval
+      ),
+      gridColor: sanitizePatternGridColor(parsed.gridColor, DEFAULT_EXPORT_DIALOG_SETTINGS.gridColor),
       showAxis: parsed.showAxis ?? DEFAULT_EXPORT_DIALOG_SETTINGS.showAxis,
       showColorCode: parsed.showColorCode ?? DEFAULT_EXPORT_DIALOG_SETTINGS.showColorCode,
       mirrorFlip: parsed.mirrorFlip ?? DEFAULT_EXPORT_DIALOG_SETTINGS.mirrorFlip,
@@ -1023,21 +1011,14 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
   const height = useEditorStore((state) => state.height);
   const currentPaletteId = usePaletteStore((state) => state.currentPaletteId);
   const currentPalette = useMemo(() => getSystemPalette(currentPaletteId), [currentPaletteId]);
-  const nearWhiteSwatches = useMemo<PaletteSwatch[]>(() => {
-    return [...(currentPalette?.swatches ?? [])]
-      .sort((a, b) => {
-        const distance = getRgbColorDistance(a.color, "#FFFFFF") - getRgbColorDistance(b.color, "#FFFFFF");
-        if (distance !== 0) return distance;
-        return a.label.localeCompare(b.label);
-      })
-      .slice(0, 6);
-  }, [currentPalette]);
+  const nearWhiteSwatches = useMemo<PaletteSwatch[]>(() => getNearWhiteSwatches(currentPalette), [currentPalette]);
   const [persistedSettings, setPersistedSettings] = useState<ExportDialogSettings>(() => loadExportDialogSettings());
   const [autoCrop, setAutoCrop] = useState(persistedSettings.autoCrop);
   const [whiteBackground, setWhiteBackground] = useState(persistedSettings.whiteBackground);
   const [showGrid, setShowGrid] = useState(persistedSettings.showGrid);
   const [showMinorGrid, setShowMinorGrid] = useState(persistedSettings.showMinorGrid);
-  const [gridInterval, setGridInterval] = useState([persistedSettings.gridInterval]);
+  const [gridInterval, setGridInterval] = useState(persistedSettings.gridInterval);
+  const [draftGridInterval, setDraftGridInterval] = useState([persistedSettings.gridInterval]);
   const [gridColor, setGridColor] = useState(persistedSettings.gridColor);
   const [showAxis, setShowAxis] = useState(persistedSettings.showAxis);
   const [showColorCode, setShowColorCode] = useState(persistedSettings.showColorCode);
@@ -1115,7 +1096,7 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
       whiteBackground,
       showGrid,
       showMinorGrid,
-      gridInterval: gridInterval[0],
+      gridInterval,
       gridColor,
       showAxis,
       showColorCode,
@@ -1196,7 +1177,7 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
         whiteBackground,
         showGrid,
         showMinorGrid,
-        gridInterval: gridInterval[0],
+        gridInterval,
         gridColor,
         showAxis,
         showColorCode,
@@ -1236,6 +1217,16 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
     setPreviewScale(1);
     setPreviewOffset({ x: 0, y: 0 });
   }
+
+  const handleGridIntervalChange = (value: number[]) => {
+    setDraftGridInterval(value);
+  };
+
+  const handleGridIntervalCommit = (value: number[]) => {
+    const nextValue = value[0] ?? gridInterval;
+    setDraftGridInterval([nextValue]);
+    setGridInterval(nextValue);
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -1658,12 +1649,13 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
                     {t("editor.exportDialog.gridInterval")}
                   </Label>
                   <span className={cn("text-[11px] font-medium", !showGrid && "text-muted-foreground")}>
-                    {gridInterval[0]}
+                    {draftGridInterval[0]}
                   </span>
                 </div>
                 <Slider
-                  value={gridInterval}
-                  onValueChange={setGridInterval}
+                  value={draftGridInterval}
+                  onValueChange={handleGridIntervalChange}
+                  onValueCommit={handleGridIntervalCommit}
                   min={1}
                   max={30}
                   disabled={!showGrid}
@@ -1679,22 +1671,30 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
                   {t("editor.exportDialog.gridColor")}
                 </Label>
                 <div className={cn("grid grid-cols-6 gap-2", !showGrid && "opacity-50 pointer-events-none")}>
-                  {GRID_COLORS.map((c) => {
+                  {PATTERN_GRID_COLORS.map((c) => {
                     const selected = c.toLowerCase() === gridColor.toLowerCase();
                     return (
                       <button
                         key={c}
                         type="button"
                         onClick={() => setGridColor(c)}
-                        className={cn(
-                          "w-full aspect-square rounded-md border-2 transition-transform hover:scale-105 active:scale-95",
-                          selected
-                            ? "border-primary shadow-[0_0_0_2px_hsl(var(--primary)/0.16)]"
-                            : "border-gray-400/20"
-                        )}
-                        style={{ backgroundColor: c }}
+                        className="group relative flex flex-col items-center gap-1 p-0.5 transition-transform hover:scale-105 active:scale-95"
                         aria-label={c}
-                      />
+                      >
+                        <div
+                          className={cn(
+                            "relative flex h-9 w-9 items-center justify-center rounded-md border-2 transition-shadow",
+                            selected ? "border-primary" : "border-gray-400/20"
+                          )}
+                          style={{ backgroundColor: c }}
+                        >
+                          {selected && (
+                            <div className="absolute -right-0.5 -top-0.5 flex size-3 items-center justify-center rounded-full bg-primary text-white shadow-sm">
+                              <Check className="size-2" />
+                            </div>
+                          )}
+                        </div>
+                      </button>
                     );
                   })}
                 </div>

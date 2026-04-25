@@ -148,6 +148,18 @@
       "pauseRotation": "一時停止",
       "resumeRotation": "回転"
     },
+    "assembly": {
+      "title": "組み立て",
+      "description": "色ごとにパターンを進めます。",
+      "progress": "Progress",
+      "empty": "キャンバスが空です",
+      "beadCount": "{{count}} beads",
+      "noStep": "色がありません",
+      "settingsTitle": "組み立て設定",
+      "showColorCodeHint": "現在の手順に色番号を表示します",
+      "markComplete": "Mark Complete",
+      "completed": "Completed"
+    },
     "exportDialog": {
       "title": "パターンを書き出し",
       "description": "書き出し設定を調整して、現在のパターンをダウンロードします。",

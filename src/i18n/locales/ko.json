@@ -148,6 +148,18 @@
       "pauseRotation": "일시정지",
       "resumeRotation": "회전"
     },
+    "assembly": {
+      "title": "조립",
+      "description": "색상별로 패턴을 따라갑니다.",
+      "progress": "Progress",
+      "empty": "캔버스가 비어 있습니다",
+      "beadCount": "{{count}} beads",
+      "noStep": "색상이 없습니다",
+      "settingsTitle": "조립 설정",
+      "showColorCodeHint": "현재 단계에 색상 코드를 표시합니다",
+      "markComplete": "Mark Complete",
+      "completed": "Completed"
+    },
     "exportDialog": {
       "title": "패턴 내보내기",
       "description": "내보내기 옵션을 조정하고 현재 패턴을 다운로드하세요.",

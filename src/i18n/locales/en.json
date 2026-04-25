@@ -148,6 +148,18 @@
       "pauseRotation": "Pause",
       "resumeRotation": "Rotate"
     },
+    "assembly": {
+      "title": "Assembly",
+      "description": "Follow the pattern color by color.",
+      "progress": "Progress",
+      "empty": "Canvas is empty",
+      "beadCount": "{{count}} beads",
+      "noStep": "No colors",
+      "settingsTitle": "Assembly Settings",
+      "showColorCodeHint": "Show the active color code on the current step",
+      "markComplete": "Mark Complete",
+      "completed": "Completed"
+    },
     "exportDialog": {
       "title": "Export Pattern",
       "description": "Adjust export options and download your current pattern.",
