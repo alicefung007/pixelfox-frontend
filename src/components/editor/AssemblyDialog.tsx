@@ -57,19 +57,17 @@ type RenderResult = {
   height: number;
 };
 
-const CHECKER_LIGHT = "#F7F7F8";
-const CHECKER_DARK = "#ECEEF1";
-const ACTIVE_OUTLINE = "#F59E0B";
-const AXIS_TEXT_COLOR = "#475569";
+const AXIS_TEXT_COLOR = "#94A3B8";
 const ASSEMBLY_SETTINGS_STORAGE_KEY = "pixelfox-assembly-dialog-settings";
-const PREVIEW_MIN_SCALE = 0.5;
+const PREVIEW_MIN_SCALE = 0.1;
 const PREVIEW_MAX_SCALE = 10;
 const PREVIEW_SCALE_STEP = 0.12;
 const PREVIEW_PAN_SPEED = 1;
 const ASSEMBLY_AXIS_SIZE = 32;
-const ASSEMBLY_PREVIEW_CELL_SIZE = 28;
-const ASSEMBLY_MIN_CELL_SIZE = 16;
-const ASSEMBLY_MAX_EDGE = 4096;
+const ASSEMBLY_PREVIEW_MARGIN = 24;
+const ASSEMBLY_PREVIEW_CELL_SIZE = 40;
+const ASSEMBLY_MIN_CELL_SIZE = 8;
+const ASSEMBLY_MAX_EDGE = 122880;
 const DEFAULT_ASSEMBLY_SETTINGS: AssemblySettings = {
   showGrid: true,
   showMinorGrid: true,
@@ -112,10 +110,35 @@ function loadAssemblySettings(): AssemblySettings {
   }
 }
 
-function rgba(color: string, alpha: number) {
+function getContrastText(color: string) {
   const rgb = hexToRgb(color);
-  if (!rgb) return color;
-  return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`;
+  if (!rgb) return "#0F172A";
+  const luminance = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255;
+  return luminance > 0.62 ? "rgba(15,23,42,0.72)" : "rgba(255,255,255,0.96)";
+}
+
+function drawVerticalGridLine(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  height: number,
+  width: number
+) {
+  const alignedWidth = Math.max(1, Math.round(width));
+  const startX = Math.round(x - alignedWidth / 2);
+  ctx.fillRect(startX, Math.round(y), alignedWidth, Math.round(height));
+}
+
+function drawHorizontalGridLine(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number
+) {
+  const alignedHeight = Math.max(1, Math.round(height));
+  const startY = Math.round(y - alignedHeight / 2);
+  ctx.fillRect(Math.round(x), startY, Math.round(width), alignedHeight);
 }
 
 function clampPreviewScale(scale: number) {
@@ -169,18 +192,20 @@ function renderAssemblyPreview({
   if (typeof document === "undefined") return null;
 
   const axisSize = showAxis ? ASSEMBLY_AXIS_SIZE : 0;
+  const margin = ASSEMBLY_PREVIEW_MARGIN;
+  const edgePadding = axisSize + margin;
   const cellSize = Math.max(
     ASSEMBLY_MIN_CELL_SIZE,
     Math.min(
       ASSEMBLY_PREVIEW_CELL_SIZE,
-      Math.floor((ASSEMBLY_MAX_EDGE - axisSize * 2) / Math.max(width, height, 1))
+      Math.floor((ASSEMBLY_MAX_EDGE - edgePadding * 2) / Math.max(width, height, 1))
     )
   );
   const contentWidth = width * cellSize;
   const contentHeight = height * cellSize;
   const canvas = document.createElement("canvas");
-  canvas.width = contentWidth + axisSize * 2;
-  canvas.height = contentHeight + axisSize * 2;
+  canvas.width = contentWidth + edgePadding * 2;
+  canvas.height = contentHeight + edgePadding * 2;
 
   const ctx = canvas.getContext("2d");
   if (!ctx) return null;
@@ -189,42 +214,29 @@ function renderAssemblyPreview({
   ctx.fillStyle = "#FFFFFF";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  const offsetX = axisSize;
-  const offsetY = axisSize;
+  const offsetX = edgePadding;
+  const offsetY = edgePadding;
 
   ctx.save();
   ctx.translate(offsetX, offsetY);
   ctx.imageSmoothingEnabled = false;
 
-  for (let x = 0; x < width; x++) {
-    for (let y = 0; y < height; y++) {
-      ctx.fillStyle = (x + y) % 2 === 0 ? CHECKER_LIGHT : CHECKER_DARK;
-      ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
-    }
-  }
+  ctx.fillStyle = "#FFFFFF";
+  ctx.fillRect(0, 0, contentWidth, contentHeight);
 
   const normalizedActiveColor = activeColor ? normalizeHex(activeColor) : null;
   for (const [key, color] of Object.entries(pixels)) {
     const [x, y] = key.split(",").map(Number);
     if (Number.isNaN(x) || Number.isNaN(y)) continue;
     if (x < 0 || y < 0 || x >= width || y >= height) continue;
+    const isActive = !normalizedActiveColor || normalizeHex(color) === normalizedActiveColor;
     const drawX = mirrorFlip ? width - 1 - x : x;
 
-    if (normalizedActiveColor && normalizeHex(color) === normalizedActiveColor) {
-      ctx.fillStyle = ACTIVE_OUTLINE;
-      ctx.globalAlpha = 0.16;
-      ctx.fillRect(drawX * cellSize, y * cellSize, cellSize, cellSize);
-      ctx.globalAlpha = 1;
-      ctx.strokeStyle = ACTIVE_OUTLINE;
-      ctx.lineWidth = Math.max(2, Math.floor(cellSize * 0.18));
-      ctx.strokeRect(drawX * cellSize + 1, y * cellSize + 1, Math.max(1, cellSize - 2), Math.max(1, cellSize - 2));
-    } else {
-      ctx.fillStyle = color;
-      ctx.globalAlpha = 0.22;
-      ctx.fillRect(drawX * cellSize, y * cellSize, cellSize, cellSize);
-      ctx.globalAlpha = 1;
-    }
+    ctx.globalAlpha = isActive ? 1 : 0.18;
+    ctx.fillStyle = color;
+    ctx.fillRect(drawX * cellSize, y * cellSize, cellSize, cellSize);
   }
+  ctx.globalAlpha = 1;
 
   if (
     showColorCode &&
@@ -234,10 +246,10 @@ function renderAssemblyPreview({
     cellSize >= 20
   ) {
     ctx.save();
-    ctx.font = `700 ${Math.max(9, Math.min(14, Math.floor(cellSize / Math.max(activeLabel.length * 0.62, 2.8))))}px Geist, sans-serif`;
+    ctx.font = `700 ${Math.max(8, Math.min(14, Math.floor(cellSize / Math.max(activeLabel.length * 0.62, 2.8))))}px Geist, sans-serif`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillStyle = "rgba(15, 23, 42, 0.68)";
+    ctx.fillStyle = getContrastText(`#${normalizedActiveColor}`);
     for (const [key, color] of Object.entries(pixels)) {
       if (normalizeHex(color) !== normalizedActiveColor) continue;
       const [x, y] = key.split(",").map(Number);
@@ -250,44 +262,30 @@ function renderAssemblyPreview({
 
   if (showGrid) {
     if (showMinorGrid) {
-      ctx.strokeStyle = rgba(gridColor, 0.22);
-      ctx.lineWidth = 1;
-      ctx.beginPath();
+      ctx.globalAlpha = 0.28;
+      ctx.fillStyle = gridColor;
       for (let x = 0; x <= width; x++) {
-        const px = x * cellSize + 0.5;
-        ctx.moveTo(px, 0);
-        ctx.lineTo(px, contentHeight);
+        drawVerticalGridLine(ctx, x * cellSize, 0, contentHeight, 1);
       }
       for (let y = 0; y <= height; y++) {
-        const py = y * cellSize + 0.5;
-        ctx.moveTo(0, py);
-        ctx.lineTo(contentWidth, py);
+        drawHorizontalGridLine(ctx, 0, y * cellSize, contentWidth, 1);
       }
-      ctx.stroke();
+      ctx.globalAlpha = 1;
     }
 
-    ctx.strokeStyle = rgba(gridColor, 0.78);
-    ctx.lineWidth = Math.max(1.5, Math.floor(cellSize * 0.08));
-    ctx.beginPath();
+    ctx.fillStyle = gridColor;
     for (let x = 0; x <= width; x += gridInterval) {
-      const px = x * cellSize + 0.5;
-      ctx.moveTo(px, 0);
-      ctx.lineTo(px, contentHeight);
+      drawVerticalGridLine(ctx, x * cellSize, 0, contentHeight, 2);
     }
     if (width % gridInterval !== 0) {
-      ctx.moveTo(contentWidth + 0.5, 0);
-      ctx.lineTo(contentWidth + 0.5, contentHeight);
+      drawVerticalGridLine(ctx, contentWidth, 0, contentHeight, 2);
     }
     for (let y = 0; y <= height; y += gridInterval) {
-      const py = y * cellSize + 0.5;
-      ctx.moveTo(0, py);
-      ctx.lineTo(contentWidth, py);
+      drawHorizontalGridLine(ctx, 0, y * cellSize, contentWidth, 2);
     }
     if (height % gridInterval !== 0) {
-      ctx.moveTo(0, contentHeight + 0.5);
-      ctx.lineTo(contentWidth, contentHeight + 0.5);
+      drawHorizontalGridLine(ctx, 0, contentHeight, contentWidth, 2);
     }
-    ctx.stroke();
   } else {
     ctx.strokeStyle = "rgba(15,23,42,0.16)";
     ctx.lineWidth = 1;
@@ -300,20 +298,19 @@ function renderAssemblyPreview({
     ctx.font = `600 ${Math.max(10, Math.floor(cellSize * 0.32))}px Geist, sans-serif`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    for (let x = 0; x < width; x += gridInterval) {
+    for (let x = 0; x < width; x++) {
       const sourceX = mirrorFlip ? width - x : x + 1;
       ctx.fillText(String(sourceX), x * cellSize + cellSize / 2, -14);
-    }
-    if ((width - 1) % gridInterval !== 0) {
-      ctx.fillText(String(mirrorFlip ? 1 : width), contentWidth - cellSize / 2, -14);
+      ctx.fillText(String(sourceX), x * cellSize + cellSize / 2, contentHeight + 14);
     }
 
     ctx.textAlign = "right";
-    for (let y = 0; y < height; y += gridInterval) {
+    for (let y = 0; y < height; y++) {
       ctx.fillText(String(y + 1), -8, y * cellSize + cellSize / 2);
     }
-    if ((height - 1) % gridInterval !== 0) {
-      ctx.fillText(String(height), -8, contentHeight - cellSize / 2);
+    ctx.textAlign = "left";
+    for (let y = 0; y < height; y++) {
+      ctx.fillText(String(y + 1), contentWidth + 8, y * cellSize + cellSize / 2);
     }
     ctx.restore();
   }
@@ -357,6 +354,7 @@ export default function AssemblyDialog({ open, onOpenChange }: Props) {
   const [previewOffset, setPreviewOffset] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [previewViewportElement, setPreviewViewportElement] = useState<HTMLDivElement | null>(null);
+  const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
   const previewViewportRef = useRef<HTMLDivElement | null>(null);
   const previewScaleRef = useRef(previewScale);
   const previewOffsetRef = useRef(previewOffset);
@@ -386,13 +384,14 @@ export default function AssemblyDialog({ open, onOpenChange }: Props) {
     );
 
     return Array.from(usage.entries())
+      .filter(([color]) => !excludedColorCodes.has(normalizeHex(color)))
       .map(([color, count], index) => ({
         color,
         count,
         label: paletteLabels.get(color) ?? getFallbackLabel(index),
       }))
-      .sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true }));
-  }, [currentPaletteId, pixels]);
+      .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, undefined, { numeric: true }));
+  }, [currentPaletteId, excludedColorCodes, pixels]);
 
   const clampedActiveIndex = Math.min(activeIndex, Math.max(steps.length - 1, 0));
   const activeStep = steps[clampedActiveIndex] ?? null;
@@ -481,7 +480,29 @@ export default function AssemblyDialog({ open, onOpenChange }: Props) {
   useEffect(() => {
     if (!open) return;
     queueMicrotask(() => resetPreviewTransform());
-  }, [open, previewResult?.dataUrl]);
+  }, [open]);
+
+  useEffect(() => {
+    const el = previewViewportElement;
+    if (!el) return;
+    const update = () => setViewportSize({ width: el.clientWidth, height: el.clientHeight });
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [previewViewportElement]);
+
+  const baseImageSize = useMemo(() => {
+    if (!previewResult) return null;
+    if (viewportSize.width <= 0 || viewportSize.height <= 0) return null;
+    const sW = (viewportSize.width * 0.8) / previewResult.width;
+    const sH = (viewportSize.height * 0.8) / previewResult.height;
+    const scale = Math.min(sW, sH);
+    return {
+      width: previewResult.width * scale,
+      height: previewResult.height * scale,
+    };
+  }, [previewResult, viewportSize.width, viewportSize.height]);
 
   const goToStep = (direction: -1 | 1) => {
     setActiveIndex(() => Math.min(Math.max(clampedActiveIndex + direction, 0), Math.max(steps.length - 1, 0)));
@@ -999,7 +1020,7 @@ export default function AssemblyDialog({ open, onOpenChange }: Props) {
                   previewViewportRef.current = node;
                   setPreviewViewportElement(node);
                 }}
-                className="relative flex h-full w-full items-center justify-center overflow-hidden overscroll-contain bg-[linear-gradient(45deg,#f5f5f5_25%,transparent_25%,transparent_75%,#f5f5f5_75%,#f5f5f5),linear-gradient(45deg,#f5f5f5_25%,transparent_25%,transparent_75%,#f5f5f5_75%,#f5f5f5)] bg-[length:10px_10px] bg-[position:0_0,5px_5px] bg-repeat [touch-action:pan-y] md:[touch-action:none]"
+                className="relative flex h-full w-full items-center justify-center overflow-hidden overscroll-contain bg-slate-100 [touch-action:pan-y] md:[touch-action:none]"
                 onTouchStart={handlePreviewTouchStart}
                 onTouchMove={handlePreviewTouchMove}
                 onTouchEnd={handlePreviewTouchEnd}
@@ -1016,8 +1037,10 @@ export default function AssemblyDialog({ open, onOpenChange }: Props) {
                     <img
                       src={previewResult.dataUrl}
                       alt={t("editor.assembly.title")}
-                      className="max-h-full max-w-full rounded-xl object-contain border border-black/10 shadow-[0_12px_30px_rgba(15,23,42,0.12),0_2px_8px_rgba(15,23,42,0.08)] [image-rendering:pixelated]"
+                      className="rounded-xl object-contain border border-black/10 [image-rendering:pixelated]"
                       style={{
+                        width: baseImageSize ? `${baseImageSize.width}px` : undefined,
+                        height: baseImageSize ? `${baseImageSize.height}px` : undefined,
                         transform: `translate(${previewOffset.x}px, ${previewOffset.y}px) scale(${previewScale})`,
                         transformOrigin: "center center",
                       }}
@@ -1074,8 +1097,8 @@ export default function AssemblyDialog({ open, onOpenChange }: Props) {
             <div className="mx-8 flex min-w-0 items-center gap-6">
               <div className="flex min-w-[150px] items-center gap-3">
                 <span
-                  className="size-10 shrink-0 rounded-full border shadow-sm"
-                  style={{ backgroundColor: activeStep?.color ?? "transparent" }}
+                  className="size-10 shrink-0 rounded-md border-2 border-gray-400/20"
+                  style={{ backgroundColor: activeStep ? `#${activeStep.color}` : "transparent" }}
                 />
                 <span className="min-w-0">
                   <span className="block text-xl font-bold leading-5 text-foreground">
