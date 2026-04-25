@@ -810,7 +810,7 @@ export default function AssemblyDialog({ open, onOpenChange }: Props) {
               >
                 <div className="space-y-4 p-6">
                   <div className="space-y-3">
-                    <h3 className="text-sm font-semibold">Settings</h3>
+                    <h3 className="text-sm font-semibold">{t("editor.assembly.sectionSettings")}</h3>
 
                     <div className="flex items-center justify-between gap-3">
                       <div className="space-y-0.5">
@@ -844,7 +844,7 @@ export default function AssemblyDialog({ open, onOpenChange }: Props) {
                   <Separator />
 
                   <div className="space-y-3">
-                    <h3 className="text-sm font-semibold">Color Code</h3>
+                    <h3 className="text-sm font-semibold">{t("editor.assembly.sectionColor")}</h3>
 
                     <div className="flex items-center justify-between gap-3">
                       <div className="space-y-0.5">
@@ -906,7 +906,7 @@ export default function AssemblyDialog({ open, onOpenChange }: Props) {
                   <Separator />
 
                   <div className="space-y-3">
-                    <h3 className="text-sm font-semibold">Grid</h3>
+                    <h3 className="text-sm font-semibold">{t("editor.assembly.sectionGrid")}</h3>
 
                     <div className="flex items-center justify-between gap-3">
                       <Label className="text-[11px] font-semibold">{t("editor.exportDialog.showGrid")}</Label>

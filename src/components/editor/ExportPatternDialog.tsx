@@ -1507,7 +1507,7 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
         <div className="flex-1 overflow-auto px-3 pb-3 md:px-6 md:pb-6 flex flex-col md:flex-row md:items-stretch gap-3 md:gap-5">
           <div className="w-full md:w-[260px] md:shrink-0 space-y-3 md:space-y-4 order-2 md:order-none">
             <div className="space-y-4 pt-3">
-              <h3 className="text-sm font-semibold">Settings</h3>
+              <h3 className="text-sm font-semibold">{t("editor.exportDialog.sectionSettings")}</h3>
 
               <div className="space-y-3">
                 <div className="flex items-center justify-between gap-3">
@@ -1563,7 +1563,7 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
             <Separator className="shrink-0" />
 
             <div className="space-y-4">
-              <h3 className="text-sm font-semibold">Color Code</h3>
+              <h3 className="text-sm font-semibold">{t("editor.exportDialog.sectionColor")}</h3>
 
               <div className="flex items-center justify-between gap-3">
                 <Label className="text-[11px] font-semibold">{t("editor.exportDialog.showColorCode")}</Label>
@@ -1620,7 +1620,7 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
             <Separator className="shrink-0" />
 
             <div className="space-y-4">
-              <h3 className="text-sm font-semibold">Grid</h3>
+              <h3 className="text-sm font-semibold">{t("editor.exportDialog.sectionGrid")}</h3>
 
               <div className="flex items-center justify-between gap-3">
                 <Label className="text-[11px] font-semibold">{t("editor.exportDialog.showGrid")}</Label>
