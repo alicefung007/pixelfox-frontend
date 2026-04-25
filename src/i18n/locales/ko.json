@@ -171,6 +171,7 @@
       "mirrorFlip": "좌우 반전",
       "mirrorFlipHint": "뒷면에서 비즈 작업할 때 유용합니다",
       "preview": "미리보기",
+      "previewHint": "스크롤로 확대, 드래그로 이동; 모바일은 핀치로 확대, 두 손가락 드래그로 이동",
       "previewTitle": "패턴",
       "previewSubtitle": "미리보기",
       "previewPlaceholder": "미리보기 자리 표시자",

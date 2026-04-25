@@ -1514,7 +1514,7 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
         <Separator className="shrink-0" />
 
         <div className="flex-1 overflow-auto px-3 pb-3 md:px-6 md:pb-6 flex flex-col md:flex-row md:items-stretch gap-3 md:gap-5">
-          <div className="w-full md:w-[260px] md:shrink-0 space-y-3 md:space-y-4">
+          <div className="w-full md:w-[260px] md:shrink-0 space-y-3 md:space-y-4 order-2 md:order-none">
             <div className="space-y-4 pt-3">
               <h3 className="text-sm font-semibold">Settings</h3>
 
@@ -1702,9 +1702,10 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
             </div>
           </div>
 
-          <div className="flex-1 min-w-0 pb-3 md:pb-4 md:flex md:flex-col md:self-stretch">
-            <div className="pt-3 pb-4">
+          <div className="flex-1 min-w-0 pb-3 md:pb-4 md:flex md:flex-col md:self-stretch order-1 md:order-none">
+            <div className="pt-3 pb-4 flex items-baseline gap-2 flex-wrap">
               <h3 className="text-sm font-semibold">{t("editor.exportDialog.preview")}</h3>
+              <span className="text-xs text-muted-foreground">({t("editor.exportDialog.previewHint")})</span>
             </div>
 
             <div
@@ -1712,7 +1713,7 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
                 previewViewportRef.current = node;
                 setPreviewViewportElement(node);
               }}
-              className="relative rounded-xl border overflow-hidden overscroll-contain flex items-center justify-center min-h-[420px] md:min-h-0 md:flex-1 bg-[linear-gradient(45deg,#f5f5f5_25%,transparent_25%,transparent_75%,#f5f5f5_75%,#f5f5f5),linear-gradient(45deg,#f5f5f5_25%,transparent_25%,transparent_75%,#f5f5f5_75%,#f5f5f5)] bg-[length:10px_10px] bg-[position:0_0,5px_5px] bg-repeat [touch-action:none]"
+              className="relative rounded-xl border overflow-hidden overscroll-contain flex items-center justify-center min-h-[420px] md:min-h-0 md:flex-1 bg-[linear-gradient(45deg,#f5f5f5_25%,transparent_25%,transparent_75%,#f5f5f5_75%,#f5f5f5),linear-gradient(45deg,#f5f5f5_25%,transparent_25%,transparent_75%,#f5f5f5_75%,#f5f5f5)] bg-[length:10px_10px] bg-[position:0_0,5px_5px] bg-repeat [touch-action:pan-y] md:[touch-action:none]"
               onTouchStart={handlePreviewTouchStart}
               onTouchMove={handlePreviewTouchMove}
               onTouchEnd={handlePreviewTouchEnd}

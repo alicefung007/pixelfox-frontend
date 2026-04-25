@@ -171,6 +171,7 @@
       "mirrorFlip": "镜像翻转",
       "mirrorFlipHint": "适合从背面串豆",
       "preview": "预览",
+      "previewHint": "滚轮缩放，拖动平移；移动端双指缩放，双指拖动平移",
       "previewTitle": "拼豆图",
       "previewSubtitle": "预览",
       "previewPlaceholder": "预览占位",

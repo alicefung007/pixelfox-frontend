@@ -171,6 +171,7 @@
       "mirrorFlip": "左右反転",
       "mirrorFlipHint": "裏面からビーズを置くときに便利です",
       "preview": "プレビュー",
+      "previewHint": "スクロールで拡大縮小、ドラッグで移動；モバイルはピンチで拡大縮小、2本指ドラッグで移動",
       "previewTitle": "パターン",
       "previewSubtitle": "プレビュー",
       "previewPlaceholder": "プレビューのプレースホルダー",

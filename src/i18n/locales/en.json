@@ -171,6 +171,7 @@
       "mirrorFlip": "Mirror Flip",
       "mirrorFlipHint": "Best for beading from the back",
       "preview": "Preview",
+      "previewHint": "Scroll to zoom, drag to pan; on mobile pinch to zoom, two-finger drag to pan",
       "previewTitle": "Pindou Art",
       "previewSubtitle": "preview",
       "previewPlaceholder": "Preview placeholder",
