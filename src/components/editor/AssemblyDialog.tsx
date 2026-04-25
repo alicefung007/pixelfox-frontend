@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { type PointerEvent, type TouchEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Check, ChevronLeft, ChevronRight, SlidersHorizontal, X } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Minus, Plus, SlidersHorizontal, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -25,7 +25,7 @@ import {
   PATTERN_GRID_COLORS,
   sanitizePatternGridColor,
 } from "@/components/editor/pattern-dialog-shared";
-import { cn, hexToRgb, isDarkColor, normalizeHex } from "@/lib/utils";
+import { cn, hexToRgb, isDarkColor, isLikelyMouseWheel, normalizeHex } from "@/lib/utils";
 import { useEditorStore } from "@/store/useEditorStore";
 import { usePaletteStore } from "@/store/usePaletteStore";
 
@@ -51,11 +51,25 @@ type AssemblySettings = {
   mirrorFlip: boolean;
 };
 
+type RenderResult = {
+  dataUrl: string;
+  width: number;
+  height: number;
+};
+
 const CHECKER_LIGHT = "#F7F7F8";
 const CHECKER_DARK = "#ECEEF1";
 const ACTIVE_OUTLINE = "#F59E0B";
 const AXIS_TEXT_COLOR = "#475569";
 const ASSEMBLY_SETTINGS_STORAGE_KEY = "pixelfox-assembly-dialog-settings";
+const PREVIEW_MIN_SCALE = 0.5;
+const PREVIEW_MAX_SCALE = 10;
+const PREVIEW_SCALE_STEP = 0.12;
+const PREVIEW_PAN_SPEED = 1;
+const ASSEMBLY_AXIS_SIZE = 32;
+const ASSEMBLY_PREVIEW_CELL_SIZE = 28;
+const ASSEMBLY_MIN_CELL_SIZE = 16;
+const ASSEMBLY_MAX_EDGE = 4096;
 const DEFAULT_ASSEMBLY_SETTINGS: AssemblySettings = {
   showGrid: true,
   showMinorGrid: true,
@@ -104,8 +118,26 @@ function rgba(color: string, alpha: number) {
   return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`;
 }
 
-function drawAssemblyCanvas({
-  canvas,
+function clampPreviewScale(scale: number) {
+  return Math.min(PREVIEW_MAX_SCALE, Math.max(PREVIEW_MIN_SCALE, Number(scale.toFixed(2))));
+}
+
+function getTouchDistance(touches: TouchEvent<HTMLDivElement>["touches"]) {
+  if (touches.length < 2) return 0;
+  const dx = touches[0].clientX - touches[1].clientX;
+  const dy = touches[0].clientY - touches[1].clientY;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+function getTouchMidpoint(touches: TouchEvent<HTMLDivElement>["touches"]) {
+  if (touches.length < 2) return { x: 0, y: 0 };
+  return {
+    x: (touches[0].clientX + touches[1].clientX) / 2,
+    y: (touches[0].clientY + touches[1].clientY) / 2,
+  };
+}
+
+function renderAssemblyPreview({
   pixels,
   width,
   height,
@@ -120,7 +152,6 @@ function drawAssemblyCanvas({
   excludedColorCodes,
   mirrorFlip,
 }: {
-  canvas: HTMLCanvasElement;
   pixels: Record<string, string>;
   width: number;
   height: number;
@@ -134,44 +165,32 @@ function drawAssemblyCanvas({
   showColorCode: boolean;
   excludedColorCodes: Set<string>;
   mirrorFlip: boolean;
-}) {
-  const parent = canvas.parentElement;
-  if (!parent) return;
+}): RenderResult | null {
+  if (typeof document === "undefined") return null;
 
-  const rect = parent.getBoundingClientRect();
-  const viewWidth = Math.max(1, Math.floor(rect.width));
-  const viewHeight = Math.max(1, Math.floor(rect.height));
-  const dpr = window.devicePixelRatio || 1;
-  canvas.width = Math.floor(viewWidth * dpr);
-  canvas.height = Math.floor(viewHeight * dpr);
-  canvas.style.width = `${viewWidth}px`;
-  canvas.style.height = `${viewHeight}px`;
-
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return;
-
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.clearRect(0, 0, viewWidth, viewHeight);
-  ctx.fillStyle = "#F8FAFC";
-  ctx.fillRect(0, 0, viewWidth, viewHeight);
-
-  const axisPadding = showAxis ? 28 : 0;
-  const padding = 18;
-  const scale = Math.max(
-    1,
-    Math.floor(
-      Math.min(
-        (viewWidth - padding * 2 - axisPadding) / width,
-        (viewHeight - padding * 2 - axisPadding) / height
-      )
+  const axisSize = showAxis ? ASSEMBLY_AXIS_SIZE : 0;
+  const cellSize = Math.max(
+    ASSEMBLY_MIN_CELL_SIZE,
+    Math.min(
+      ASSEMBLY_PREVIEW_CELL_SIZE,
+      Math.floor((ASSEMBLY_MAX_EDGE - axisSize * 2) / Math.max(width, height, 1))
     )
   );
-  const contentWidth = width * scale;
-  const contentHeight = height * scale;
-  const totalWidth = contentWidth + axisPadding;
-  const totalHeight = contentHeight + axisPadding;
-  const offsetX = Math.floor((viewWidth - totalWidth) / 2) + (showAxis ? axisPadding : 0);
-  const offsetY = Math.floor((viewHeight - totalHeight) / 2) + (showAxis ? axisPadding : 0);
+  const contentWidth = width * cellSize;
+  const contentHeight = height * cellSize;
+  const canvas = document.createElement("canvas");
+  canvas.width = contentWidth + axisSize * 2;
+  canvas.height = contentHeight + axisSize * 2;
+
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "#FFFFFF";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const offsetX = axisSize;
+  const offsetY = axisSize;
 
   ctx.save();
   ctx.translate(offsetX, offsetY);
@@ -180,7 +199,7 @@ function drawAssemblyCanvas({
   for (let x = 0; x < width; x++) {
     for (let y = 0; y < height; y++) {
       ctx.fillStyle = (x + y) % 2 === 0 ? CHECKER_LIGHT : CHECKER_DARK;
-      ctx.fillRect(x * scale, y * scale, scale, scale);
+      ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
     }
   }
 
@@ -194,15 +213,15 @@ function drawAssemblyCanvas({
     if (normalizedActiveColor && normalizeHex(color) === normalizedActiveColor) {
       ctx.fillStyle = ACTIVE_OUTLINE;
       ctx.globalAlpha = 0.16;
-      ctx.fillRect(drawX * scale, y * scale, scale, scale);
+      ctx.fillRect(drawX * cellSize, y * cellSize, cellSize, cellSize);
       ctx.globalAlpha = 1;
       ctx.strokeStyle = ACTIVE_OUTLINE;
-      ctx.lineWidth = Math.max(2, Math.floor(scale * 0.18));
-      ctx.strokeRect(drawX * scale + 1, y * scale + 1, Math.max(1, scale - 2), Math.max(1, scale - 2));
+      ctx.lineWidth = Math.max(2, Math.floor(cellSize * 0.18));
+      ctx.strokeRect(drawX * cellSize + 1, y * cellSize + 1, Math.max(1, cellSize - 2), Math.max(1, cellSize - 2));
     } else {
       ctx.fillStyle = color;
       ctx.globalAlpha = 0.22;
-      ctx.fillRect(drawX * scale, y * scale, scale, scale);
+      ctx.fillRect(drawX * cellSize, y * cellSize, cellSize, cellSize);
       ctx.globalAlpha = 1;
     }
   }
@@ -212,10 +231,10 @@ function drawAssemblyCanvas({
     normalizedActiveColor &&
     !excludedColorCodes.has(normalizedActiveColor) &&
     activeLabel &&
-    scale >= 20
+    cellSize >= 20
   ) {
     ctx.save();
-    ctx.font = `${Math.max(10, Math.floor(scale * 0.32))}px Geist, sans-serif`;
+    ctx.font = `700 ${Math.max(9, Math.min(14, Math.floor(cellSize / Math.max(activeLabel.length * 0.62, 2.8))))}px Geist, sans-serif`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillStyle = "rgba(15, 23, 42, 0.68)";
@@ -224,7 +243,7 @@ function drawAssemblyCanvas({
       const [x, y] = key.split(",").map(Number);
       if (Number.isNaN(x) || Number.isNaN(y)) continue;
       const drawX = mirrorFlip ? width - 1 - x : x;
-      ctx.fillText(activeLabel, drawX * scale + scale / 2, y * scale + scale / 2);
+      ctx.fillText(activeLabel, drawX * cellSize + cellSize / 2, y * cellSize + cellSize / 2);
     }
     ctx.restore();
   }
@@ -235,12 +254,12 @@ function drawAssemblyCanvas({
       ctx.lineWidth = 1;
       ctx.beginPath();
       for (let x = 0; x <= width; x++) {
-        const px = x * scale + 0.5;
+        const px = x * cellSize + 0.5;
         ctx.moveTo(px, 0);
         ctx.lineTo(px, contentHeight);
       }
       for (let y = 0; y <= height; y++) {
-        const py = y * scale + 0.5;
+        const py = y * cellSize + 0.5;
         ctx.moveTo(0, py);
         ctx.lineTo(contentWidth, py);
       }
@@ -248,10 +267,10 @@ function drawAssemblyCanvas({
     }
 
     ctx.strokeStyle = rgba(gridColor, 0.78);
-    ctx.lineWidth = Math.max(1.5, Math.floor(scale * 0.08));
+    ctx.lineWidth = Math.max(1.5, Math.floor(cellSize * 0.08));
     ctx.beginPath();
     for (let x = 0; x <= width; x += gridInterval) {
-      const px = x * scale + 0.5;
+      const px = x * cellSize + 0.5;
       ctx.moveTo(px, 0);
       ctx.lineTo(px, contentHeight);
     }
@@ -260,7 +279,7 @@ function drawAssemblyCanvas({
       ctx.lineTo(contentWidth + 0.5, contentHeight);
     }
     for (let y = 0; y <= height; y += gridInterval) {
-      const py = y * scale + 0.5;
+      const py = y * cellSize + 0.5;
       ctx.moveTo(0, py);
       ctx.lineTo(contentWidth, py);
     }
@@ -269,28 +288,32 @@ function drawAssemblyCanvas({
       ctx.lineTo(contentWidth, contentHeight + 0.5);
     }
     ctx.stroke();
+  } else {
+    ctx.strokeStyle = "rgba(15,23,42,0.16)";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(0.5, 0.5, contentWidth - 1, contentHeight - 1);
   }
 
-  if (showAxis && scale >= 12) {
+  if (showAxis && cellSize >= 12) {
     ctx.save();
     ctx.fillStyle = AXIS_TEXT_COLOR;
-    ctx.font = `${Math.max(10, Math.floor(scale * 0.32))}px Geist, sans-serif`;
+    ctx.font = `600 ${Math.max(10, Math.floor(cellSize * 0.32))}px Geist, sans-serif`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     for (let x = 0; x < width; x += gridInterval) {
       const sourceX = mirrorFlip ? width - x : x + 1;
-      ctx.fillText(String(sourceX), x * scale + scale / 2, -14);
+      ctx.fillText(String(sourceX), x * cellSize + cellSize / 2, -14);
     }
     if ((width - 1) % gridInterval !== 0) {
-      ctx.fillText(String(mirrorFlip ? 1 : width), contentWidth - scale / 2, -14);
+      ctx.fillText(String(mirrorFlip ? 1 : width), contentWidth - cellSize / 2, -14);
     }
 
     ctx.textAlign = "right";
     for (let y = 0; y < height; y += gridInterval) {
-      ctx.fillText(String(y + 1), -8, y * scale + scale / 2);
+      ctx.fillText(String(y + 1), -8, y * cellSize + cellSize / 2);
     }
     if ((height - 1) % gridInterval !== 0) {
-      ctx.fillText(String(height), -8, contentHeight - scale / 2);
+      ctx.fillText(String(height), -8, contentHeight - cellSize / 2);
     }
     ctx.restore();
   }
@@ -299,11 +322,16 @@ function drawAssemblyCanvas({
   ctx.strokeStyle = "rgba(17, 24, 39, 0.35)";
   ctx.strokeRect(0, 0, contentWidth, contentHeight);
   ctx.restore();
+
+  return {
+    dataUrl: canvas.toDataURL("image/png"),
+    width: canvas.width,
+    height: canvas.height,
+  };
 }
 
 export default function AssemblyDialog({ open, onOpenChange }: Props) {
   const { t } = useTranslation();
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const pixels = useEditorStore((state) => state.pixels);
   const width = useEditorStore((state) => state.width);
   const height = useEditorStore((state) => state.height);
@@ -325,6 +353,25 @@ export default function AssemblyDialog({ open, onOpenChange }: Props) {
     () => new Set(persistedSettings.excludedColorCodes.map(normalizeHex))
   );
   const [mirrorFlip, setMirrorFlip] = useState(persistedSettings.mirrorFlip);
+  const [previewScale, setPreviewScale] = useState(1);
+  const [previewOffset, setPreviewOffset] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [previewViewportElement, setPreviewViewportElement] = useState<HTMLDivElement | null>(null);
+  const previewViewportRef = useRef<HTMLDivElement | null>(null);
+  const previewScaleRef = useRef(previewScale);
+  const previewOffsetRef = useRef(previewOffset);
+  const previewGestureRef = useRef<{
+    distance: number;
+    midpoint: { x: number; y: number };
+    scale: number;
+    offset: { x: number; y: number };
+  } | null>(null);
+  const previewDragRef = useRef<{
+    pointerId: number;
+    startX: number;
+    startY: number;
+    offset: { x: number; y: number };
+  } | null>(null);
 
   const steps = useMemo<AssemblyStep[]>(() => {
     const usage = new Map<string, number>();
@@ -351,6 +398,42 @@ export default function AssemblyDialog({ open, onOpenChange }: Props) {
   const activeStep = steps[clampedActiveIndex] ?? null;
   const progress = steps.length === 0 ? 0 : Math.round((completedColors.size / steps.length) * 100);
   const excludedColorCodeList = useMemo(() => Array.from(excludedColorCodes), [excludedColorCodes]);
+  const previewResult = useMemo(
+    () =>
+      steps.length === 0
+        ? null
+        : renderAssemblyPreview({
+            pixels,
+            width,
+            height,
+            activeColor: activeStep?.color ?? null,
+            activeLabel: activeStep?.label ?? null,
+            showGrid,
+            showMinorGrid,
+            gridInterval,
+            gridColor,
+            showAxis,
+            showColorCode,
+            excludedColorCodes,
+            mirrorFlip,
+          }),
+    [
+      activeStep?.color,
+      activeStep?.label,
+      excludedColorCodes,
+      gridColor,
+      gridInterval,
+      height,
+      mirrorFlip,
+      pixels,
+      showAxis,
+      showColorCode,
+      showGrid,
+      showMinorGrid,
+      steps.length,
+      width,
+    ]
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -381,49 +464,24 @@ export default function AssemblyDialog({ open, onOpenChange }: Props) {
   }, [excludedColorCodeList, gridColor, gridInterval, mirrorFlip, showAxis, showColorCode, showGrid, showMinorGrid]);
 
   useEffect(() => {
+    previewScaleRef.current = previewScale;
+  }, [previewScale]);
+
+  useEffect(() => {
+    previewOffsetRef.current = previewOffset;
+  }, [previewOffset]);
+
+  const resetPreviewTransform = () => {
+    previewScaleRef.current = 1;
+    previewOffsetRef.current = { x: 0, y: 0 };
+    setPreviewScale(1);
+    setPreviewOffset({ x: 0, y: 0 });
+  };
+
+  useEffect(() => {
     if (!open) return;
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const render = () => {
-      drawAssemblyCanvas({
-        canvas,
-        pixels,
-        width,
-        height,
-        activeColor: activeStep?.color ?? null,
-        activeLabel: activeStep?.label ?? null,
-        showGrid,
-        showMinorGrid,
-        gridInterval,
-        gridColor,
-        showAxis,
-        showColorCode,
-        excludedColorCodes,
-        mirrorFlip,
-      });
-    };
-
-    render();
-    const resizeObserver = new ResizeObserver(render);
-    if (canvas.parentElement) resizeObserver.observe(canvas.parentElement);
-    return () => resizeObserver.disconnect();
-  }, [
-    activeStep?.color,
-    activeStep?.label,
-    gridColor,
-    gridInterval,
-    height,
-    excludedColorCodes,
-    mirrorFlip,
-    open,
-    pixels,
-    showAxis,
-    showColorCode,
-    showGrid,
-    showMinorGrid,
-    width,
-  ]);
+    queueMicrotask(() => resetPreviewTransform());
+  }, [open, previewResult?.dataUrl]);
 
   const goToStep = (direction: -1 | 1) => {
     setActiveIndex(() => Math.min(Math.max(clampedActiveIndex + direction, 0), Math.max(steps.length - 1, 0)));
@@ -458,6 +516,241 @@ export default function AssemblyDialog({ open, onOpenChange }: Props) {
     setDraftGridInterval([nextValue]);
     setGridInterval(nextValue);
   };
+
+  const zoomPreviewAtPoint = (nextScale: number, anchor: { x: number; y: number }) => {
+    const element = previewViewportRef.current;
+    if (!element) return;
+
+    const rect = element.getBoundingClientRect();
+    const currentScale = previewScaleRef.current;
+    const currentOffset = previewOffsetRef.current;
+    const clampedScale = clampPreviewScale(nextScale);
+    const anchorX = anchor.x - rect.left;
+    const anchorY = anchor.y - rect.top;
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+
+    if (clampedScale === currentScale) return;
+
+    const worldX = (anchorX - centerX - currentOffset.x) / currentScale;
+    const worldY = (anchorY - centerY - currentOffset.y) / currentScale;
+
+    const nextOffset = {
+      x: anchorX - centerX - worldX * clampedScale,
+      y: anchorY - centerY - worldY * clampedScale,
+    };
+
+    previewScaleRef.current = clampedScale;
+    previewOffsetRef.current = nextOffset;
+    setPreviewScale(clampedScale);
+    setPreviewOffset(nextOffset);
+  };
+
+  const panPreviewByDelta = (dx: number, dy: number) => {
+    const nextOffset = {
+      x: previewOffsetRef.current.x - dx * PREVIEW_PAN_SPEED,
+      y: previewOffsetRef.current.y - dy * PREVIEW_PAN_SPEED,
+    };
+    previewOffsetRef.current = nextOffset;
+    setPreviewOffset(nextOffset);
+  };
+
+  const stepPreviewScale = (delta: number) => {
+    const element = previewViewportRef.current;
+    if (!element) return;
+    const rect = element.getBoundingClientRect();
+    zoomPreviewAtPoint(previewScaleRef.current + delta, {
+      x: rect.left + rect.width / 2,
+      y: rect.top + rect.height / 2,
+    });
+  };
+
+  const stopPreviewDrag = () => {
+    previewDragRef.current = null;
+    setIsDragging(false);
+  };
+
+  const handlePreviewPointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    if (!previewResult) return;
+    if (event.pointerType !== "mouse") return;
+    if (event.button !== 0) return;
+    if (event.target instanceof HTMLElement && event.target.closest("button")) return;
+
+    previewDragRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      offset: previewOffsetRef.current,
+    };
+    setIsDragging(true);
+    event.currentTarget.setPointerCapture(event.pointerId);
+    event.preventDefault();
+  };
+
+  const handlePreviewPointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    const drag = previewDragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+
+    const nextOffset = {
+      x: drag.offset.x + (event.clientX - drag.startX),
+      y: drag.offset.y + (event.clientY - drag.startY),
+    };
+
+    previewOffsetRef.current = nextOffset;
+    setPreviewOffset(nextOffset);
+  };
+
+  const handlePreviewPointerUp = (event: PointerEvent<HTMLDivElement>) => {
+    const drag = previewDragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    stopPreviewDrag();
+  };
+
+  const handlePreviewPointerCancel = (event: PointerEvent<HTMLDivElement>) => {
+    const drag = previewDragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    stopPreviewDrag();
+  };
+
+  const handlePreviewTouchStart = (event: TouchEvent<HTMLDivElement>) => {
+    if (!previewResult) return;
+    if (event.touches.length < 2) return;
+
+    event.preventDefault();
+    const element = previewViewportRef.current;
+    if (!element) return;
+    const rect = element.getBoundingClientRect();
+    const midpoint = getTouchMidpoint(event.touches);
+    previewGestureRef.current = {
+      distance: getTouchDistance(event.touches),
+      midpoint: {
+        x: midpoint.x - rect.left,
+        y: midpoint.y - rect.top,
+      },
+      scale: previewScaleRef.current,
+      offset: previewOffsetRef.current,
+    };
+  };
+
+  const handlePreviewTouchMove = (event: TouchEvent<HTMLDivElement>) => {
+    if (!previewResult) return;
+    if (event.touches.length < 2) return;
+
+    event.preventDefault();
+    const start = previewGestureRef.current;
+    const element = previewViewportRef.current;
+    if (!start || !element) return;
+
+    const rect = element.getBoundingClientRect();
+    const currentDistance = getTouchDistance(event.touches);
+    const midpoint = getTouchMidpoint(event.touches);
+    const screenMidpoint = {
+      x: midpoint.x - rect.left,
+      y: midpoint.y - rect.top,
+    };
+
+    if (currentDistance <= 0 || start.distance <= 0) return;
+
+    const nextScale = clampPreviewScale(start.scale * (currentDistance / start.distance));
+    const worldX = (start.midpoint.x - rect.width / 2 - start.offset.x) / start.scale;
+    const worldY = (start.midpoint.y - rect.height / 2 - start.offset.y) / start.scale;
+    const nextOffset = {
+      x: screenMidpoint.x - rect.width / 2 - worldX * nextScale,
+      y: screenMidpoint.y - rect.height / 2 - worldY * nextScale,
+    };
+
+    previewScaleRef.current = nextScale;
+    previewOffsetRef.current = nextOffset;
+    setPreviewScale(nextScale);
+    setPreviewOffset(nextOffset);
+  };
+
+  const handlePreviewTouchEnd = () => {
+    previewGestureRef.current = null;
+  };
+
+  useEffect(() => {
+    if (!open) return;
+    const element = previewViewportElement;
+    if (!element) return;
+
+    const handleNativeWheel = (event: WheelEvent) => {
+      if (!previewResult) return;
+      event.preventDefault();
+      event.stopPropagation();
+      if (event.ctrlKey || event.metaKey || isLikelyMouseWheel(event)) {
+        const factor = Math.exp(-event.deltaY / 80);
+        zoomPreviewAtPoint(previewScaleRef.current * factor, { x: event.clientX, y: event.clientY });
+        return;
+      }
+
+      let dx = event.deltaX;
+      let dy = event.deltaY;
+      if (event.deltaMode === 1) {
+        dx *= 16;
+        dy *= 16;
+      } else if (event.deltaMode === 2) {
+        dx *= element.clientWidth;
+        dy *= element.clientHeight;
+      }
+      panPreviewByDelta(dx, dy);
+    };
+
+    const handleDocumentWheel = (event: WheelEvent) => {
+      if (!previewResult) return;
+      const target = event.target;
+      if (!(target instanceof Node)) return;
+      if (!element.contains(target)) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+      if (event.ctrlKey || event.metaKey || isLikelyMouseWheel(event)) {
+        const factor = Math.exp(-event.deltaY / 80);
+        zoomPreviewAtPoint(previewScaleRef.current * factor, { x: event.clientX, y: event.clientY });
+        return;
+      }
+
+      let dx = event.deltaX;
+      let dy = event.deltaY;
+      if (event.deltaMode === 1) {
+        dx *= 16;
+        dy *= 16;
+      } else if (event.deltaMode === 2) {
+        dx *= element.clientWidth;
+        dy *= element.clientHeight;
+      }
+      panPreviewByDelta(dx, dy);
+    };
+
+    const preventGestureZoom = (event: Event) => {
+      if (!previewResult) return;
+      event.preventDefault();
+      event.stopPropagation();
+    };
+
+    element.addEventListener("wheel", handleNativeWheel, { passive: false });
+    document.addEventListener("wheel", handleDocumentWheel, { passive: false, capture: true });
+    element.addEventListener("gesturestart", preventGestureZoom as EventListener, { passive: false });
+    element.addEventListener("gesturechange", preventGestureZoom as EventListener, { passive: false });
+    element.addEventListener("gestureend", preventGestureZoom as EventListener, { passive: false });
+    document.addEventListener("gesturestart", preventGestureZoom as EventListener, { passive: false, capture: true });
+    document.addEventListener("gesturechange", preventGestureZoom as EventListener, { passive: false, capture: true });
+    document.addEventListener("gestureend", preventGestureZoom as EventListener, { passive: false, capture: true });
+
+    return () => {
+      element.removeEventListener("wheel", handleNativeWheel);
+      document.removeEventListener("wheel", handleDocumentWheel, true);
+      element.removeEventListener("gesturestart", preventGestureZoom as EventListener);
+      element.removeEventListener("gesturechange", preventGestureZoom as EventListener);
+      element.removeEventListener("gestureend", preventGestureZoom as EventListener);
+      document.removeEventListener("gesturestart", preventGestureZoom as EventListener, true);
+      document.removeEventListener("gesturechange", preventGestureZoom as EventListener, true);
+      document.removeEventListener("gestureend", preventGestureZoom as EventListener, true);
+    };
+  }, [open, previewResult, previewViewportElement]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -701,7 +994,69 @@ export default function AssemblyDialog({ open, onOpenChange }: Props) {
                 {t("editor.assembly.empty")}
               </div>
             ) : (
-              <canvas ref={canvasRef} className="block size-full" />
+              <div
+                ref={(node) => {
+                  previewViewportRef.current = node;
+                  setPreviewViewportElement(node);
+                }}
+                className="relative flex h-full w-full items-center justify-center overflow-hidden overscroll-contain bg-[linear-gradient(45deg,#f5f5f5_25%,transparent_25%,transparent_75%,#f5f5f5_75%,#f5f5f5),linear-gradient(45deg,#f5f5f5_25%,transparent_25%,transparent_75%,#f5f5f5_75%,#f5f5f5)] bg-[length:10px_10px] bg-[position:0_0,5px_5px] bg-repeat [touch-action:pan-y] md:[touch-action:none]"
+                onTouchStart={handlePreviewTouchStart}
+                onTouchMove={handlePreviewTouchMove}
+                onTouchEnd={handlePreviewTouchEnd}
+                onTouchCancel={handlePreviewTouchEnd}
+                onPointerDown={handlePreviewPointerDown}
+                onPointerMove={handlePreviewPointerMove}
+                onPointerUp={handlePreviewPointerUp}
+                onPointerCancel={handlePreviewPointerCancel}
+                onLostPointerCapture={stopPreviewDrag}
+                style={{ cursor: previewResult ? (isDragging ? "grabbing" : "grab") : "default" }}
+              >
+                {previewResult ? (
+                  <div className="flex h-full w-full min-h-0 min-w-0 items-center justify-center overflow-hidden p-3">
+                    <img
+                      src={previewResult.dataUrl}
+                      alt={t("editor.assembly.title")}
+                      className="max-h-full max-w-full rounded-xl object-contain border border-black/10 shadow-[0_12px_30px_rgba(15,23,42,0.12),0_2px_8px_rgba(15,23,42,0.08)] [image-rendering:pixelated]"
+                      style={{
+                        transform: `translate(${previewOffset.x}px, ${previewOffset.y}px) scale(${previewScale})`,
+                        transformOrigin: "center center",
+                      }}
+                    />
+                  </div>
+                ) : null}
+
+                <div className="absolute top-3 right-3 flex items-center gap-1 rounded-xl border border-black/10 bg-background/92 p-1.5 shadow-sm backdrop-blur">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 rounded-lg"
+                    onClick={() => stepPreviewScale(-PREVIEW_SCALE_STEP)}
+                    disabled={!previewResult || previewScale <= PREVIEW_MIN_SCALE}
+                  >
+                    <Minus className="size-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="h-8 min-w-14 rounded-lg px-2 text-xs font-semibold tabular-nums"
+                    onClick={resetPreviewTransform}
+                    disabled={!previewResult}
+                  >
+                    {Math.round(previewScale * 100)}%
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 rounded-lg"
+                    onClick={() => stepPreviewScale(PREVIEW_SCALE_STEP)}
+                    disabled={!previewResult || previewScale >= PREVIEW_MAX_SCALE}
+                  >
+                    <Plus className="size-4" />
+                  </Button>
+                </div>
+              </div>
             )}
           </main>
 
