@@ -1098,7 +1098,7 @@ export default function AssemblyDialog({ open, onOpenChange }: Props) {
                   })}
                 </span>
               </div>
-              <div className="h-3 w-full overflow-hidden rounded-full bg-muted">
+              <div className="h-3 w-full overflow-hidden rounded-full border border-gray-400/10 bg-muted">
                 <div
                   className={cn(
                     "h-full rounded-full transition-[width,background-color]",
