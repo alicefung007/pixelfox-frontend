@@ -59,8 +59,14 @@ type RenderResult = {
   height: number;
 };
 
+type AssemblyProgress = {
+  activeIndex: number;
+  completedColors: string[];
+};
+
 const AXIS_TEXT_COLOR = "#94A3B8";
 const ASSEMBLY_SETTINGS_STORAGE_KEY = "pixelfox-assembly-dialog-settings";
+const ASSEMBLY_PROGRESS_STORAGE_KEY_PREFIX = "pixelfox-assembly-progress";
 const PREVIEW_MIN_SCALE = 0.1;
 const PREVIEW_MAX_SCALE = 10;
 const PREVIEW_SCALE_STEP = 0.12;
@@ -105,6 +111,61 @@ function getDefaultPreviewOffset(viewportSize: { width: number; height: number }
 function getFallbackLabel(index: number) {
   const letter = String.fromCharCode(65 + Math.floor(index / 9));
   return `${letter}${(index % 9) + 1}`;
+}
+
+function hashString(value: string) {
+  let hash = 2166136261;
+  for (let i = 0; i < value.length; i++) {
+    hash ^= value.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(36);
+}
+
+function getAssemblyProgressStorageKey({
+  currentPaletteId,
+  height,
+  pixels,
+  width,
+}: {
+  currentPaletteId: string;
+  height: number;
+  pixels: Record<string, string>;
+  width: number;
+}) {
+  const pixelSignature = Object.entries(pixels)
+    .map(([key, color]) => `${key}:${normalizeHex(color)}`)
+    .sort()
+    .join("|");
+  const signature = `${currentPaletteId}:${width}x${height}:${pixelSignature}`;
+  return `${ASSEMBLY_PROGRESS_STORAGE_KEY_PREFIX}:${hashString(signature)}`;
+}
+
+function loadAssemblyProgress(storageKey: string): AssemblyProgress | null {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const raw = window.localStorage.getItem(storageKey);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<AssemblyProgress>;
+    if (!Array.isArray(parsed.completedColors)) return null;
+    return {
+      activeIndex: Number.isFinite(parsed.activeIndex) ? Math.max(0, Math.floor(parsed.activeIndex ?? 0)) : 0,
+      completedColors: parsed.completedColors.map(normalizeHex),
+    };
+  } catch {
+    return null;
+  }
+}
+
+function saveAssemblyProgress(storageKey: string, progress: AssemblyProgress) {
+  if (typeof window === "undefined") return;
+
+  try {
+    window.localStorage.setItem(storageKey, JSON.stringify(progress));
+  } catch {
+    // Ignore storage quota or privacy-mode failures; assembly still works in memory.
+  }
 }
 
 function loadAssemblySettings(): AssemblySettings {
@@ -194,6 +255,7 @@ function renderAssemblyPreview({
   gridInterval,
   gridColor,
   showAxis,
+  showBorder = true,
   showColorCode,
   excludedColorCodes,
   mirrorFlip,
@@ -208,6 +270,7 @@ function renderAssemblyPreview({
   gridInterval: number;
   gridColor: string;
   showAxis: boolean;
+  showBorder?: boolean;
   showColorCode: boolean;
   excludedColorCodes: Set<string>;
   mirrorFlip: boolean;
@@ -310,7 +373,7 @@ function renderAssemblyPreview({
     if (height % gridInterval !== 0) {
       drawHorizontalGridLine(ctx, 0, contentHeight, contentWidth, 2);
     }
-  } else {
+  } else if (showBorder) {
     ctx.strokeStyle = "rgba(15,23,42,0.16)";
     ctx.lineWidth = 1;
     ctx.strokeRect(0.5, 0.5, contentWidth - 1, contentHeight - 1);
@@ -339,10 +402,62 @@ function renderAssemblyPreview({
     ctx.restore();
   }
 
-  ctx.lineWidth = 2;
-  ctx.strokeStyle = "rgba(17, 24, 39, 0.35)";
-  ctx.strokeRect(0, 0, contentWidth, contentHeight);
+  if (showBorder) {
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "rgba(17, 24, 39, 0.35)";
+    ctx.strokeRect(0, 0, contentWidth, contentHeight);
+  }
   ctx.restore();
+
+  return {
+    dataUrl: canvas.toDataURL("image/png"),
+    width: canvas.width,
+    height: canvas.height,
+  };
+}
+
+function renderAssemblyThumbnail({
+  pixels,
+  mirrorFlip,
+  width,
+}: {
+  pixels: Record<string, string>;
+  mirrorFlip: boolean;
+  width: number;
+}): RenderResult | null {
+  if (typeof document === "undefined") return null;
+
+  const entries = Object.entries(pixels)
+    .map(([key, color]) => {
+      const [x, y] = key.split(",").map(Number);
+      const drawX = mirrorFlip ? width - 1 - x : x;
+      return { drawX, y, color };
+    })
+    .filter(({ drawX, y }) => !Number.isNaN(drawX) && !Number.isNaN(y));
+
+  if (entries.length === 0) return null;
+
+  const minX = Math.min(...entries.map(({ drawX }) => drawX));
+  const maxX = Math.max(...entries.map(({ drawX }) => drawX));
+  const minY = Math.min(...entries.map(({ y }) => y));
+  const maxY = Math.max(...entries.map(({ y }) => y));
+  const cellSize = ASSEMBLY_PREVIEW_CELL_SIZE;
+  const contentWidth = (maxX - minX + 1) * cellSize;
+  const contentHeight = (maxY - minY + 1) * cellSize;
+  const canvas = document.createElement("canvas");
+  canvas.width = contentWidth;
+  canvas.height = contentHeight;
+
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.imageSmoothingEnabled = false;
+
+  for (const { drawX, y, color } of entries) {
+    ctx.fillStyle = color;
+    ctx.fillRect((drawX - minX) * cellSize, (y - minY) * cellSize, cellSize, cellSize);
+  }
 
   return {
     dataUrl: canvas.toDataURL("image/png"),
@@ -427,6 +542,16 @@ export default function AssemblyDialog({ open, onOpenChange }: Props) {
     0
   );
   const progress = totalBeadCount === 0 ? 0 : Number(((completedBeadCount / totalBeadCount) * 100).toFixed(2));
+  const assemblyProgressStorageKey = useMemo(
+    () =>
+      getAssemblyProgressStorageKey({
+        currentPaletteId,
+        height,
+        pixels,
+        width,
+      }),
+    [currentPaletteId, height, pixels, width]
+  );
   const excludedColorCodeList = useMemo(() => Array.from(excludedColorCodes), [excludedColorCodes]);
   const previewResult = useMemo(
     () =>
@@ -463,6 +588,17 @@ export default function AssemblyDialog({ open, onOpenChange }: Props) {
       steps.length,
       width,
     ]
+  );
+  const completionPreviewResult = useMemo(
+    () =>
+      steps.length === 0
+        ? null
+        : renderAssemblyThumbnail({
+            pixels,
+            width,
+            mirrorFlip,
+          }),
+    [mirrorFlip, pixels, steps.length, width]
   );
 
   useEffect(() => {
@@ -580,8 +716,37 @@ export default function AssemblyDialog({ open, onOpenChange }: Props) {
     };
   }, [previewResult, viewportSize.width, viewportSize.height]);
 
+  const persistProgress = useCallback(
+    (nextActiveIndex: number, nextCompletedColors: Set<string>) => {
+      saveAssemblyProgress(assemblyProgressStorageKey, {
+        activeIndex: nextActiveIndex,
+        completedColors: Array.from(nextCompletedColors),
+      });
+    },
+    [assemblyProgressStorageKey]
+  );
+
+  const restorePersistedProgress = useCallback(() => {
+    const persisted = loadAssemblyProgress(assemblyProgressStorageKey);
+    const stepColors = new Set(steps.map((step) => normalizeHex(step.color)));
+    const restoredCompletedColors = new Set(
+      (persisted?.completedColors ?? []).filter((color) => stepColors.has(normalizeHex(color)))
+    );
+    const restoredActiveIndex = Math.min(
+      Math.max(persisted?.activeIndex ?? 0, 0),
+      Math.max(steps.length - 1, 0)
+    );
+
+    setActiveIndex(restoredActiveIndex);
+    setCompletedColors(restoredCompletedColors);
+    setCompletionOpen(false);
+    completionShownRef.current = restoredCompletedColors.size > 0 && restoredCompletedColors.size >= steps.length;
+  }, [assemblyProgressStorageKey, steps]);
+
   const goToStep = (direction: -1 | 1) => {
-    setActiveIndex(() => Math.min(Math.max(clampedActiveIndex + direction, 0), Math.max(steps.length - 1, 0)));
+    const nextActiveIndex = Math.min(Math.max(clampedActiveIndex + direction, 0), Math.max(steps.length - 1, 0));
+    setActiveIndex(nextActiveIndex);
+    persistProgress(nextActiveIndex, completedColors);
   };
 
   const markComplete = () => {
@@ -595,11 +760,20 @@ export default function AssemblyDialog({ open, onOpenChange }: Props) {
       next.add(activeStep.color);
       return next;
     });
+    const nextCompletedColors = new Set(completedColors);
+    nextCompletedColors.add(activeStep.color);
+    const nextActiveIndex = Math.min(clampedActiveIndex + 1, Math.max(steps.length - 1, 0));
+    persistProgress(nextActiveIndex, nextCompletedColors);
     if (willComplete && !completionShownRef.current) {
       completionShownRef.current = true;
       setCompletionOpen(true);
     }
-    setActiveIndex(() => Math.min(clampedActiveIndex + 1, Math.max(steps.length - 1, 0)));
+    setActiveIndex(nextActiveIndex);
+  };
+
+  const selectStep = (index: number) => {
+    setActiveIndex(index);
+    persistProgress(index, completedColors);
   };
 
   const handleToggleExcludedColor = (color: string) => {
@@ -874,10 +1048,7 @@ export default function AssemblyDialog({ open, onOpenChange }: Props) {
       <DialogContent
         className="h-[100dvh] w-screen max-w-none translate-x-[-50%] translate-y-[-50%] gap-0 overflow-hidden rounded-none border-0 bg-background p-0 shadow-none"
         onOpenAutoFocus={() => {
-          setActiveIndex(0);
-          setCompletedColors(new Set());
-          setCompletionOpen(false);
-          completionShownRef.current = false;
+          restorePersistedProgress();
           setSettingsOpen(false);
         }}
       >
@@ -1193,7 +1364,7 @@ export default function AssemblyDialog({ open, onOpenChange }: Props) {
                   completedColors={completedColors}
                   onPrevious={() => goToStep(-1)}
                   onNext={() => goToStep(1)}
-                  onSelectStep={setActiveIndex}
+                  onSelectStep={selectStep}
                   onMarkComplete={markComplete}
                   steps={steps}
                   beadCountText={(count) => t("editor.assembly.beadCount", { count })}
@@ -1208,9 +1379,17 @@ export default function AssemblyDialog({ open, onOpenChange }: Props) {
           {completionOpen && (
             <div className="absolute inset-0 z-30 flex items-center justify-center bg-background/70 p-6 backdrop-blur-sm">
               <div className="w-full max-w-sm rounded-xl border border-border/70 bg-background p-6 text-center shadow-xl">
-                <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-emerald-600 text-white shadow-sm">
-                  <Check className="size-7" />
-                </div>
+                {completionPreviewResult ? (
+                  <img
+                    src={completionPreviewResult.dataUrl}
+                    alt={t("editor.assembly.title")}
+                    className="mx-auto h-auto max-h-48 max-w-full rounded-lg border-2 border-gray-400/20 bg-white object-contain [image-rendering:pixelated]"
+                  />
+                ) : (
+                  <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-emerald-600 text-white shadow-sm">
+                    <Check className="size-7" />
+                  </div>
+                )}
                 <div className="mt-4 space-y-2">
                   <h2 className="text-xl font-semibold text-foreground">
                     {t("editor.assembly.completionTitle")}
