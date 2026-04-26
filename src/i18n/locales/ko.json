@@ -151,17 +151,17 @@
     "assembly": {
       "title": "조립",
       "description": "색상별로 패턴을 따라갑니다.",
-      "progress": "Progress",
+      "progress": "진행률",
       "empty": "캔버스가 비어 있습니다",
-      "beadCount": "{{count}} beads",
+      "beadCount": "비즈 {{count}}개",
       "noStep": "색상이 없습니다",
       "settingsTitle": "조립 설정",
       "sectionSettings": "설정",
       "sectionColor": "색상",
       "sectionGrid": "격자",
       "showColorCodeHint": "현재 단계에 색상 코드를 표시합니다",
-      "markComplete": "Mark Complete",
-      "completed": "Completed"
+      "markComplete": "완료로 표시",
+      "completed": "완료됨"
     },
     "exportDialog": {
       "title": "패턴 내보내기",

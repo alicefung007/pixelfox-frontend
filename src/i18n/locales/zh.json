@@ -151,17 +151,17 @@
     "assembly": {
       "title": "组装",
       "description": "按颜色逐步完成图案。",
-      "progress": "Progress",
+      "progress": "进度",
       "empty": "画布为空",
-      "beadCount": "{{count}} beads",
+      "beadCount": "{{count}} 颗",
       "noStep": "没有颜色",
       "settingsTitle": "组装设置",
       "sectionSettings": "设置",
       "sectionColor": "颜色",
       "sectionGrid": "网格",
       "showColorCodeHint": "在当前颜色步骤上显示色号",
-      "markComplete": "Mark Complete",
-      "completed": "Completed"
+      "markComplete": "标记完成",
+      "completed": "已完成"
     },
     "exportDialog": {
       "title": "导出拼豆图",

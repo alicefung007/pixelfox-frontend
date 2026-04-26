@@ -151,17 +151,17 @@
     "assembly": {
       "title": "組み立て",
       "description": "色ごとにパターンを進めます。",
-      "progress": "Progress",
+      "progress": "進捗",
       "empty": "キャンバスが空です",
-      "beadCount": "{{count}} beads",
+      "beadCount": "ビーズ {{count}} 個",
       "noStep": "色がありません",
       "settingsTitle": "組み立て設定",
       "sectionSettings": "設定",
       "sectionColor": "カラー",
       "sectionGrid": "グリッド",
       "showColorCodeHint": "現在の手順に色番号を表示します",
-      "markComplete": "Mark Complete",
-      "completed": "Completed"
+      "markComplete": "完了にする",
+      "completed": "完了"
     },
     "exportDialog": {
       "title": "パターンを書き出し",

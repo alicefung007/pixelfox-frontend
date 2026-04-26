@@ -423,7 +423,7 @@ export default function AssemblyDialog({ open, onOpenChange }: Props) {
     (total, step) => total + (completedColors.has(step.color) ? step.count : 0),
     0
   );
-  const progress = totalBeadCount === 0 ? 0 : Math.round((completedBeadCount / totalBeadCount) * 100);
+  const progress = totalBeadCount === 0 ? 0 : Number(((completedBeadCount / totalBeadCount) * 100).toFixed(2));
   const excludedColorCodeList = useMemo(() => Array.from(excludedColorCodes), [excludedColorCodes]);
   const previewResult = useMemo(
     () =>
@@ -528,8 +528,8 @@ export default function AssemblyDialog({ open, onOpenChange }: Props) {
   const baseImageSize = useMemo(() => {
     if (!previewResult) return null;
     if (viewportSize.width <= 0 || viewportSize.height <= 0) return null;
-    const sW = (viewportSize.width * 0.8) / previewResult.width;
-    const sH = (viewportSize.height * 0.8) / previewResult.height;
+    const sW = (viewportSize.width * 0.9) / previewResult.width;
+    const sH = (viewportSize.height * 0.9) / previewResult.height;
     const scale = Math.min(sW, sH);
     return {
       width: previewResult.width * scale,
@@ -1037,11 +1037,14 @@ export default function AssemblyDialog({ open, onOpenChange }: Props) {
             <div className="mx-auto w-full max-w-[608px] space-y-1.5">
               <div className="flex items-center justify-between text-sm text-muted-foreground">
                 <span>{t("editor.assembly.progress")}</span>
-                <span className="tabular-nums">{progress}%</span>
+                <span className="tabular-nums">{progress.toFixed(2)}%</span>
               </div>
               <div className="h-3 overflow-hidden rounded-full bg-muted">
                 <div
-                  className="h-full rounded-full bg-sky-500 transition-[width]"
+                  className={cn(
+                    "h-full rounded-full transition-[width,background-color]",
+                    progress >= 100 ? "bg-emerald-600" : "bg-primary"
+                  )}
                   style={{ width: `${progress}%` }}
                 />
               </div>
