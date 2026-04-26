@@ -1,6 +1,6 @@
 import { type PointerEvent, type TouchEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Check, ChevronLeft, ChevronRight, Minus, Plus, SlidersHorizontal, X } from "lucide-react";
+import { Check, Minus, Plus, SlidersHorizontal, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -18,6 +18,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
+import AssemblyStepPanel from "@/components/editor/AssemblyStepPanel";
 import { getSystemPalette, type PaletteSwatch } from "@/lib/palettes";
 import {
   clampPatternGridInterval,
@@ -68,6 +69,7 @@ const ASSEMBLY_PREVIEW_MARGIN = 24;
 const ASSEMBLY_PREVIEW_CELL_SIZE = 40;
 const ASSEMBLY_MIN_CELL_SIZE = 8;
 const ASSEMBLY_MAX_EDGE = 122880;
+const ASSEMBLY_STEP_PANEL_BREAKPOINT = 640;
 const DEFAULT_ASSEMBLY_SETTINGS: AssemblySettings = {
   showGrid: true,
   showMinorGrid: true,
@@ -78,6 +80,26 @@ const DEFAULT_ASSEMBLY_SETTINGS: AssemblySettings = {
   excludedColorCodes: [],
   mirrorFlip: false,
 };
+
+function getAssemblyCellLabelFontSize(cellSize: number, labelLength: number) {
+  return Math.max(8, Math.min(14, Math.floor(cellSize / Math.max(labelLength * 0.62, 2.8))));
+}
+
+function getDefaultPreviewOffset(viewportSize: { width: number; height: number }) {
+  if (viewportSize.width <= 0 || viewportSize.height <= 0) return { x: 0, y: 0 };
+
+  if (viewportSize.width < ASSEMBLY_STEP_PANEL_BREAKPOINT) {
+    return {
+      x: 0,
+      y: Math.min(120, Math.round(viewportSize.height * 0.22)),
+    };
+  }
+
+  return {
+    x: -Math.min(200, Math.round(viewportSize.width * 0.18)),
+    y: 0,
+  };
+}
 
 function getFallbackLabel(index: number) {
   const letter = String.fromCharCode(65 + Math.floor(index / 9));
@@ -225,6 +247,7 @@ function renderAssemblyPreview({
   ctx.fillRect(0, 0, contentWidth, contentHeight);
 
   const normalizedActiveColor = activeColor ? normalizeHex(activeColor) : null;
+  const cellLabelFontSize = getAssemblyCellLabelFontSize(cellSize, activeLabel?.length ?? 2);
   for (const [key, color] of Object.entries(pixels)) {
     const [x, y] = key.split(",").map(Number);
     if (Number.isNaN(x) || Number.isNaN(y)) continue;
@@ -246,7 +269,7 @@ function renderAssemblyPreview({
     cellSize >= 20
   ) {
     ctx.save();
-    ctx.font = `700 ${Math.max(8, Math.min(14, Math.floor(cellSize / Math.max(activeLabel.length * 0.62, 2.8))))}px Geist, sans-serif`;
+    ctx.font = `700 ${cellLabelFontSize}px Geist, sans-serif`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillStyle = getContrastText(`#${normalizedActiveColor}`);
@@ -295,7 +318,7 @@ function renderAssemblyPreview({
   if (showAxis && cellSize >= 12) {
     ctx.save();
     ctx.fillStyle = AXIS_TEXT_COLOR;
-    ctx.font = `600 ${Math.max(10, Math.floor(cellSize * 0.32))}px Geist, sans-serif`;
+    ctx.font = `600 ${cellLabelFontSize}px Geist, sans-serif`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     for (let x = 0; x < width; x++) {
@@ -395,7 +418,12 @@ export default function AssemblyDialog({ open, onOpenChange }: Props) {
 
   const clampedActiveIndex = Math.min(activeIndex, Math.max(steps.length - 1, 0));
   const activeStep = steps[clampedActiveIndex] ?? null;
-  const progress = steps.length === 0 ? 0 : Math.round((completedColors.size / steps.length) * 100);
+  const totalBeadCount = steps.reduce((total, step) => total + step.count, 0);
+  const completedBeadCount = steps.reduce(
+    (total, step) => total + (completedColors.has(step.color) ? step.count : 0),
+    0
+  );
+  const progress = totalBeadCount === 0 ? 0 : Math.round((completedBeadCount / totalBeadCount) * 100);
   const excludedColorCodeList = useMemo(() => Array.from(excludedColorCodes), [excludedColorCodes]);
   const previewResult = useMemo(
     () =>
@@ -471,10 +499,15 @@ export default function AssemblyDialog({ open, onOpenChange }: Props) {
   }, [previewOffset]);
 
   const resetPreviewTransform = () => {
+    const element = previewViewportRef.current;
+    const defaultOffset = getDefaultPreviewOffset({
+      width: element?.clientWidth ?? viewportSize.width,
+      height: element?.clientHeight ?? viewportSize.height,
+    });
     previewScaleRef.current = 1;
-    previewOffsetRef.current = { x: 0, y: 0 };
+    previewOffsetRef.current = defaultOffset;
     setPreviewScale(1);
-    setPreviewOffset({ x: 0, y: 0 });
+    setPreviewOffset(defaultOffset);
   };
 
   useEffect(() => {
@@ -596,6 +629,12 @@ export default function AssemblyDialog({ open, onOpenChange }: Props) {
     if (event.pointerType !== "mouse") return;
     if (event.button !== 0) return;
     if (event.target instanceof HTMLElement && event.target.closest("button")) return;
+    if (
+      event.target instanceof Element &&
+      event.target.closest('[data-assembly-step-panel="true"]')
+    ) {
+      return;
+    }
 
     previewDragRef.current = {
       pointerId: event.pointerId,
@@ -724,6 +763,12 @@ export default function AssemblyDialog({ open, onOpenChange }: Props) {
       if (!previewResult) return;
       const target = event.target;
       if (!(target instanceof Node)) return;
+      if (
+        target instanceof Element &&
+        target.closest('[data-assembly-step-panel="true"]')
+      ) {
+        return;
+      }
       if (!element.contains(target)) return;
 
       event.preventDefault();
@@ -786,7 +831,7 @@ export default function AssemblyDialog({ open, onOpenChange }: Props) {
         <DialogTitle className="sr-only">{t("editor.assembly.title")}</DialogTitle>
         <DialogDescription className="sr-only">{t("editor.assembly.description")}</DialogDescription>
 
-        <div className="grid h-full grid-rows-[72px_1fr_70px] bg-slate-50">
+        <div className="grid h-full grid-rows-[72px_1fr] bg-slate-50">
           <header className="grid grid-cols-[96px_1fr_96px] items-center border-b bg-background px-5">
             <Popover open={settingsOpen} onOpenChange={setSettingsOpen}>
               <PopoverTrigger asChild>
@@ -1048,7 +1093,7 @@ export default function AssemblyDialog({ open, onOpenChange }: Props) {
                   </div>
                 ) : null}
 
-                <div className="absolute top-3 right-3 flex items-center gap-1 rounded-xl border border-black/10 bg-background/92 p-1.5 shadow-sm backdrop-blur">
+                <div className="absolute right-3 bottom-3 flex items-center gap-1 rounded-xl border border-black/10 bg-background/92 p-1.5 shadow-sm backdrop-blur">
                   <Button
                     type="button"
                     variant="ghost"
@@ -1079,62 +1124,24 @@ export default function AssemblyDialog({ open, onOpenChange }: Props) {
                     <Plus className="size-4" />
                   </Button>
                 </div>
+
+                <AssemblyStepPanel
+                  activeIndex={clampedActiveIndex}
+                  activeStep={activeStep}
+                  completedColors={completedColors}
+                  onPrevious={() => goToStep(-1)}
+                  onNext={() => goToStep(1)}
+                  onSelectStep={setActiveIndex}
+                  onMarkComplete={markComplete}
+                  steps={steps}
+                  beadCountText={(count) => t("editor.assembly.beadCount", { count })}
+                  emptyText={t("editor.assembly.noStep")}
+                  markCompleteText={t("editor.assembly.markComplete")}
+                  completedText={t("editor.assembly.completed")}
+                />
               </div>
             )}
           </main>
-
-          <footer className="grid grid-cols-[1fr_auto_1fr] items-center border-t bg-background/95 px-4 shadow-[0_-8px_24px_rgba(15,23,42,0.06)] backdrop-blur">
-            <Button
-              variant="outline"
-              size="icon"
-              className="size-12 justify-self-end rounded-lg"
-              disabled={clampedActiveIndex === 0 || steps.length === 0}
-              onClick={() => goToStep(-1)}
-            >
-              <ChevronLeft className="size-5" />
-            </Button>
-
-            <div className="mx-8 flex min-w-0 items-center gap-6">
-              <div className="flex min-w-[150px] items-center gap-3">
-                <span
-                  className="size-10 shrink-0 rounded-md border-2 border-gray-400/20"
-                  style={{ backgroundColor: activeStep ? `#${activeStep.color}` : "transparent" }}
-                />
-                <span className="min-w-0">
-                  <span className="block text-xl font-bold leading-5 text-foreground">
-                    {activeStep?.label ?? "--"}
-                  </span>
-                  <span className="block truncate text-sm text-muted-foreground">
-                    {activeStep ? t("editor.assembly.beadCount", { count: activeStep.count }) : t("editor.assembly.noStep")}
-                  </span>
-                </span>
-              </div>
-
-              <Button
-                className={cn(
-                  "h-11 min-w-[202px] rounded-md bg-pink-600 px-5 text-base font-semibold text-white shadow-sm hover:bg-pink-600/90",
-                  activeStep && completedColors.has(activeStep.color) && "bg-emerald-600 hover:bg-emerald-600/90"
-                )}
-                disabled={!activeStep}
-                onClick={markComplete}
-              >
-                <Check className="size-5" />
-                {activeStep && completedColors.has(activeStep.color)
-                  ? t("editor.assembly.completed")
-                  : t("editor.assembly.markComplete")}
-              </Button>
-            </div>
-
-            <Button
-              variant="outline"
-              size="icon"
-              className="size-12 justify-self-start rounded-lg"
-              disabled={clampedActiveIndex >= steps.length - 1 || steps.length === 0}
-              onClick={() => goToStep(1)}
-            >
-              <ChevronRight className="size-5" />
-            </Button>
-          </footer>
         </div>
       </DialogContent>
     </Dialog>
