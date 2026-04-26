@@ -152,6 +152,7 @@
       "title": "Assembly",
       "description": "Follow the pattern color by color.",
       "progress": "Progress",
+      "progressBeadCount": "({{completed}}/{{total}} beads)",
       "empty": "Canvas is empty",
       "beadCount": "{{count}} beads",
       "noStep": "No colors",
@@ -161,7 +162,11 @@
       "sectionGrid": "Grid",
       "showColorCodeHint": "Show the active color code on the current step",
       "markComplete": "Mark Complete",
-      "completed": "Completed"
+      "completed": "Completed",
+      "completionTitle": "All done",
+      "completionDescription": "Every assembly step is complete.",
+      "completionStats": "Completed {{count}} beads",
+      "completionDismiss": "Continue"
     },
     "exportDialog": {
       "title": "Export Pattern",

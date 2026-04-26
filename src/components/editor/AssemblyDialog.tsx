@@ -1,4 +1,5 @@
-import { type PointerEvent, type TouchEvent, useEffect, useMemo, useRef, useState } from "react";
+import { type PointerEvent, type TouchEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import confetti from "canvas-confetti";
 import { useTranslation } from "react-i18next";
 import { Check, Minus, Plus, SlidersHorizontal, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -357,6 +358,7 @@ export default function AssemblyDialog({ open, onOpenChange }: Props) {
   const height = useEditorStore((state) => state.height);
   const currentPaletteId = usePaletteStore((state) => state.currentPaletteId);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [completionOpen, setCompletionOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const [completedColors, setCompletedColors] = useState<Set<string>>(() => new Set());
   const currentPalette = useMemo(() => getSystemPalette(currentPaletteId), [currentPaletteId]);
@@ -393,6 +395,7 @@ export default function AssemblyDialog({ open, onOpenChange }: Props) {
     startY: number;
     offset: { x: number; y: number };
   } | null>(null);
+  const completionShownRef = useRef(false);
 
   const steps = useMemo<AssemblyStep[]>(() => {
     const usage = new Map<string, number>();
@@ -463,6 +466,46 @@ export default function AssemblyDialog({ open, onOpenChange }: Props) {
   );
 
   useEffect(() => {
+    if (!completionOpen) return;
+
+    const fire = (options: confetti.Options) => {
+      void confetti({
+        disableForReducedMotion: true,
+        ...options,
+      });
+    };
+
+    fire({
+      particleCount: 90,
+      spread: 70,
+      origin: { x: 0.5, y: 0.62 },
+    });
+
+    const bursts = [
+      window.setTimeout(() => {
+        fire({
+          particleCount: 45,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0.08, y: 0.72 },
+        });
+      }, 180),
+      window.setTimeout(() => {
+        fire({
+          particleCount: 45,
+          angle: 120,
+          spread: 55,
+          origin: { x: 0.92, y: 0.72 },
+        });
+      }, 280),
+    ];
+
+    return () => {
+      bursts.forEach(window.clearTimeout);
+    };
+  }, [completionOpen]);
+
+  useEffect(() => {
     if (!open) return;
     const defaultColor = nearWhiteSwatches[0]?.color;
     queueMicrotask(() => {
@@ -498,7 +541,7 @@ export default function AssemblyDialog({ open, onOpenChange }: Props) {
     previewOffsetRef.current = previewOffset;
   }, [previewOffset]);
 
-  const resetPreviewTransform = () => {
+  const resetPreviewTransform = useCallback(() => {
     const element = previewViewportRef.current;
     const defaultOffset = getDefaultPreviewOffset({
       width: element?.clientWidth ?? viewportSize.width,
@@ -508,12 +551,12 @@ export default function AssemblyDialog({ open, onOpenChange }: Props) {
     previewOffsetRef.current = defaultOffset;
     setPreviewScale(1);
     setPreviewOffset(defaultOffset);
-  };
+  }, [viewportSize.height, viewportSize.width]);
 
   useEffect(() => {
     if (!open) return;
     queueMicrotask(() => resetPreviewTransform());
-  }, [open]);
+  }, [open, resetPreviewTransform]);
 
   useEffect(() => {
     const el = previewViewportElement;
@@ -543,11 +586,19 @@ export default function AssemblyDialog({ open, onOpenChange }: Props) {
 
   const markComplete = () => {
     if (!activeStep) return;
+    const alreadyCompleted = completedColors.has(activeStep.color);
+    const nextCompletedBeadCount = alreadyCompleted ? completedBeadCount : completedBeadCount + activeStep.count;
+    const willComplete = totalBeadCount > 0 && nextCompletedBeadCount >= totalBeadCount;
+
     setCompletedColors((current) => {
       const next = new Set(current);
       next.add(activeStep.color);
       return next;
     });
+    if (willComplete && !completionShownRef.current) {
+      completionShownRef.current = true;
+      setCompletionOpen(true);
+    }
     setActiveIndex(() => Math.min(clampedActiveIndex + 1, Math.max(steps.length - 1, 0)));
   };
 
@@ -825,14 +876,16 @@ export default function AssemblyDialog({ open, onOpenChange }: Props) {
         onOpenAutoFocus={() => {
           setActiveIndex(0);
           setCompletedColors(new Set());
+          setCompletionOpen(false);
+          completionShownRef.current = false;
           setSettingsOpen(false);
         }}
       >
         <DialogTitle className="sr-only">{t("editor.assembly.title")}</DialogTitle>
         <DialogDescription className="sr-only">{t("editor.assembly.description")}</DialogDescription>
 
-        <div className="grid h-full grid-rows-[72px_1fr] bg-slate-50">
-          <header className="grid grid-cols-[96px_1fr_96px] items-center border-b bg-background px-5">
+        <div className="relative grid h-full grid-rows-[72px_1fr] bg-slate-50">
+          <header className="grid grid-cols-[52px_minmax(0,1fr)_52px] items-center border-b bg-background px-3 sm:grid-cols-[96px_minmax(0,1fr)_96px] sm:px-5">
             <Popover open={settingsOpen} onOpenChange={setSettingsOpen}>
               <PopoverTrigger asChild>
                 <Button
@@ -1034,12 +1087,18 @@ export default function AssemblyDialog({ open, onOpenChange }: Props) {
               </PopoverContent>
             </Popover>
 
-            <div className="mx-auto w-full max-w-[608px] space-y-1.5">
-              <div className="flex items-center justify-between text-sm text-muted-foreground">
-                <span>{t("editor.assembly.progress")}</span>
-                <span className="tabular-nums">{progress.toFixed(2)}%</span>
+            <div className="mx-auto flex w-full max-w-[608px] min-w-0 flex-col items-center gap-1.5">
+              <div className="flex max-w-full flex-wrap items-center justify-center gap-x-1.5 gap-y-0 text-center text-sm leading-tight text-muted-foreground">
+                <span className="shrink-0">{t("editor.assembly.progress")}</span>
+                <span className="shrink-0 tabular-nums">{progress.toFixed(2)}%</span>
+                <span className="shrink-0 text-xs tabular-nums">
+                  {t("editor.assembly.progressBeadCount", {
+                    completed: completedBeadCount,
+                    total: totalBeadCount,
+                  })}
+                </span>
               </div>
-              <div className="h-3 overflow-hidden rounded-full bg-muted">
+              <div className="h-3 w-full overflow-hidden rounded-full bg-muted">
                 <div
                   className={cn(
                     "h-full rounded-full transition-[width,background-color]",
@@ -1145,6 +1204,30 @@ export default function AssemblyDialog({ open, onOpenChange }: Props) {
               </div>
             )}
           </main>
+
+          {completionOpen && (
+            <div className="absolute inset-0 z-30 flex items-center justify-center bg-background/70 p-6 backdrop-blur-sm">
+              <div className="w-full max-w-sm rounded-xl border border-border/70 bg-background p-6 text-center shadow-xl">
+                <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-emerald-600 text-white shadow-sm">
+                  <Check className="size-7" />
+                </div>
+                <div className="mt-4 space-y-2">
+                  <h2 className="text-xl font-semibold text-foreground">
+                    {t("editor.assembly.completionTitle")}
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    {t("editor.assembly.completionDescription")}
+                  </p>
+                </div>
+                <div className="mt-5 rounded-lg bg-muted px-4 py-3 text-sm font-semibold tabular-nums text-foreground">
+                  {t("editor.assembly.completionStats", { count: totalBeadCount })}
+                </div>
+                <Button className="mt-5 w-full" onClick={() => setCompletionOpen(false)}>
+                  {t("editor.assembly.completionDismiss")}
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>

@@ -152,6 +152,7 @@
       "title": "組み立て",
       "description": "色ごとにパターンを進めます。",
       "progress": "進捗",
+      "progressBeadCount": "({{completed}}/{{total}} 個)",
       "empty": "キャンバスが空です",
       "beadCount": "ビーズ {{count}} 個",
       "noStep": "色がありません",
@@ -161,7 +162,11 @@
       "sectionGrid": "グリッド",
       "showColorCodeHint": "現在の手順に色番号を表示します",
       "markComplete": "完了にする",
-      "completed": "完了"
+      "completed": "完了",
+      "completionTitle": "すべて完了",
+      "completionDescription": "すべての組み立て手順が完了しました。",
+      "completionStats": "ビーズ {{count}} 個を完了",
+      "completionDismiss": "続ける"
     },
     "exportDialog": {
       "title": "パターンを書き出し",

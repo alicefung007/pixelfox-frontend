@@ -152,6 +152,7 @@
       "title": "组装",
       "description": "按颜色逐步完成图案。",
       "progress": "进度",
+      "progressBeadCount": "({{completed}}/{{total}} 颗)",
       "empty": "画布为空",
       "beadCount": "{{count}} 颗",
       "noStep": "没有颜色",
@@ -161,7 +162,11 @@
       "sectionGrid": "网格",
       "showColorCodeHint": "在当前颜色步骤上显示色号",
       "markComplete": "标记完成",
-      "completed": "已完成"
+      "completed": "已完成",
+      "completionTitle": "全部完成",
+      "completionDescription": "所有组装步骤都已完成。",
+      "completionStats": "已完成 {{count}} 颗",
+      "completionDismiss": "继续"
     },
     "exportDialog": {
       "title": "导出拼豆图",
