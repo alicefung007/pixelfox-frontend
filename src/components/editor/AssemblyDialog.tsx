@@ -1383,7 +1383,7 @@ export default function AssemblyDialog({ open, onOpenChange }: Props) {
                   <img
                     src={completionPreviewResult.dataUrl}
                     alt={t("editor.assembly.title")}
-                    className="mx-auto h-auto max-h-48 max-w-full rounded-lg border-2 border-gray-400/20 bg-white object-contain [image-rendering:pixelated]"
+                    className="mx-auto h-auto max-h-48 max-w-full bg-white object-contain [image-rendering:pixelated]"
                   />
                 ) : (
                   <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-emerald-600 text-white shadow-sm">
