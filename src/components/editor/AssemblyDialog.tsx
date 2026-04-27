@@ -5,7 +5,6 @@ import { Check, Minus, Plus, SlidersHorizontal, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogDescription,
   DialogTitle,
@@ -32,8 +31,9 @@ import { useEditorStore } from "@/store/useEditorStore";
 import { usePaletteStore } from "@/store/usePaletteStore";
 
 type Props = {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  standalone?: boolean;
 };
 
 type AssemblyStep = {
@@ -466,7 +466,7 @@ function renderAssemblyThumbnail({
   };
 }
 
-export default function AssemblyDialog({ open, onOpenChange }: Props) {
+export default function AssemblyDialog({ open = true, onOpenChange, standalone = false }: Props) {
   const { t } = useTranslation();
   const pixels = useEditorStore((state) => state.pixels);
   const width = useEditorStore((state) => state.width);
@@ -511,6 +511,7 @@ export default function AssemblyDialog({ open, onOpenChange }: Props) {
     offset: { x: number; y: number };
   } | null>(null);
   const completionShownRef = useRef(false);
+  const handleClose = () => onOpenChange?.(false);
 
   const steps = useMemo<AssemblyStep[]>(() => {
     const usage = new Map<string, number>();
@@ -742,6 +743,14 @@ export default function AssemblyDialog({ open, onOpenChange }: Props) {
     setCompletionOpen(false);
     completionShownRef.current = restoredCompletedColors.size > 0 && restoredCompletedColors.size >= steps.length;
   }, [assemblyProgressStorageKey, steps]);
+
+  useEffect(() => {
+    if (!open) return;
+    queueMicrotask(() => {
+      restorePersistedProgress();
+      setSettingsOpen(false);
+    });
+  }, [open, restorePersistedProgress]);
 
   const goToStep = (direction: -1 | 1) => {
     const nextActiveIndex = Math.min(Math.max(clampedActiveIndex + direction, 0), Math.max(steps.length - 1, 0));
@@ -1043,17 +1052,19 @@ export default function AssemblyDialog({ open, onOpenChange }: Props) {
     };
   }, [open, previewResult, previewViewportElement]);
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className="h-[100dvh] w-screen max-w-none translate-x-[-50%] translate-y-[-50%] gap-0 overflow-hidden rounded-none border-0 bg-background p-0 shadow-none"
-        onOpenAutoFocus={() => {
-          restorePersistedProgress();
-          setSettingsOpen(false);
-        }}
-      >
-        <DialogTitle className="sr-only">{t("editor.assembly.title")}</DialogTitle>
-        <DialogDescription className="sr-only">{t("editor.assembly.description")}</DialogDescription>
+  const content = (
+    <>
+      {standalone ? (
+        <>
+          <h1 className="sr-only">{t("editor.assembly.title")}</h1>
+          <p className="sr-only">{t("editor.assembly.description")}</p>
+        </>
+      ) : (
+        <>
+          <DialogTitle className="sr-only">{t("editor.assembly.title")}</DialogTitle>
+          <DialogDescription className="sr-only">{t("editor.assembly.description")}</DialogDescription>
+        </>
+      )}
 
         <div className="relative grid h-full grid-rows-[72px_1fr] bg-slate-50">
           <header className="grid grid-cols-[52px_minmax(0,1fr)_52px] items-center border-b bg-background px-3 sm:grid-cols-[96px_minmax(0,1fr)_96px] sm:px-5">
@@ -1280,11 +1291,14 @@ export default function AssemblyDialog({ open, onOpenChange }: Props) {
               </div>
             </div>
 
-            <DialogClose asChild>
-              <Button variant="ghost" size="icon" className="size-10 justify-self-end rounded-full">
-                <X className="size-5" />
-              </Button>
-            </DialogClose>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-10 justify-self-end rounded-full"
+              onClick={handleClose}
+            >
+              <X className="size-5" />
+            </Button>
           </header>
 
           <main className="relative min-h-0 overflow-hidden">
@@ -1408,6 +1422,17 @@ export default function AssemblyDialog({ open, onOpenChange }: Props) {
             </div>
           )}
         </div>
+    </>
+  );
+
+  if (standalone) {
+    return <div className="h-full w-full overflow-hidden bg-background">{content}</div>;
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="h-[100dvh] w-screen max-w-none translate-x-[-50%] translate-y-[-50%] gap-0 overflow-hidden rounded-none border-0 bg-background p-0 shadow-none">
+        {content}
       </DialogContent>
     </Dialog>
   );

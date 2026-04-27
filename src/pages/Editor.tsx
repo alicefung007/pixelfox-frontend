@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useOutletContext } from "react-router-dom";
+import { useNavigate, useOutletContext } from "react-router-dom";
 import PixelCanvas from "@/components/editor/PixelCanvas";
 import MobileEditorQuickActions from "@/components/editor/MobileEditorQuickActions";
 import PalettePanel from "@/components/palette/PalettePanel";
@@ -8,7 +8,6 @@ import Sidebar from "@/components/layout/Sidebar";
 import UploadPhotoDialog from "@/components/editor/UploadPhotoDialog";
 import Preview3DDialog from "@/components/editor/Preview3DDialog";
 import ExportPatternDialog from "@/components/editor/ExportPatternDialog";
-import AssemblyDialog from "@/components/editor/AssemblyDialog";
 import { useToolShortcuts } from "@/hooks/useToolShortcuts";
 import type { ColorMatchResult } from "@/lib/image-processor";
 import type { SystemPaletteId } from "@/lib/palettes";
@@ -30,8 +29,8 @@ type EditorContext = {
 
 export default function Editor() {
   useToolShortcuts();
+  const navigate = useNavigate();
   const { sidebarOpen, setSidebarOpen, uploadOpen, setUploadOpen, exportOpen, setExportOpen, handleGenerate } = useOutletContext<EditorContext>();
-  const [assemblyOpen, setAssemblyOpen] = useState(false);
   const [preview3DOpen, setPreview3DOpen] = useState(false);
   const [replaceSourceColor, setReplaceSourceColor] = useState<string | null>(null);
   const [isDesktopViewport, setIsDesktopViewport] = useState(() => {
@@ -59,7 +58,7 @@ export default function Editor() {
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         onUpload={() => setUploadOpen(true)}
-        onAssembly={() => setAssemblyOpen(true)}
+        onAssembly={() => navigate("/assembly")}
         onPreview3D={() => setPreview3DOpen(true)}
         onExport={() => setExportOpen(true)}
       />
@@ -110,7 +109,6 @@ export default function Editor() {
       </div>
 
       <UploadPhotoDialog open={uploadOpen} onOpenChange={setUploadOpen} onGenerate={handleGenerate} />
-      <AssemblyDialog open={assemblyOpen} onOpenChange={setAssemblyOpen} />
       <Preview3DDialog open={preview3DOpen} onOpenChange={setPreview3DOpen} />
       <ExportPatternDialog open={exportOpen} onOpenChange={setExportOpen} />
       <PaletteReplaceColorDialog

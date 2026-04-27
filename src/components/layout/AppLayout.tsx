@@ -15,6 +15,7 @@ export default function AppLayout() {
   const { t } = useTranslation();
   const location = useLocation();
   const isEditorPage = location.pathname === "/";
+  const showNavbar = location.pathname !== "/assembly";
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const setPixels = useEditorStore((state) => state.setPixels);
@@ -75,7 +76,9 @@ export default function AppLayout() {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-background">
-      <Navbar onMenuClick={isEditorPage ? () => setSidebarOpen(!sidebarOpen) : undefined} />
+      {showNavbar && (
+        <Navbar onMenuClick={isEditorPage ? () => setSidebarOpen(!sidebarOpen) : undefined} />
+      )}
       <Toaster position="top-right" />
       <main className="flex-1 flex flex-col relative overflow-hidden">
         <Outlet context={{
