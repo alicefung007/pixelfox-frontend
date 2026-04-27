@@ -761,17 +761,24 @@ export default function AssemblyDialog({ open = true, onOpenChange, standalone =
   const markComplete = () => {
     if (!activeStep) return;
     const alreadyCompleted = completedColors.has(activeStep.color);
-    const nextCompletedBeadCount = alreadyCompleted ? completedBeadCount : completedBeadCount + activeStep.count;
+    const nextCompletedColors = new Set(completedColors);
+    let nextActiveIndex = clampedActiveIndex;
+
+    if (alreadyCompleted) {
+      nextCompletedColors.delete(activeStep.color);
+      setCompletionOpen(false);
+      completionShownRef.current = false;
+    } else {
+      nextCompletedColors.add(activeStep.color);
+      nextActiveIndex = Math.min(clampedActiveIndex + 1, Math.max(steps.length - 1, 0));
+    }
+
+    const nextCompletedBeadCount = alreadyCompleted
+      ? completedBeadCount - activeStep.count
+      : completedBeadCount + activeStep.count;
     const willComplete = totalBeadCount > 0 && nextCompletedBeadCount >= totalBeadCount;
 
-    setCompletedColors((current) => {
-      const next = new Set(current);
-      next.add(activeStep.color);
-      return next;
-    });
-    const nextCompletedColors = new Set(completedColors);
-    nextCompletedColors.add(activeStep.color);
-    const nextActiveIndex = Math.min(clampedActiveIndex + 1, Math.max(steps.length - 1, 0));
+    setCompletedColors(nextCompletedColors);
     persistProgress(nextActiveIndex, nextCompletedColors);
     if (willComplete && !completionShownRef.current) {
       completionShownRef.current = true;
