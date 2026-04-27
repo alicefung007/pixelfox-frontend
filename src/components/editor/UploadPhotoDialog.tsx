@@ -37,6 +37,9 @@ type Props = {
   onGenerate: (result: ColorMatchResult, paletteId: SystemPaletteId) => void;
 };
 
+const extractionTabTriggerClass =
+  "h-7 min-w-0 cursor-pointer gap-1.5 rounded-md px-1.5 text-xs font-medium text-muted-foreground transition-all hover:bg-accent/70 hover:text-foreground data-active:bg-muted data-active:text-foreground sm:px-2.5";
+
 function trimColorMatchResult(result: ColorMatchResult): ColorMatchResult {
   if (result.width <= 1 || result.height <= 1) {
     return result;
@@ -549,15 +552,15 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
               <h3 className="text-sm font-semibold">{t("editor.uploadDialog.extraction")}</h3>
 
               <Tabs value={extractionQuality} onValueChange={setExtractionQuality} className="w-full">
-                <TabsList className="w-full grid grid-cols-3 h-9 bg-muted/30 p-1 rounded-xl">
-                  <TabsTrigger value="recommended" className="text-[11px] rounded-lg data-[state=active]:shadow-sm">
-                    {t("editor.uploadDialog.qualityRecommended")}
+                <TabsList className="grid h-auto w-full grid-cols-3 gap-1 rounded-lg border bg-background/95 p-0.5 backdrop-blur-sm">
+                  <TabsTrigger value="recommended" className={extractionTabTriggerClass}>
+                    <span className="min-w-0 truncate">{t("editor.uploadDialog.qualityRecommended")}</span>
                   </TabsTrigger>
-                  <TabsTrigger value="average" className="text-[11px] rounded-lg data-[state=active]:shadow-sm">
-                    {t("editor.uploadDialog.qualityAverage")}
+                  <TabsTrigger value="average" className={extractionTabTriggerClass}>
+                    <span className="min-w-0 truncate">{t("editor.uploadDialog.qualityAverage")}</span>
                   </TabsTrigger>
-                  <TabsTrigger value="high" className="text-[11px] rounded-lg data-[state=active]:shadow-sm">
-                    {t("editor.uploadDialog.qualityHigh")}
+                  <TabsTrigger value="high" className={extractionTabTriggerClass}>
+                    <span className="min-w-0 truncate">{t("editor.uploadDialog.qualityHigh")}</span>
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
