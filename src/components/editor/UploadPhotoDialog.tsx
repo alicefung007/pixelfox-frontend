@@ -13,7 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ButtonGroup, ButtonGroupButton } from "@/components/ui/button-group";
 import { Switch } from "@/components/ui/switch";
 import {
   Popover,
@@ -37,8 +37,14 @@ type Props = {
   onGenerate: (result: ColorMatchResult, paletteId: SystemPaletteId) => void;
 };
 
-const extractionTabTriggerClass =
+const extractionButtonClass =
   "h-7 min-w-0 cursor-pointer gap-1.5 rounded-md px-1.5 text-xs font-medium text-muted-foreground transition-all hover:bg-accent/70 hover:text-foreground data-active:bg-muted data-active:text-foreground sm:px-2.5";
+
+const extractionQualityOptions = [
+  { value: "recommended", labelKey: "editor.uploadDialog.qualityRecommended" },
+  { value: "average", labelKey: "editor.uploadDialog.qualityAverage" },
+  { value: "high", labelKey: "editor.uploadDialog.qualityHigh" },
+];
 
 function trimColorMatchResult(result: ColorMatchResult): ColorMatchResult {
   if (result.width <= 1 || result.height <= 1) {
@@ -551,19 +557,23 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
             <div className="space-y-4">
               <h3 className="text-sm font-semibold">{t("editor.uploadDialog.extraction")}</h3>
 
-              <Tabs value={extractionQuality} onValueChange={setExtractionQuality} className="w-full">
-                <TabsList className="grid h-auto w-full grid-cols-3 gap-1 rounded-lg border bg-background/95 p-0.5 backdrop-blur-sm">
-                  <TabsTrigger value="recommended" className={extractionTabTriggerClass}>
-                    <span className="min-w-0 truncate">{t("editor.uploadDialog.qualityRecommended")}</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="average" className={extractionTabTriggerClass}>
-                    <span className="min-w-0 truncate">{t("editor.uploadDialog.qualityAverage")}</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="high" className={extractionTabTriggerClass}>
-                    <span className="min-w-0 truncate">{t("editor.uploadDialog.qualityHigh")}</span>
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
+              <ButtonGroup className="grid h-auto w-full grid-cols-3 gap-1 border bg-background/95 p-0.5 backdrop-blur-sm">
+                {extractionQualityOptions.map((option) => {
+                  const isActive = extractionQuality === option.value;
+
+                  return (
+                    <ButtonGroupButton
+                      key={option.value}
+                      aria-pressed={isActive}
+                      data-active={isActive ? true : undefined}
+                      onClick={() => setExtractionQuality(option.value)}
+                      className={extractionButtonClass}
+                    >
+                      <span className="min-w-0 truncate">{t(option.labelKey)}</span>
+                    </ButtonGroupButton>
+                  );
+                })}
+              </ButtonGroup>
 
               <div className="space-y-2">
                 <Label className="text-[11px] font-semibold">{t("editor.uploadDialog.colorManagement")}</Label>
