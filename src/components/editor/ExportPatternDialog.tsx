@@ -149,6 +149,7 @@ const PREVIEW_SCALE_STEP = 0.12;
 const PREVIEW_PAN_SPEED = 1;
 const EXPORT_DIALOG_SETTINGS_STORAGE_KEY = "pixelfox-export-dialog-settings";
 const BRAND_LOGO_SRC = "/logo_with_name.png";
+const BRAND_COMPACT_LOGO_SRC = "/logo.png";
 const BRAND_BUILDER_LABEL = "BUILDER";
 const BRAND_DOMAIN_TEXT = "pixelfox.art";
 const HEADER_SCALE_BASE_WIDTH = 30;
@@ -574,6 +575,7 @@ function renderPatternImage(options: {
   mirrorFlip: boolean;
   summaryLabels: { palette: string; size: string; beadCount: string };
   logoImage: HTMLImageElement | null;
+  compactLogoImage: HTMLImageElement | null;
 }): RenderResult | null {
   if (typeof document === "undefined") return null;
 
@@ -598,6 +600,7 @@ function renderPatternImage(options: {
     mirrorFlip,
     summaryLabels,
     logoImage,
+    compactLogoImage,
   } = options;
   const excludedColorCodeSet = new Set(excludedColorCodes.map(normalizeHex));
 
@@ -629,7 +632,8 @@ function renderPatternImage(options: {
   const measureCanvas = document.createElement("canvas");
   const measureCtx = measureCanvas.getContext("2d");
   if (!measureCtx) return null;
-  const brandLogoWidth = getBrandLogoWidth(logoImage, headerMetrics);
+  const brandImage = cols <= 10 ? compactLogoImage : logoImage;
+  const brandLogoWidth = getBrandLogoWidth(brandImage, headerMetrics);
   const headerStats = getHeaderStats(summaryInfo, summaryLabels);
   const headerStatsGap = Math.max(20, Math.round(headerMetrics.headerPaddingX * 0.8));
   const getHeaderStatsBounds = (renderWidth: number) => ({
@@ -688,7 +692,7 @@ function renderPatternImage(options: {
   ctx.fillRect(0, headerMetrics.headerHeight - 1, exportWidth, 1);
 
   const brandIconY = (headerMetrics.headerHeight - headerMetrics.logoHeight) / 2;
-  drawBrandIcon(ctx, headerMetrics.headerPaddingX, brandIconY, themePrimaryColor, logoImage, headerMetrics);
+  drawBrandIcon(ctx, headerMetrics.headerPaddingX, brandIconY, themePrimaryColor, brandImage, headerMetrics);
 
   const headerStatsBounds = getHeaderStatsBounds(exportWidth);
   const headerStatsHeight =
@@ -927,6 +931,7 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
   const [excludedColorCodes, setExcludedColorCodes] = useState<Set<string>>(() => new Set());
   const [mirrorFlip, setMirrorFlip] = useState(persistedSettings.mirrorFlip);
   const [brandLogoImage, setBrandLogoImage] = useState<HTMLImageElement | null>(null);
+  const [brandCompactLogoImage, setBrandCompactLogoImage] = useState<HTMLImageElement | null>(null);
   const [previewScale, setPreviewScale] = useState(1);
   const [previewOffset, setPreviewOffset] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -979,16 +984,24 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
     if (typeof window === "undefined") return;
 
     queueMicrotask(() => setBrandLogoImage(null));
+    queueMicrotask(() => setBrandCompactLogoImage(null));
     const image = new window.Image();
+    const compactImage = new window.Image();
     image.onload = () => setBrandLogoImage(image);
+    compactImage.onload = () => setBrandCompactLogoImage(compactImage);
     image.src = BRAND_LOGO_SRC;
+    compactImage.src = BRAND_COMPACT_LOGO_SRC;
 
     if (image.complete && image.naturalWidth > 0) {
       queueMicrotask(() => setBrandLogoImage(image));
     }
+    if (compactImage.complete && compactImage.naturalWidth > 0) {
+      queueMicrotask(() => setBrandCompactLogoImage(compactImage));
+    }
 
     return () => {
       image.onload = null;
+      compactImage.onload = null;
     };
   }, []);
 
@@ -1086,6 +1099,7 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
         excludedColorCodes: excludedColorCodeList,
         mirrorFlip,
         logoImage: brandLogoImage,
+        compactLogoImage: brandCompactLogoImage,
         summaryLabels: {
           palette: t("editor.exportDialog.summaryPalette"),
           size: t("editor.exportDialog.summarySize"),
@@ -1109,6 +1123,7 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
       excludedColorCodeList,
       mirrorFlip,
       brandLogoImage,
+      brandCompactLogoImage,
       t,
     ]
   );
