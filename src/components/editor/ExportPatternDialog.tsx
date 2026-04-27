@@ -57,21 +57,24 @@ type SummaryInfo = {
   colorCountExcludingWhite: number;
 };
 
-type SummarySegment = {
-  text: string;
-  icon?: "palette" | "size" | "bead";
+type HeaderStat = {
+  label: string;
+  value: string;
 };
 
 type HeaderSummaryMetrics = {
   headerHeight: number;
+  headerPaddingX: number;
   logoHeight: number;
-  lineHeight: number;
-  lineGap: number;
-  font: string;
-  fontSize: number;
-  iconSize: number;
-  iconGap: number;
-  itemGap: number;
+  statLabelFont: string;
+  statLabelFontSize: number;
+  statValueFont: string;
+  statValueFontSize: number;
+  statLabelLineHeight: number;
+  statValueLineHeight: number;
+  statGapY: number;
+  statColumnGap: number;
+  statSeparatorHeight: number;
 };
 
 type ColorStatsMetrics = {
@@ -111,9 +114,12 @@ type ReactTouchList = TouchEvent<HTMLDivElement>["touches"];
 
 const CELL_SIZE = 40;
 const AXIS_SIZE = 40;
-const BASE_BRAND_HEADER_HEIGHT = 120;
-const BRAND_HEADER_PADDING_X = 40;
+const BASE_BRAND_HEADER_PADDING_Y = 32;
+const BASE_BRAND_HEADER_PADDING_X = 40;
 const BASE_BRAND_LOGO_HEIGHT = 76;
+const BASE_BRAND_STATS_LABEL_FONT_SIZE = 14;
+const BASE_BRAND_STATS_VALUE_FONT_SIZE = 26;
+const BASE_BRAND_STATS_SEPARATOR_HEIGHT = 60;
 const MAX_EXPORT_EDGE = 122880;
 const MAJOR_GRID_WIDTH = 2;
 const MINOR_GRID_WIDTH = 2;
@@ -124,8 +130,6 @@ const BASE_COLOR_STATS_GAP_Y = 16;
 const BASE_COLOR_STATS_SUMMARY_GAP_Y = 8;
 const BASE_COLOR_STATS_SUMMARY_LINE_HEIGHT = 28;
 const BASE_COLOR_STATS_SUMMARY_FONT_SIZE = 18;
-const BASE_COLOR_STATS_SUMMARY_ICON_SIZE = 22;
-const BASE_COLOR_STATS_SUMMARY_ICON_GAP = 8;
 const BASE_COLOR_STATS_SUMMARY_ITEM_GAP = 24;
 const BASE_COLOR_STATS_BADGE_HEIGHT = 28;
 const BASE_COLOR_STATS_BADGE_RADIUS = 8;
@@ -145,6 +149,8 @@ const PREVIEW_SCALE_STEP = 0.12;
 const PREVIEW_PAN_SPEED = 1;
 const EXPORT_DIALOG_SETTINGS_STORAGE_KEY = "pixelfox-export-dialog-settings";
 const BRAND_LOGO_SRC = "/logo_with_name.png";
+const BRAND_BUILDER_LABEL = "BUILDER";
+const BRAND_DOMAIN_TEXT = "pixelfox.art";
 const HEADER_SCALE_BASE_WIDTH = 30;
 const EXPORT_CORNER_RADIUS = 20;
 const EXPORT_BORDER_WIDTH = 1;
@@ -321,18 +327,31 @@ function isWhiteLikeColor(hex: string) {
 
 function getHeaderSummaryMetrics(downloadWidth: number): HeaderSummaryMetrics {
   const scale = Math.max(downloadWidth, 1) / HEADER_SCALE_BASE_WIDTH;
-  const fontSize = Math.max(12, Math.round(BASE_COLOR_STATS_SUMMARY_FONT_SIZE * scale));
+  const statLabelFontSize = Math.max(9, Math.round(BASE_BRAND_STATS_LABEL_FONT_SIZE * scale));
+  const statValueFontSize = Math.max(15, Math.round(BASE_BRAND_STATS_VALUE_FONT_SIZE * scale));
+  const logoHeight = Math.max(24, Math.round(BASE_BRAND_LOGO_HEIGHT * scale));
+  const statLabelLineHeight = Math.max(18, Math.round(BASE_COLOR_STATS_SUMMARY_LINE_HEIGHT * scale));
+  const statValueLineHeight = Math.max(24, Math.round(statValueFontSize * 1.12));
+  const statGapY = Math.max(4, Math.round(BASE_COLOR_STATS_SUMMARY_GAP_Y * scale));
+  const headerContentHeight = Math.max(logoHeight, statLabelLineHeight + statGapY + statValueLineHeight);
+  const verticalPaddingScale = 0.72 + Math.min(0.42, Math.sqrt(Math.max(downloadWidth, 1) / HEADER_SCALE_BASE_WIDTH) * 0.28);
+  const horizontalPaddingScale = 0.78 + Math.min(0.34, Math.sqrt(Math.max(downloadWidth, 1) / HEADER_SCALE_BASE_WIDTH) * 0.22);
+  const headerPaddingY = Math.max(14, Math.round(BASE_BRAND_HEADER_PADDING_Y * scale * verticalPaddingScale));
+  const headerPaddingX = Math.max(18, Math.round(BASE_BRAND_HEADER_PADDING_X * scale * horizontalPaddingScale));
 
   return {
-    headerHeight: Math.max(72, Math.round(BASE_BRAND_HEADER_HEIGHT * scale)),
-    logoHeight: Math.max(24, Math.round(BASE_BRAND_LOGO_HEIGHT * scale)),
-    lineHeight: Math.max(20, Math.round(BASE_COLOR_STATS_SUMMARY_LINE_HEIGHT * scale)),
-    lineGap: Math.max(4, Math.round(BASE_COLOR_STATS_SUMMARY_GAP_Y * scale)),
-    font: `500 ${fontSize}px Geist, sans-serif`,
-    fontSize,
-    iconSize: Math.max(14, Math.round(BASE_COLOR_STATS_SUMMARY_ICON_SIZE * scale)),
-    iconGap: Math.max(4, Math.round(BASE_COLOR_STATS_SUMMARY_ICON_GAP * scale)),
-    itemGap: Math.max(8, Math.round(BASE_COLOR_STATS_SUMMARY_ITEM_GAP * scale)),
+    headerHeight: Math.max(72, headerContentHeight + headerPaddingY * 2),
+    headerPaddingX,
+    logoHeight,
+    statLabelFont: `700 ${statLabelFontSize}px Geist, sans-serif`,
+    statLabelFontSize,
+    statValueFont: `700 ${statValueFontSize}px Geist, sans-serif`,
+    statValueFontSize,
+    statLabelLineHeight,
+    statValueLineHeight,
+    statGapY,
+    statColumnGap: Math.max(12, Math.round(BASE_COLOR_STATS_SUMMARY_ITEM_GAP * scale)),
+    statSeparatorHeight: Math.max(28, Math.round(BASE_BRAND_STATS_SEPARATOR_HEIGHT * scale)),
   };
 }
 
@@ -363,160 +382,6 @@ function getColorStatsMetrics(downloadWidth: number): ColorStatsMetrics {
   };
 }
 
-function createSummaryLayout(
-  ctx: CanvasRenderingContext2D,
-  summary: SummaryInfo,
-  availableWidth: number,
-  labels: { palette: string; size: string; beadCount: string },
-  metrics: HeaderSummaryMetrics
-) {
-  const contentWidth = Math.max(0, availableWidth);
-  const segments: SummarySegment[] = [
-    { icon: "palette", text: `${labels.palette}: ${summary.paletteName}` },
-    { icon: "size", text: `${labels.size}: ${summary.sizeText}` },
-    { icon: "bead", text: `${labels.beadCount}: ${summary.beadCount}` },
-  ];
-
-  const lines: SummarySegment[][] = [];
-  let currentLine: SummarySegment[] = [];
-  ctx.font = metrics.font;
-
-  for (const segment of segments) {
-    const segmentWidth =
-      ctx.measureText(segment.text).width +
-      (segment.icon ? metrics.iconSize + metrics.iconGap : 0);
-    const currentWidth = currentLine.reduce((sum, item, index) => {
-      const itemWidth =
-        ctx.measureText(item.text).width +
-        (item.icon ? metrics.iconSize + metrics.iconGap : 0);
-      return sum + itemWidth + (index > 0 ? metrics.itemGap : 0);
-    }, 0);
-
-    if (currentLine.length === 0 || currentWidth + metrics.itemGap + segmentWidth <= contentWidth) {
-      currentLine.push(segment);
-      continue;
-    }
-    lines.push(currentLine);
-    currentLine = [segment];
-  }
-
-  if (currentLine.length > 0) {
-    lines.push(currentLine);
-  }
-
-  return {
-    lines,
-    height: lines.length > 0
-      ? lines.length * metrics.lineHeight + Math.max(0, lines.length - 1) * metrics.lineGap
-      : 0,
-  };
-}
-
-function drawPaletteSummaryIcon(ctx: CanvasRenderingContext2D, x: number, y: number, metrics: HeaderSummaryMetrics) {
-  const size = metrics.iconSize;
-  const radius = Math.max(3, Math.round(size * 0.18));
-  const innerPadding = Math.max(1, Math.round(size * 0.09));
-  const swatchGap = Math.max(1, Math.round(size * 0.09));
-  const swatchSize = (size - innerPadding * 2 - swatchGap) / 2;
-  const swatches = [
-    { color: "#FB7185", x: x + innerPadding, y: y + innerPadding },
-    { color: "#FBBF24", x: x + innerPadding + swatchSize + swatchGap, y: y + innerPadding },
-    { color: "#38BDF8", x: x + innerPadding, y: y + innerPadding + swatchSize + swatchGap },
-    { color: "#34D399", x: x + innerPadding + swatchSize + swatchGap, y: y + innerPadding + swatchSize + swatchGap },
-  ];
-
-  ctx.save();
-  ctx.fillStyle = "#FFFFFF";
-  ctx.beginPath();
-  ctx.roundRect(x, y, size, size, radius);
-  ctx.fill();
-
-  ctx.strokeStyle = "#CBD5E1";
-  ctx.lineWidth = 1;
-  ctx.stroke();
-
-  swatches.forEach((swatch) => {
-    ctx.fillStyle = swatch.color;
-    ctx.beginPath();
-    ctx.roundRect(swatch.x, swatch.y, swatchSize, swatchSize, 2);
-    ctx.fill();
-  });
-
-  ctx.strokeStyle = "rgba(15,23,42,0.08)";
-  swatches.forEach((swatch) => {
-    ctx.beginPath();
-    ctx.roundRect(swatch.x, swatch.y, swatchSize, swatchSize, 2);
-    ctx.stroke();
-  });
-  ctx.restore();
-}
-
-function drawSizeSummaryIcon(ctx: CanvasRenderingContext2D, x: number, y: number, metrics: HeaderSummaryMetrics) {
-  const size = metrics.iconSize;
-  const radius = Math.max(3, Math.round(size * 0.18));
-
-  ctx.save();
-  ctx.strokeStyle = "#94A3B8";
-  ctx.lineWidth = Math.max(1, size * 0.055);
-  ctx.beginPath();
-  ctx.roundRect(x + 1, y + 1, size - 2, size - 2, radius);
-  ctx.stroke();
-
-  ctx.strokeStyle = "#475569";
-  ctx.lineWidth = Math.max(1, size * 0.064);
-  ctx.beginPath();
-  ctx.moveTo(x + size * 0.28, y + size * 0.36);
-  ctx.lineTo(x + size * 0.72, y + size * 0.36);
-  ctx.moveTo(x + size * 0.28, y + size * 0.64);
-  ctx.lineTo(x + size * 0.72, y + size * 0.64);
-  ctx.moveTo(x + size * 0.36, y + size * 0.28);
-  ctx.lineTo(x + size * 0.36, y + size * 0.72);
-  ctx.moveTo(x + size * 0.64, y + size * 0.28);
-  ctx.lineTo(x + size * 0.64, y + size * 0.72);
-  ctx.stroke();
-  ctx.restore();
-}
-
-function drawBeadSummaryIcon(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  color: string,
-  metrics: HeaderSummaryMetrics
-) {
-  const size = metrics.iconSize;
-  const radius = Math.max(3, Math.round(size * 0.18));
-  const centerX = x + size / 2;
-  const centerY = y + size / 2;
-  const beadRadius = size * 0.32;
-
-  ctx.save();
-  ctx.fillStyle = "#FFFFFF";
-  ctx.beginPath();
-  ctx.roundRect(x, y, size, size, radius);
-  ctx.fill();
-
-  ctx.strokeStyle = "#CBD5E1";
-  ctx.lineWidth = 1;
-  ctx.stroke();
-
-  ctx.fillStyle = color;  ctx.beginPath();
-  ctx.arc(centerX, centerY, beadRadius, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.strokeStyle = "rgba(15,23,42,0.08)";
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.arc(centerX, centerY, beadRadius, 0, Math.PI * 2);
-  ctx.stroke();
-
-  ctx.fillStyle = "rgba(255,255,255,0.5)";
-  ctx.beginPath();
-  ctx.arc(centerX - beadRadius * 0.25, centerY - beadRadius * 0.25, beadRadius * 0.25, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.restore();
-}
-
 function drawBrandIcon(
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -535,6 +400,83 @@ function drawBrandIcon(
   ctx.save();
   ctx.fillStyle = color;
   ctx.fillRect(x, y, metrics.logoHeight, metrics.logoHeight);
+  ctx.restore();
+}
+
+function getBrandLogoWidth(logoImage: HTMLImageElement | null, metrics: HeaderSummaryMetrics) {
+  if (!logoImage) return metrics.logoHeight;
+  return metrics.logoHeight * (logoImage.naturalWidth / Math.max(logoImage.naturalHeight, 1));
+}
+
+function getHeaderStats(
+  summary: SummaryInfo,
+  labels: { palette: string; size: string; beadCount: string }
+): HeaderStat[] {
+  return [
+    { label: labels.palette, value: summary.paletteName },
+    { label: labels.size, value: summary.sizeText },
+    { label: labels.beadCount, value: String(summary.beadCount) },
+    { label: BRAND_BUILDER_LABEL, value: BRAND_DOMAIN_TEXT },
+  ];
+}
+
+function getDisplayHeaderLabel(label: string) {
+  const upperLabel = label.toLocaleUpperCase();
+  if (!/^[A-Z ]+$/.test(upperLabel)) return upperLabel;
+  return upperLabel
+    .split(" ")
+    .map((word) => word.split("").join(" "))
+    .join("   ");
+}
+
+function drawHeaderStats(
+  ctx: CanvasRenderingContext2D,
+  stats: HeaderStat[],
+  x: number,
+  y: number,
+  width: number,
+  metrics: HeaderSummaryMetrics
+) {
+  if (stats.length === 0 || width <= 0) return;
+
+  const gap = metrics.statColumnGap;
+  const columnWidth = Math.max(1, (width - gap * (stats.length - 1)) / stats.length);
+  const labelY = y + Math.max(0, (metrics.statLabelLineHeight - metrics.statLabelFontSize) / 2);
+  const valueY =
+    y +
+    metrics.statLabelLineHeight +
+    metrics.statGapY +
+    Math.max(0, (metrics.statValueLineHeight - metrics.statValueFontSize) / 2);
+
+  ctx.save();
+  ctx.textAlign = "center";
+  ctx.textBaseline = "top";
+
+  stats.forEach((stat, index) => {
+    const columnX = x + index * (columnWidth + gap);
+    const centerX = columnX + columnWidth / 2;
+    const textMaxWidth = Math.max(8, columnWidth * 0.92);
+
+    ctx.font = metrics.statLabelFont;
+    ctx.fillStyle = "#746D68";
+    ctx.fillText(fitTextToWidth(ctx, getDisplayHeaderLabel(stat.label), textMaxWidth), centerX, labelY);
+
+    ctx.font = metrics.statValueFont;
+    ctx.fillStyle = "#403C3B";
+    ctx.fillText(fitTextToWidth(ctx, stat.value, textMaxWidth), centerX, valueY);
+
+    if (index < stats.length - 1) {
+      const separatorX = Math.round(columnX + columnWidth + gap / 2);
+      const separatorY = Math.round(y + (metrics.statLabelLineHeight + metrics.statGapY) * 0.55);
+      const separatorHeight = Math.min(
+        metrics.statSeparatorHeight,
+        metrics.statLabelLineHeight + metrics.statGapY + metrics.statValueLineHeight - (separatorY - y)
+      );
+      ctx.fillStyle = "rgba(116,109,104,0.24)";
+      ctx.fillRect(separatorX, separatorY, 1, Math.max(1, Math.round(separatorHeight)));
+    }
+  });
+
   ctx.restore();
 }
 
@@ -677,28 +619,29 @@ function renderPatternImage(options: {
   const colorUsage = getColorUsage(pixels, paletteLabels, excludedColorCodeSet);
   const headerMetrics = getHeaderSummaryMetrics(cols);
   const colorStatsMetrics = getColorStatsMetrics(cols);
+  const beadCount = colorUsage.reduce((sum, item) => sum + item.count, 0);
   const summaryInfo: SummaryInfo = {
     paletteName,
     sizeText: `${cols} × ${rows}`,
-    beadCount: Object.keys(pixels).length,
+    beadCount,
     colorCountExcludingWhite: colorUsage.filter((item) => !isWhiteLikeColor(item.color)).length,
   };
   const measureCanvas = document.createElement("canvas");
   const measureCtx = measureCanvas.getContext("2d");
   if (!measureCtx) return null;
-  const brandLogoWidth = logoImage
-    ? headerMetrics.logoHeight * (logoImage.naturalWidth / Math.max(logoImage.naturalHeight, 1))
-    : headerMetrics.logoHeight;
+  const brandLogoWidth = getBrandLogoWidth(logoImage, headerMetrics);
+  const headerStats = getHeaderStats(summaryInfo, summaryLabels);
+  const headerStatsGap = Math.max(20, Math.round(headerMetrics.headerPaddingX * 0.8));
+  const getHeaderStatsBounds = (renderWidth: number) => ({
+    x: headerMetrics.headerPaddingX + brandLogoWidth + headerStatsGap,
+    width: Math.max(
+      0,
+      renderWidth - headerMetrics.headerPaddingX * 2 - brandLogoWidth - headerStatsGap
+    ),
+  });
 
   let cellSize = clampCellSize(CELL_SIZE, cols, rows, axisSize);
   let exportWidth = cols * cellSize + axisSize * 2;
-  let summaryLayout = createSummaryLayout(
-    measureCtx,
-    summaryInfo,
-    exportWidth - BRAND_HEADER_PADDING_X * 2 - brandLogoWidth - 32,
-    summaryLabels,
-    headerMetrics
-  );
   let colorStatsLayout = createColorBadgeLayout(measureCtx, colorUsage, exportWidth, colorStatsMetrics);
 
   for (let iteration = 0; iteration < 4; iteration += 1) {
@@ -710,13 +653,6 @@ function renderPatternImage(options: {
 
     cellSize = nextCellSize;
     exportWidth = cols * cellSize + axisSize * 2;
-    summaryLayout = createSummaryLayout(
-      measureCtx,
-      summaryInfo,
-      exportWidth - BRAND_HEADER_PADDING_X * 2 - brandLogoWidth - 32,
-      summaryLabels,
-      headerMetrics
-    );
     colorStatsLayout = createColorBadgeLayout(measureCtx, colorUsage, exportWidth, colorStatsMetrics);
   }
 
@@ -752,56 +688,22 @@ function renderPatternImage(options: {
   ctx.fillRect(0, headerMetrics.headerHeight - 1, exportWidth, 1);
 
   const brandIconY = (headerMetrics.headerHeight - headerMetrics.logoHeight) / 2;
-  drawBrandIcon(ctx, BRAND_HEADER_PADDING_X, brandIconY, themePrimaryColor, logoImage, headerMetrics);
+  drawBrandIcon(ctx, headerMetrics.headerPaddingX, brandIconY, themePrimaryColor, logoImage, headerMetrics);
 
-  if (summaryLayout.lines.length > 0) {
-    const summaryRightX = exportWidth - BRAND_HEADER_PADDING_X;
-    const summaryBlockHeight =
-      summaryLayout.lines.length * headerMetrics.lineHeight +
-      Math.max(0, summaryLayout.lines.length - 1) * headerMetrics.lineGap;
-    const summaryStartY = Math.max(
-      0,
-      Math.round((headerMetrics.headerHeight - summaryBlockHeight) / 2)
-    );
-
-    ctx.font = headerMetrics.font;
-    ctx.textAlign = "left";
-    ctx.textBaseline = "top";
-    ctx.fillStyle = "#334155";
-
-    summaryLayout.lines.forEach((line, index) => {
-      const lineY = summaryStartY + index * (headerMetrics.lineHeight + headerMetrics.lineGap);
-      const iconY = lineY + (headerMetrics.lineHeight - headerMetrics.iconSize) / 2;
-      const textY = lineY + (headerMetrics.lineHeight - headerMetrics.fontSize) / 2;
-      const lineWidth = line.reduce((sum, segment, segmentIndex) => {
-        const segmentWidth =
-          ctx.measureText(segment.text).width +
-          (segment.icon ? headerMetrics.iconSize + headerMetrics.iconGap : 0);
-        return sum + segmentWidth + (segmentIndex > 0 ? headerMetrics.itemGap : 0);
-      }, 0);
-      let cursorX = summaryRightX - lineWidth;
-
-      line.forEach((segment, segmentIndex) => {
-        if (segmentIndex > 0) {
-          cursorX += headerMetrics.itemGap;
-        }
-
-        if (segment.icon === "palette") {
-          drawPaletteSummaryIcon(ctx, cursorX, iconY, headerMetrics);
-          cursorX += headerMetrics.iconSize + headerMetrics.iconGap;
-        } else if (segment.icon === "size") {
-          drawSizeSummaryIcon(ctx, cursorX, iconY, headerMetrics);
-          cursorX += headerMetrics.iconSize + headerMetrics.iconGap;
-        } else if (segment.icon === "bead") {
-          drawBeadSummaryIcon(ctx, cursorX, iconY, themePrimaryColor, headerMetrics);
-          cursorX += headerMetrics.iconSize + headerMetrics.iconGap;
-        }
-
-        ctx.fillText(segment.text, cursorX, textY);
-        cursorX += ctx.measureText(segment.text).width;
-      });
-    });
-  }
+  const headerStatsBounds = getHeaderStatsBounds(exportWidth);
+  const headerStatsHeight =
+    headerMetrics.statLabelLineHeight +
+    headerMetrics.statGapY +
+    headerMetrics.statValueLineHeight;
+  const headerStatsY = Math.max(0, Math.round((headerMetrics.headerHeight - headerStatsHeight) / 2));
+  drawHeaderStats(
+    ctx,
+    headerStats,
+    headerStatsBounds.x,
+    headerStatsY,
+    headerStatsBounds.width,
+    headerMetrics
+  );
 
   if (colorStatsLayout.height > 0) {
     ctx.fillStyle = whiteBackground ? "#F8FAFC" : "rgba(248,250,252,0.96)";
@@ -1575,10 +1477,10 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
               </div>
 
               <div className="space-y-2">
-                <Label className={cn("text-[11px] font-semibold", !showColorCode && "text-muted-foreground")}>
+                <Label className="text-[11px] font-semibold">
                   {t("editor.exportDialog.excludeColors")}
                 </Label>
-                <div className={cn("grid grid-cols-6 gap-2", !showColorCode && "pointer-events-none opacity-50")}>
+                <div className="grid grid-cols-6 gap-2">
                   {nearWhiteSwatches.map((swatch) => {
                     const key = normalizeHex(swatch.color);
                     const isSelected = excludedColorCodes.has(key);
