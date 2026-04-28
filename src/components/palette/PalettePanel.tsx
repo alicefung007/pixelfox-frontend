@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { PaletteTabId } from "@/store/usePaletteStore";
 import { useTranslation } from "react-i18next";
 import {
@@ -48,13 +48,15 @@ export default function PalettePanel({ onOpenReplaceColorDialog }: PalettePanelP
   const selectedUsedColor = usePaletteStore((state) => state.selectedUsedColor);
   const setSelectedUsedColor = usePaletteStore((state) => state.setSelectedUsedColor);
   const usedTabFlashAt = usePaletteStore((state) => state.usedTabFlashAt);
+  const handledUsedTabFlashAtRef = useRef(usedTabFlashAt);
   const [isManageOpen, setIsManageOpen] = useState(false);
   const [isUsedFlashing, setIsUsedFlashing] = useState(false);
   const [pendingPaletteId, setPendingPaletteId] = useState<SystemPaletteId | null>(null);
   const [usedActionPopoverColor, setUsedActionPopoverColor] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!usedTabFlashAt) return;
+    if (!usedTabFlashAt || handledUsedTabFlashAtRef.current === usedTabFlashAt) return;
+    handledUsedTabFlashAtRef.current = usedTabFlashAt;
     queueMicrotask(() => setIsUsedFlashing(true));
     const timer = setTimeout(() => setIsUsedFlashing(false), 900);
     return () => clearTimeout(timer);
