@@ -394,7 +394,11 @@ function drawBrandIcon(
   if (logoImage) {
     const aspectRatio = logoImage.naturalWidth / Math.max(logoImage.naturalHeight, 1);
     const width = metrics.logoHeight * aspectRatio;
+    const previousImageSmoothingEnabled = ctx.imageSmoothingEnabled;
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
     ctx.drawImage(logoImage, x, y, width, metrics.logoHeight);
+    ctx.imageSmoothingEnabled = previousImageSmoothingEnabled;
     return;
   }
 
@@ -1647,7 +1651,7 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
                   <img
                     src={exportResult.dataUrl}
                     alt={t("editor.exportDialog.previewTitle")}
-                    className="max-h-full max-w-full rounded-xl object-contain mx-auto border border-black/10 shadow-[0_12px_30px_rgba(15,23,42,0.12),0_2px_8px_rgba(15,23,42,0.08)] [image-rendering:pixelated]"
+                    className="max-h-full max-w-full rounded-xl object-contain mx-auto border border-black/10 shadow-[0_12px_30px_rgba(15,23,42,0.12),0_2px_8px_rgba(15,23,42,0.08)]"
                     style={{
                       transform: `translate(${previewOffset.x}px, ${previewOffset.y}px) scale(${previewScale})`,
                       transformOrigin: "center center",
