@@ -579,7 +579,7 @@ function renderPatternImage(options: {
   summaryLabels: { palette: string; size: string; beadCount: string };
   logoImage: HTMLImageElement | null;
   compactLogoImage: HTMLImageElement | null;
-}): RenderResult | null {
+}, renderOptions: { canvas?: HTMLCanvasElement | null; includeDataUrl?: boolean } = {}): RenderResult | null {
   if (typeof document === "undefined") return null;
 
   const themePrimaryColor =
@@ -667,9 +667,9 @@ function renderPatternImage(options: {
   const gridHeight = rows * cellSize + axisSize * 2;
   const exportHeight = headerMetrics.headerHeight + gridHeight + colorStatsLayout.height;
 
-  const canvas = document.createElement("canvas");
-  canvas.width = exportWidth;
-  canvas.height = exportHeight;
+  const canvas = renderOptions.canvas ?? document.createElement("canvas");
+  if (canvas.width !== exportWidth) canvas.width = exportWidth;
+  if (canvas.height !== exportHeight) canvas.height = exportHeight;
   const ctx = canvas.getContext("2d");
   if (!ctx) return null;
   ctx.imageSmoothingEnabled = false;
@@ -907,7 +907,7 @@ function renderPatternImage(options: {
   ctx.restore();
 
   return {
-    dataUrl: canvas.toDataURL("image/png"),
+    dataUrl: renderOptions.includeDataUrl === false ? "" : canvas.toDataURL("image/png"),
     width: exportWidth,
     height: exportHeight,
   };
@@ -939,6 +939,8 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
   const [previewOffset, setPreviewOffset] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [previewViewportElement, setPreviewViewportElement] = useState<HTMLDivElement | null>(null);
+  const [previewResult, setPreviewResult] = useState<Pick<RenderResult, "width" | "height"> | null>(null);
+  const previewCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const previewViewportRef = useRef<HTMLDivElement | null>(null);
   const previewScaleRef = useRef(previewScale);
   const previewOffsetRef = useRef(previewOffset);
@@ -958,6 +960,7 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
   }, [open, currentPaletteId, nearWhiteSwatches]);
 
   const excludedColorCodeList = useMemo(() => Array.from(excludedColorCodes), [excludedColorCodes]);
+  const canRenderPreview = useMemo(() => !autoCrop || Object.keys(pixels).length > 0, [autoCrop, pixels]);
 
   const handleToggleExcludedColor = (color: string) => {
     const key = normalizeHex(color);
@@ -1083,32 +1086,31 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
       : currentPalette.name
     : currentPaletteId;
 
-  const exportResult = useMemo(
-    () =>
-      renderPatternImage({
-        pixels,
-        width,
-        height,
-        paletteName: paletteDisplayName,
-        paletteLabels,
-        autoCrop,
-        whiteBackground,
-        showGrid,
-        showMinorGrid,
-        gridInterval,
-        gridColor,
-        showAxis,
-        showColorCode,
-        excludedColorCodes: excludedColorCodeList,
-        mirrorFlip,
-        logoImage: brandLogoImage,
-        compactLogoImage: brandCompactLogoImage,
-        summaryLabels: {
-          palette: t("editor.exportDialog.summaryPalette"),
-          size: t("editor.exportDialog.summarySize"),
-          beadCount: t("editor.exportDialog.summaryBeadCount"),
-        },
-      }),
+  const patternRenderOptions = useMemo(
+    () => ({
+      pixels,
+      width,
+      height,
+      paletteName: paletteDisplayName,
+      paletteLabels,
+      autoCrop,
+      whiteBackground,
+      showGrid,
+      showMinorGrid,
+      gridInterval,
+      gridColor,
+      showAxis,
+      showColorCode,
+      excludedColorCodes: excludedColorCodeList,
+      mirrorFlip,
+      logoImage: brandLogoImage,
+      compactLogoImage: brandCompactLogoImage,
+      summaryLabels: {
+        palette: t("editor.exportDialog.summaryPalette"),
+        size: t("editor.exportDialog.summarySize"),
+        beadCount: t("editor.exportDialog.summaryBeadCount"),
+      },
+    }),
     [
       pixels,
       width,
@@ -1131,6 +1133,28 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
     ]
   );
 
+  useEffect(() => {
+    if (!canRenderPreview) {
+      queueMicrotask(() => setPreviewResult(null));
+      return;
+    }
+
+    const canvas = previewCanvasRef.current;
+    if (!canvas) return;
+
+    const result = renderPatternImage(patternRenderOptions, {
+      canvas,
+      includeDataUrl: false,
+    });
+    queueMicrotask(() => {
+      setPreviewResult((current) => {
+        if (!result) return null;
+        if (current?.width === result.width && current.height === result.height) return current;
+        return { width: result.width, height: result.height };
+      });
+    });
+  }, [canRenderPreview, patternRenderOptions]);
+
   function resetPreviewTransform() {
     previewScaleRef.current = 1;
     previewOffsetRef.current = { x: 0, y: 0 };
@@ -1151,13 +1175,15 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
   useEffect(() => {
     if (!open) return;
     queueMicrotask(() => resetPreviewTransform());
-  }, [open, exportResult?.dataUrl]);
+  }, [open]);
 
   const handleDownload = () => {
-    if (!exportResult || typeof document === "undefined") return;
+    if (!previewResult || typeof document === "undefined") return;
+    const result = renderPatternImage(patternRenderOptions);
+    if (!result?.dataUrl) return;
 
     const link = document.createElement("a");
-    link.href = exportResult.dataUrl;
+    link.href = result.dataUrl;
     link.download = `pixelfox-pattern-${width}x${height}.png`;
     link.click();
   };
@@ -1216,7 +1242,7 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
   };
 
   const handlePreviewPointerDown = (event: PointerEvent<HTMLDivElement>) => {
-    if (!exportResult) return;
+    if (!previewResult) return;
     if (event.pointerType !== "mouse") return;
     if (event.button !== 0) return;
     if (event.target instanceof HTMLElement && event.target.closest("button")) return;
@@ -1263,7 +1289,7 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
   };
 
   const handlePreviewTouchStart = (event: TouchEvent<HTMLDivElement>) => {
-    if (!exportResult) return;
+    if (!previewResult) return;
     if (event.touches.length < 2) return;
 
     event.preventDefault();
@@ -1283,7 +1309,7 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
   };
 
   const handlePreviewTouchMove = (event: TouchEvent<HTMLDivElement>) => {
-    if (!exportResult) return;
+    if (!previewResult) return;
     if (event.touches.length < 2) return;
 
     event.preventDefault();
@@ -1326,7 +1352,7 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
     if (!element) return;
 
     const handleNativeWheel = (event: globalThis.WheelEvent) => {
-      if (!exportResult) return;
+      if (!previewResult) return;
       event.preventDefault();
       event.stopPropagation();
       if (event.ctrlKey || event.metaKey || isLikelyMouseWheel(event)) {
@@ -1348,7 +1374,7 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
     };
 
     const handleDocumentWheel = (event: globalThis.WheelEvent) => {
-      if (!exportResult) return;
+      if (!previewResult) return;
       const target = event.target;
       if (!(target instanceof Node)) return;
       if (!element.contains(target)) return;
@@ -1374,7 +1400,7 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
     };
 
     const preventGestureZoom = (event: Event) => {
-      if (!exportResult) return;
+      if (!previewResult) return;
       event.preventDefault();
       event.stopPropagation();
     };
@@ -1398,7 +1424,7 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
       document.removeEventListener("gesturechange", preventGestureZoom as EventListener, true);
       document.removeEventListener("gestureend", preventGestureZoom as EventListener, true);
     };
-  }, [open, exportResult, previewViewportElement]);
+  }, [open, previewResult, previewViewportElement]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -1643,13 +1669,14 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
               onPointerUp={handlePreviewPointerUp}
               onPointerCancel={handlePreviewPointerCancel}
               onLostPointerCapture={stopPreviewDrag}
-              style={{ cursor: exportResult ? (isDragging ? "grabbing" : "grab") : "default" }}
+              style={{ cursor: previewResult ? (isDragging ? "grabbing" : "grab") : "default" }}
             >
-              {exportResult ? (
+              {canRenderPreview ? (
                 <div className="flex h-full w-full min-h-0 min-w-0 items-center justify-center overflow-hidden p-3">
-                  <img
-                    src={exportResult.dataUrl}
-                    alt={t("editor.exportDialog.previewTitle")}
+                  <canvas
+                    ref={previewCanvasRef}
+                    aria-label={t("editor.exportDialog.previewTitle")}
+                    role="img"
                     className="max-h-full max-w-full rounded-xl object-contain mx-auto border border-black/10 shadow-[0_12px_30px_rgba(15,23,42,0.12),0_2px_8px_rgba(15,23,42,0.08)]"
                     style={{
                       transform: `translate(${previewOffset.x}px, ${previewOffset.y}px) scale(${previewScale})`,
@@ -1670,7 +1697,7 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
                   size="icon"
                   className="h-8 w-8 rounded-lg"
                   onClick={() => stepPreviewScale(-PREVIEW_SCALE_STEP)}
-                  disabled={!exportResult || previewScale <= PREVIEW_MIN_SCALE}
+                  disabled={!previewResult || previewScale <= PREVIEW_MIN_SCALE}
                 >
                   <Minus className="size-4" />
                 </Button>
@@ -1679,7 +1706,7 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
                   variant="ghost"
                   className="h-8 min-w-14 rounded-lg px-2 text-xs font-semibold tabular-nums"
                   onClick={resetPreviewTransform}
-                  disabled={!exportResult}
+                  disabled={!previewResult}
                 >
                   {Math.round(previewScale * 100)}%
                 </Button>
@@ -1689,7 +1716,7 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
                   size="icon"
                   className="h-8 w-8 rounded-lg"
                   onClick={() => stepPreviewScale(PREVIEW_SCALE_STEP)}
-                  disabled={!exportResult || previewScale >= PREVIEW_MAX_SCALE}
+                  disabled={!previewResult || previewScale >= PREVIEW_MAX_SCALE}
                 >
                   <Plus className="size-4" />
                 </Button>
@@ -1710,7 +1737,7 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
             className="w-full sm:w-auto gap-2 bg-gradient-to-r from-primary to-primary/80 hover:opacity-90 border-none text-white font-medium"
             type="button"
             onClick={handleDownload}
-            disabled={!exportResult}
+            disabled={!previewResult}
           >
             <Download className="size-4" />
             {t("editor.exportDialog.downloadImage")}
