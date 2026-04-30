@@ -64,10 +64,10 @@ export default function Sidebar({ isOpen = true, onClose, onUpload, onAssembly, 
   const tools: { id: ToolType; icon: React.ReactNode; label: string; shortcut: string; hidden?: boolean }[] = [
     { id: 'brush', icon: <Brush size={18} />, label: t("sidebar.brush"), shortcut: "B" },
     { id: 'bucket', icon: <PaintBucket size={18} />, label: t("sidebar.bucket"), shortcut: "G" },
-    { id: 'wand', icon: <WandSparkles size={18} />, label: t("sidebar.wand"), shortcut: "W" },
     { id: 'hand', icon: <Hand size={18} />, label: t("sidebar.hand"), shortcut: "H" },
     { id: 'eraser', icon: <Eraser size={18} />, label: t("sidebar.eraser"), shortcut: "E" },
     { id: 'eyedropper', icon: <Pipette size={18} />, label: t("sidebar.eyedropper"), shortcut: "I" },
+    { id: 'wand', icon: <WandSparkles size={18} />, label: t("sidebar.wand"), shortcut: "W" },
     { id: 'text', icon: <Type size={18} />, label: t("sidebar.text"), shortcut: "T", hidden: true },
   ];
 

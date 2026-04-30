@@ -3,7 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { EDITOR_CONFIG } from '@/lib/constants';
 import { clampZoom } from '@/lib/utils';
 
-export type ToolType = 'brush' | 'bucket' | 'wand' | 'hand' | 'eraser' | 'eyedropper' | 'text';
+export type ToolType = 'brush' | 'bucket' | 'hand' | 'eraser' | 'eyedropper' | 'wand' | 'text';
 
 interface HistoryEntry {
   pixels: Record<string, string>;

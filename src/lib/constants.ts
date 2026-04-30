@@ -30,10 +30,13 @@ export const CANVAS_CONFIG = {
 
 export const CURSOR_CONFIG = {
   ICON_SIZE: 24,
-  BRUSH_HOTSPOT: { x: 2, y: 21 },
-  BUCKET_HOTSPOT: { x: 20, y: 20 },
-  ERASER_HOTSPOT: { x: 8, y: 21 },
-  EYEDROPPER_HOTSPOT: { x: 2, y: 22 },
+  HOTSPOTS: {
+    brush: { x: 2, y: 21 },
+    bucket: { x: 20, y: 20 },
+    eraser: { x: 8, y: 21 },
+    eyedropper: { x: 2, y: 22 },
+    wand: { x: 22, y: 2 },
+  },
 } as const;
 
 export const PREVIEW_3D_CONFIG = {

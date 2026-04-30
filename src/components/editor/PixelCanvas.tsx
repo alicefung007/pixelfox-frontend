@@ -1047,18 +1047,11 @@ export default function PixelCanvas({ onOpenReplaceColorDialog }: PixelCanvasPro
         };
       })()
     : null;
+  const defaultCursorHotspot = { x: CURSOR_CONFIG.ICON_SIZE / 2, y: CURSOR_CONFIG.ICON_SIZE / 2 };
   const cursorHotspot =
-    currentTool === 'brush'
-      ? CURSOR_CONFIG.BRUSH_HOTSPOT
-      : currentTool === 'bucket'
-        ? CURSOR_CONFIG.BUCKET_HOTSPOT
-      : currentTool === 'wand'
-        ? { x: 4, y: 20 }
-        : currentTool === 'eraser'
-          ? CURSOR_CONFIG.ERASER_HOTSPOT
-        : currentTool === 'eyedropper'
-          ? CURSOR_CONFIG.EYEDROPPER_HOTSPOT
-          : { x: CURSOR_CONFIG.ICON_SIZE / 2, y: CURSOR_CONFIG.ICON_SIZE / 2 };
+    currentTool in CURSOR_CONFIG.HOTSPOTS
+      ? CURSOR_CONFIG.HOTSPOTS[currentTool as keyof typeof CURSOR_CONFIG.HOTSPOTS]
+      : defaultCursorHotspot;
   const cursorIconSize = CURSOR_CONFIG.ICON_SIZE;
   const cursorHotspotScaled = cursorHotspot;
   const usesPrimaryColorCursor = currentTool === 'brush' || currentTool === 'bucket';

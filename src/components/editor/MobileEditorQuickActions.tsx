@@ -13,10 +13,10 @@ type Props = {
 const tools: { id: ToolType; icon: React.ReactNode; labelKey: string }[] = [
   { id: "brush", icon: <Brush size={16} />, labelKey: "sidebar.brush" },
   { id: "bucket", icon: <PaintBucket size={16} />, labelKey: "sidebar.bucket" },
-  { id: "wand", icon: <WandSparkles size={16} />, labelKey: "sidebar.wand" },
   { id: "hand", icon: <Hand size={16} />, labelKey: "sidebar.hand" },
   { id: "eraser", icon: <Eraser size={16} />, labelKey: "sidebar.eraser" },
   { id: "eyedropper", icon: <Pipette size={16} />, labelKey: "sidebar.eyedropper" },
+  { id: "wand", icon: <WandSparkles size={16} />, labelKey: "sidebar.wand" },
 ];
 
 export default function MobileEditorQuickActions({ onExport, className }: Props) {
