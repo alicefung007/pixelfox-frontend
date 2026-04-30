@@ -7,7 +7,7 @@ import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover'
 import { useTheme } from '@/components/theme-provider';
 import UsedColorActionButtons from '@/components/palette/UsedColorActionButtons';
 import { clampZoom, getLinePoints, isLikelyMouseWheel, normalizeHex } from '@/lib/utils';
-import { EDITOR_CONFIG, CANVAS_CONFIG, CURSOR_CONFIG } from '@/lib/constants';
+import { EDITOR_CONFIG, CANVAS_CONFIG, CURSOR_CONFIG, SELECTION_CONFIG } from '@/lib/constants';
 
 type ResizeEdge = 'left' | 'right' | 'top' | 'bottom';
 
@@ -21,6 +21,25 @@ type WandSelection = {
   color: string;
   keys: string[];
 };
+
+const COLOR_NEIGHBOR_OFFSETS =
+  SELECTION_CONFIG.COLOR_CONNECTIVITY === 8
+    ? [
+        [1, 0],
+        [-1, 0],
+        [0, 1],
+        [0, -1],
+        [1, 1],
+        [1, -1],
+        [-1, 1],
+        [-1, -1],
+      ]
+    : [
+        [1, 0],
+        [-1, 0],
+        [0, 1],
+        [0, -1],
+      ];
 
 export default function PixelCanvas({ onOpenReplaceColorDialog }: PixelCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -392,7 +411,9 @@ export default function PixelCanvas({ onOpenReplaceColorDialog }: PixelCanvasPro
       if (!currentColor || normalizeHex(currentColor) !== normalizedTargetColor) continue;
 
       selectedKeys.push(key);
-      queue.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
+      for (const [offsetX, offsetY] of COLOR_NEIGHBOR_OFFSETS) {
+        queue.push([x + offsetX, y + offsetY]);
+      }
     }
 
     return selectedKeys;
@@ -461,7 +482,9 @@ export default function PixelCanvas({ onOpenReplaceColorDialog }: PixelCanvasPro
       visited.add(key);
       newPixels[key] = replacementColor;
 
-      queue.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
+      for (const [offsetX, offsetY] of COLOR_NEIGHBOR_OFFSETS) {
+        queue.push([x + offsetX, y + offsetY]);
+      }
     }
     
     setPixels(newPixels);

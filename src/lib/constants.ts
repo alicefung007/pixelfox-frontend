@@ -39,6 +39,10 @@ export const CURSOR_CONFIG = {
   },
 } as const;
 
+export const SELECTION_CONFIG = {
+  COLOR_CONNECTIVITY: 8,
+} as const;
+
 export const PREVIEW_3D_CONFIG = {
   BEAD_DEPTH: 0.9,
   CYLINDER: {
