@@ -131,6 +131,11 @@ export default function PalettePanel({ onOpenReplaceColorDialog }: PalettePanelP
   }, [canvasUsedColors, selectedUsedColor]);
 
   useEffect(() => {
+    if (selectedUsedColor || !usedActionPopoverColor) return;
+    queueMicrotask(() => setUsedActionPopoverColor(null));
+  }, [selectedUsedColor, usedActionPopoverColor]);
+
+  useEffect(() => {
     if (tab !== "used" || !selectedUsedColor) return;
     const normalizedSelectedColor = normalizeHex(selectedUsedColor);
     const hasSelection = canvasUsedColors.some(

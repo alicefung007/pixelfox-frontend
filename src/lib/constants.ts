@@ -40,7 +40,7 @@ export const CURSOR_CONFIG = {
 } as const;
 
 export const SELECTION_CONFIG = {
-  COLOR_CONNECTIVITY: 8,
+  COLOR_CONNECTIVITY: 4 as 4 | 8,
 } as const;
 
 export const PREVIEW_3D_CONFIG = {

@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Ban, Replace, Trash2 } from "lucide-react";
+import { Replace, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type UsedColorActionButtonsProps = {
@@ -43,14 +43,6 @@ export default function UsedColorActionButtons({
       >
         <Trash2 className="size-3.5" />
         <span>{t("palette.usedActions.clear")}</span>
-      </Button>
-      <Button
-        variant="ghost"
-        size="sm"
-        className="h-7 gap-1.5 rounded-md px-2.5 text-xs"
-      >
-        <Ban className="size-3.5" />
-        <span>{t("palette.usedActions.exclude")}</span>
       </Button>
     </>
   );

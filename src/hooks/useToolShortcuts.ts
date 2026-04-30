@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
 import { useEditorStore } from '@/store/useEditorStore';
+import { usePaletteStore } from '@/store/usePaletteStore';
 import type { ToolType } from '@/store/useEditorStore';
+import { normalizeHex } from '@/lib/utils';
 
 const TOOL_SHORTCUTS: Record<string, ToolType> = {
   b: 'brush',
@@ -17,9 +19,13 @@ export function useToolShortcuts() {
   const undo = useEditorStore((state) => state.undo);
   const redo = useEditorStore((state) => state.redo);
   const clear = useEditorStore((state) => state.clear);
+  const setPixels = useEditorStore((state) => state.setPixels);
+  const saveHistory = useEditorStore((state) => state.saveHistory);
   const setUploadOpen = useEditorStore((state) => state.setUploadOpen);
   const setExportOpen = useEditorStore((state) => state.setExportOpen);
   const hasPixels = useEditorStore((state) => Object.keys(state.pixels).length > 0);
+  const selectedUsedColor = usePaletteStore((state) => state.selectedUsedColor);
+  const setSelectedUsedColor = usePaletteStore((state) => state.setSelectedUsedColor);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -61,6 +67,30 @@ export function useToolShortcuts() {
         return;
       }
 
+      // Clear the selected Used Colors swatch with Delete/Backspace.
+      if (!e.metaKey && !e.ctrlKey && !e.altKey && (e.key === 'Backspace' || e.key === 'Delete') && selectedUsedColor) {
+        e.preventDefault();
+        const normalizedSelectedColor = normalizeHex(selectedUsedColor);
+        let changed = false;
+        const currentPixels = useEditorStore.getState().pixels;
+        const nextPixels: Record<string, string> = {};
+
+        for (const [key, color] of Object.entries(currentPixels)) {
+          if (normalizeHex(color) === normalizedSelectedColor) {
+            changed = true;
+            continue;
+          }
+          nextPixels[key] = color;
+        }
+
+        if (changed) {
+          setPixels(nextPixels);
+          saveHistory();
+        }
+        setSelectedUsedColor(null);
+        return;
+      }
+
       // Check for Ctrl/Cmd + E (export pattern)
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'e') {
         e.preventDefault();
@@ -85,5 +115,5 @@ export function useToolShortcuts() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [setTool, undo, redo, clear, setUploadOpen, setExportOpen, hasPixels]);
+  }, [setTool, undo, redo, clear, setPixels, saveHistory, setUploadOpen, setExportOpen, hasPixels, selectedUsedColor, setSelectedUsedColor]);
 }

@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useLayoutEffect, useState } from 'react';
+import React, { useRef, useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import { useEditorStore } from '@/store/useEditorStore';
 import { usePaletteStore } from '@/store/usePaletteStore';
 import { Minus, Plus, Maximize, Pencil, PaintBucket, Eraser, Pipette, Brush, WandSparkles } from 'lucide-react';
@@ -439,7 +439,7 @@ export default function PixelCanvas({ onOpenReplaceColorDialog }: PixelCanvasPro
     });
   };
 
-  const handleClearWandSelection = () => {
+  const handleClearWandSelection = useCallback(() => {
     if (!wandSelection) return;
 
     const selectedKeys = new Set(wandSelection.keys);
@@ -460,7 +460,32 @@ export default function PixelCanvas({ onOpenReplaceColorDialog }: PixelCanvasPro
     setPixels(nextPixels);
     saveHistory();
     setWandSelection(null);
-  };
+  }, [saveHistory, setPixels, wandSelection]);
+
+  useEffect(() => {
+    if (!wandSelection) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement;
+      if (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+      if (event.key !== 'Backspace' && event.key !== 'Delete') return;
+
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      handleClearWandSelection();
+    };
+
+    window.addEventListener('keydown', handleKeyDown, { capture: true });
+    return () => window.removeEventListener('keydown', handleKeyDown, { capture: true });
+  }, [handleClearWandSelection, wandSelection]);
 
   const floodFill = (startX: number, startY: number, targetColor: string | null, replacementColor: string) => {
     if (targetColor === replacementColor) return;
