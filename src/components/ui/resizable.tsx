@@ -47,13 +47,13 @@ function ResizableHandle({
   return (
     <Separator
       className={cn(
-        "relative flex items-center justify-center bg-border hover:bg-primary/50 active:bg-primary transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-1 aria-[orientation=vertical]:w-px aria-[orientation=vertical]:h-full aria-[orientation=horizontal]:h-px aria-[orientation=horizontal]:w-full",
+        "relative flex touch-manipulation-none items-center justify-center bg-border transition-colors hover:bg-primary/50 active:bg-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-1 aria-[orientation=vertical]:h-full aria-[orientation=vertical]:w-px aria-[orientation=horizontal]:h-px aria-[orientation=horizontal]:w-full",
         className
       )}
       {...props}
     >
       {withHandle ? (
-        <div className="z-10 flex h-4 w-3 items-center justify-center rounded-sm border bg-background">
+        <div className="z-10 flex h-4 w-3 touch-manipulation-none items-center justify-center rounded-sm border bg-background">
           <GripVertical className="h-2.5 w-2.5 text-muted-foreground aria-[orientation=horizontal]:rotate-90" />
         </div>
       ) : null}

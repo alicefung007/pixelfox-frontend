@@ -1120,6 +1120,7 @@ export default function PixelCanvas({ onOpenReplaceColorDialog }: PixelCanvasPro
   const startResize = (edge: ResizeEdge, event: React.PointerEvent<HTMLDivElement>) => {
     event.preventDefault();
     event.stopPropagation();
+    event.currentTarget.setPointerCapture(event.pointerId);
     setIsAutoZoom(false);
     setIsPanning(false);
     setIsDrawing(false);
@@ -1214,11 +1215,11 @@ export default function PixelCanvas({ onOpenReplaceColorDialog }: PixelCanvasPro
   ];
 
   return (
-    <div className="relative h-full w-full overflow-hidden">
-      <div ref={containerRef} className="absolute inset-0 overflow-hidden bg-background">
+    <div className="relative h-full w-full overflow-hidden touch-manipulation-none">
+      <div ref={containerRef} className="absolute inset-0 overflow-hidden bg-background touch-manipulation-none">
         <canvas
           ref={canvasRef}
-          className={`absolute inset-0 h-full w-full touch-none ${cursorClass}`}
+          className={`absolute inset-0 h-full w-full touch-manipulation-none ${cursorClass}`}
           onMouseDown={onMouseDown}
           onMouseMove={onMouseMove}
           onMouseUp={onMouseUp}
@@ -1270,7 +1271,7 @@ export default function PixelCanvas({ onOpenReplaceColorDialog }: PixelCanvasPro
         {resizeHandles.map((handle) => (
           <div
             key={handle.edge}
-            className={`group absolute z-10 touch-none ${handle.className}`}
+            className={`group absolute z-10 touch-manipulation-none ${handle.className}`}
             style={handle.style}
             onPointerDown={(event) => startResize(handle.edge, event)}
           >
