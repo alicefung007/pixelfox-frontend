@@ -187,6 +187,7 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
   const [colorPaletteId, setColorPaletteId] = useState<SystemPaletteId>(SYSTEM_PALETTES[0].id);
   const [colorMerging, setColorMerging] = useState(true);
   const [colorMergeThreshold, setColorMergeThreshold] = useState([2]);
+  const [colorMergeThresholdDraft, setColorMergeThresholdDraft] = useState([2]);
   const [palettePopoverOpen, setPalettePopoverOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -361,27 +362,18 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
   );
 
   useEffect(() => {
-    if (!trimEdges) {
-      if (widthBeads !== processingDimensions.width) {
-        setWidthBeads(processingDimensions.width);
-      }
-      if (heightBeads !== processingDimensions.height) {
-        setHeightBeads(processingDimensions.height);
-      }
-      return;
-    }
+    if (trimEdges) return;
 
-    if (!effectiveResult) return;
+    setWidthBeads(processingDimensions.width);
+    setHeightBeads(processingDimensions.height);
+  }, [trimEdges, processingDimensions.width, processingDimensions.height]);
 
-    const nextWidth = String(effectiveResult.width);
-    const nextHeight = String(effectiveResult.height);
-    if (widthBeads !== nextWidth) {
-      setWidthBeads(nextWidth);
-    }
-    if (heightBeads !== nextHeight) {
-      setHeightBeads(nextHeight);
-    }
-  }, [trimEdges, effectiveResult, processingDimensions.width, processingDimensions.height, widthBeads, heightBeads]);
+  useEffect(() => {
+    if (!trimEdges || !effectiveResult) return;
+
+    setWidthBeads(String(effectiveResult.width));
+    setHeightBeads(String(effectiveResult.height));
+  }, [trimEdges, effectiveResult]);
 
   useEffect(() => {
     if (!effectiveResult) return;
@@ -448,6 +440,41 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
       }
     }
     setProcessingDimensions((prev) => ({ ...prev, height: clamped }));
+  };
+
+  const handleWidthBeadsDraftChange = (val: string) => {
+    const clamped = clampBeads(val);
+    setWidthBeads(clamped);
+    if (aspectRatioLocked && clamped !== "") {
+      const newWidth = parseInt(clamped, 10);
+      const currentHeight = parseInt(processingDimensions.height, 10) || 1;
+      const currentWidth = parseInt(processingDimensions.width, 10) || 1;
+      if (currentWidth > 0) {
+        const ratio = currentHeight / currentWidth;
+        const newHeight = Math.round(newWidth * ratio);
+        setHeightBeads(String(clamp(newHeight, 1, 200)));
+      }
+    }
+  };
+
+  const handleHeightBeadsDraftChange = (val: string) => {
+    const clamped = clampBeads(val);
+    setHeightBeads(clamped);
+    if (aspectRatioLocked && clamped !== "") {
+      const newHeight = parseInt(clamped, 10);
+      const currentHeight = parseInt(processingDimensions.height, 10) || 1;
+      const currentWidth = parseInt(processingDimensions.width, 10) || 1;
+      if (currentHeight > 0) {
+        const ratio = currentWidth / currentHeight;
+        const newWidth = Math.round(newHeight * ratio);
+        setWidthBeads(String(clamp(newWidth, 1, 200)));
+      }
+    }
+  };
+
+  const handleColorMergeThresholdCommit = (value: number[]) => {
+    setColorMergeThresholdDraft(value);
+    setColorMergeThreshold(value);
   };
 
   return (
@@ -686,12 +713,13 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
                       {t("editor.uploadDialog.colorMergeThreshold")}
                     </Label>
                     <span className={cn("text-[11px] font-medium", !colorMerging && "text-muted-foreground")}>
-                      {colorMergeThreshold[0]}
+                      {colorMergeThresholdDraft[0]}
                     </span>
                   </div>
                   <Slider
-                    value={colorMergeThreshold}
-                    onValueChange={setColorMergeThreshold}
+                    value={colorMergeThresholdDraft}
+                    onValueChange={setColorMergeThresholdDraft}
+                    onValueCommit={handleColorMergeThresholdCommit}
                     min={1}
                     max={20}
                     disabled={!colorMerging}
@@ -773,7 +801,8 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
                     </Label>
                     <Slider
                       value={[Number(widthBeads) || 1]}
-                      onValueChange={([val]) => handleWidthBeadsChange(String(val))}
+                      onValueChange={([val]) => handleWidthBeadsDraftChange(String(val))}
+                      onValueCommit={([val]) => handleWidthBeadsChange(String(val))}
                       min={1}
                       max={200}
                       className="[&_[data-slot=slider-range]]:bg-primary"
@@ -785,7 +814,8 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
                     </Label>
                     <Slider
                       value={[Number(heightBeads) || 1]}
-                      onValueChange={([val]) => handleHeightBeadsChange(String(val))}
+                      onValueChange={([val]) => handleHeightBeadsDraftChange(String(val))}
+                      onValueCommit={([val]) => handleHeightBeadsChange(String(val))}
                       min={1}
                       max={200}
                       className="[&_[data-slot=slider-range]]:bg-primary"

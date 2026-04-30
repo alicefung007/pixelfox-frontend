@@ -1117,7 +1117,7 @@ export default function AssemblyDialog({ open = true, onOpenChange, standalone =
         </>
       )}
 
-        <div className="relative grid h-full grid-rows-[72px_1fr] bg-slate-50">
+        <div className="relative grid h-full grid-rows-[72px_1fr] bg-muted/30">
           <header className="grid grid-cols-[52px_minmax(0,1fr)_52px] items-center border-b bg-background px-3 sm:grid-cols-[96px_minmax(0,1fr)_96px] sm:px-5">
             <Popover open={settingsOpen} onOpenChange={setSettingsOpen}>
               <PopoverTrigger asChild>
@@ -1364,7 +1364,7 @@ export default function AssemblyDialog({ open = true, onOpenChange, standalone =
                   previewViewportRef.current = node;
                   setPreviewViewportElement(node);
                 }}
-                className="relative flex h-full w-full items-center justify-center overflow-hidden overscroll-contain bg-slate-100 [touch-action:pan-y] md:[touch-action:none]"
+                className="relative flex h-full w-full items-center justify-center overflow-hidden overscroll-contain bg-muted/60 [touch-action:pan-y] md:[touch-action:none]"
                 onTouchStart={handlePreviewTouchStart}
                 onTouchMove={handlePreviewTouchMove}
                 onTouchEnd={handlePreviewTouchEnd}
@@ -1382,7 +1382,7 @@ export default function AssemblyDialog({ open = true, onOpenChange, standalone =
                       ref={previewCanvasRef}
                       aria-label={t("editor.assembly.title")}
                       role="img"
-                      className="rounded-xl object-contain border border-black/10 [image-rendering:pixelated]"
+                      className="rounded-xl object-contain border border-border/60 [image-rendering:pixelated]"
                       style={{
                         width: baseImageSize ? `${baseImageSize.width}px` : undefined,
                         height: baseImageSize ? `${baseImageSize.height}px` : undefined,
@@ -1393,7 +1393,7 @@ export default function AssemblyDialog({ open = true, onOpenChange, standalone =
                   </div>
                 ) : null}
 
-                <div className="absolute right-3 bottom-3 flex items-center gap-1 rounded-xl border border-black/10 bg-background/92 p-1.5 shadow-sm backdrop-blur">
+                <div className="absolute right-3 bottom-3 flex items-center gap-1 rounded-xl border border-border/60 bg-background/92 p-1.5 shadow-sm backdrop-blur">
                   <Button
                     type="button"
                     variant="ghost"
