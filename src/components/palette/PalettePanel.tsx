@@ -2,12 +2,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { PaletteTabId } from "@/store/usePaletteStore";
 import { useTranslation } from "react-i18next";
 import {
-  Ban,
   Flower,
   Palette,
-  Replace,
   Settings,
-  Trash2,
   TriangleAlert,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -23,6 +20,7 @@ import {
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
 import { useEditorStore } from "@/store/useEditorStore";
 import { usePaletteStore } from "@/store/usePaletteStore";
+import UsedColorActionButtons from "@/components/palette/UsedColorActionButtons";
 import PaletteManageDialog from "@/components/palette/PaletteManageDialog";
 import { getSystemPalette, type PaletteSwatch, type SystemPaletteId } from "@/lib/palettes";
 import { resolvePaletteColor } from "@/lib/palette-color";
@@ -327,35 +325,12 @@ export default function PalettePanel({ onOpenReplaceColorDialog }: PalettePanelP
                   className="z-[100] flex w-fit flex-row items-center gap-0 rounded-lg border bg-background/95 p-0.5 shadow-sm backdrop-blur-sm"
                   onOpenAutoFocus={(event) => event.preventDefault()}
                 >
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 gap-1.5 rounded-md px-2.5 text-xs"
-                    onClick={() => {
-                      if (!selectedUsedColor) return;
-                      onOpenReplaceColorDialog(selectedUsedColor);
-                    }}
-                  >
-                    <Replace className="size-3.5" />
-                    <span>{t("palette.usedActions.replace")}</span>
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 gap-1.5 rounded-md px-2.5 text-xs"
-                    onClick={handleClearSelectedColor}
-                  >
-                    <Trash2 className="size-3.5" />
-                    <span>{t("palette.usedActions.clear")}</span>
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 gap-1.5 rounded-md px-2.5 text-xs"
-                  >
-                    <Ban className="size-3.5" />
-                    <span>{t("palette.usedActions.exclude")}</span>
-                  </Button>
+                  <UsedColorActionButtons
+                    selectedColor={selectedUsedColor}
+                    onReplace={onOpenReplaceColorDialog}
+                    onClear={handleClearSelectedColor}
+                    onClose={() => setUsedActionPopoverColor(null)}
+                  />
                 </PopoverContent>
               </Popover>
             </div>

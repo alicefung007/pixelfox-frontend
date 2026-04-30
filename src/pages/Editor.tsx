@@ -27,12 +27,17 @@ type EditorContext = {
   handleGenerate: (result: ColorMatchResult, paletteId: SystemPaletteId) => void;
 };
 
+type ReplaceTarget = {
+  sourceColor: string;
+  pixelKeys?: string[];
+};
+
 export default function Editor() {
   useToolShortcuts();
   const navigate = useNavigate();
   const { sidebarOpen, setSidebarOpen, uploadOpen, setUploadOpen, exportOpen, setExportOpen, handleGenerate } = useOutletContext<EditorContext>();
   const [preview3DOpen, setPreview3DOpen] = useState(false);
-  const [replaceSourceColor, setReplaceSourceColor] = useState<string | null>(null);
+  const [replaceTarget, setReplaceTarget] = useState<ReplaceTarget | null>(null);
   const [isDesktopViewport, setIsDesktopViewport] = useState(() => {
     if (typeof window === "undefined") return true;
     return window.matchMedia("(min-width: 768px)").matches;
@@ -40,7 +45,11 @@ export default function Editor() {
 
   const handleReplaceDialogOpenChange = (open: boolean) => {
     if (open) return;
-    setReplaceSourceColor(null);
+    setReplaceTarget(null);
+  };
+
+  const openReplaceDialog = (sourceColor: string, pixelKeys?: string[]) => {
+    setReplaceTarget({ sourceColor, pixelKeys });
   };
 
   useEffect(() => {
@@ -71,7 +80,7 @@ export default function Editor() {
             className="h-full"
           >
             <ResizablePanel defaultSize="55%" minSize="40%" className="relative overflow-hidden">
-              <PixelCanvas />
+              <PixelCanvas onOpenReplaceColorDialog={openReplaceDialog} />
             </ResizablePanel>
             <ResizableHandle
               withHandle
@@ -83,7 +92,7 @@ export default function Editor() {
               maxSize="45%"
               className="overflow-hidden bg-background"
             >
-              <PalettePanel onOpenReplaceColorDialog={setReplaceSourceColor} />
+              <PalettePanel onOpenReplaceColorDialog={openReplaceDialog} />
             </ResizablePanel>
           </ResizablePanelGroup>
         ) : (
@@ -96,13 +105,13 @@ export default function Editor() {
               <div className="flex h-full flex-col">
                 <MobileEditorQuickActions onExport={() => setExportOpen(true)} />
                 <div className="relative min-h-0 flex-1 overflow-hidden">
-                  <PixelCanvas />
+                  <PixelCanvas onOpenReplaceColorDialog={openReplaceDialog} />
                 </div>
               </div>
             </ResizablePanel>
             <ResizableHandle withHandle className="aria-[orientation=horizontal]:h-2" />
             <ResizablePanel defaultSize="55%" minSize="20%" maxSize="55%" className="overflow-hidden bg-background">
-              <PalettePanel onOpenReplaceColorDialog={setReplaceSourceColor} />
+              <PalettePanel onOpenReplaceColorDialog={openReplaceDialog} />
             </ResizablePanel>
           </ResizablePanelGroup>
         )}
@@ -112,8 +121,9 @@ export default function Editor() {
       <Preview3DDialog open={preview3DOpen} onOpenChange={setPreview3DOpen} />
       <ExportPatternDialog open={exportOpen} onOpenChange={setExportOpen} />
       <PaletteReplaceColorDialog
-        open={replaceSourceColor !== null}
-        sourceColor={replaceSourceColor}
+        open={replaceTarget !== null}
+        sourceColor={replaceTarget?.sourceColor ?? null}
+        pixelKeys={replaceTarget?.pixelKeys}
         onOpenChange={handleReplaceDialogOpenChange}
       />
     </div>

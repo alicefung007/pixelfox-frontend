@@ -21,6 +21,7 @@ import { cn, getRgbColorDistance, isDarkColor, normalizeHex } from "@/lib/utils"
 type PaletteReplaceColorDialogProps = {
   open: boolean
   sourceColor: string | null
+  pixelKeys?: string[]
   onOpenChange: (open: boolean) => void
 }
 
@@ -49,6 +50,7 @@ function isNameSearchMatch(swatchLabel: string, keyword: string) {
 export default function PaletteReplaceColorDialog({
   open,
   sourceColor,
+  pixelKeys,
   onOpenChange,
 }: PaletteReplaceColorDialogProps) {
   const { t } = useTranslation()
@@ -65,6 +67,10 @@ export default function PaletteReplaceColorDialog({
   const normalizedSourceColor = useMemo(
     () => (sourceColor ? normalizeHex(sourceColor) : null),
     [sourceColor]
+  )
+  const targetPixelKeySet = useMemo(
+    () => (pixelKeys ? new Set(pixelKeys) : null),
+    [pixelKeys]
   )
   const filteredSwatches = useMemo(() => {
     const keyword = search.trim().toLowerCase()
@@ -111,7 +117,11 @@ export default function PaletteReplaceColorDialog({
     const currentPixels = useEditorStore.getState().pixels
     const nextPixels: Record<string, string> = {}
     for (const [key, color] of Object.entries(currentPixels)) {
-      if (normalizeHex(color) === normalizedSourceColor) {
+      const isTargetPixel = targetPixelKeySet
+        ? targetPixelKeySet.has(key) && normalizeHex(color) === normalizedSourceColor
+        : normalizeHex(color) === normalizedSourceColor
+
+      if (isTargetPixel) {
         nextPixels[key] = replacementColor
         changed = true
       } else {
@@ -127,7 +137,9 @@ export default function PaletteReplaceColorDialog({
     setPixels(nextPixels)
     saveHistory()
     setColor(replacementColor)
-    setSelectedUsedColor(replacementColor)
+    if (!targetPixelKeySet) {
+      setSelectedUsedColor(replacementColor)
+    }
     onOpenChange(false)
   }
 

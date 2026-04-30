@@ -1,15 +1,28 @@
 import React, { useRef, useEffect, useLayoutEffect, useState } from 'react';
 import { useEditorStore } from '@/store/useEditorStore';
 import { usePaletteStore } from '@/store/usePaletteStore';
-import { Minus, Plus, Maximize, Pencil, PaintBucket, Eraser, Pipette, Brush } from 'lucide-react';
+import { Minus, Plus, Maximize, Pencil, PaintBucket, Eraser, Pipette, Brush, WandSparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover';
 import { useTheme } from '@/components/theme-provider';
+import UsedColorActionButtons from '@/components/palette/UsedColorActionButtons';
 import { clampZoom, getLinePoints, isLikelyMouseWheel, normalizeHex } from '@/lib/utils';
 import { EDITOR_CONFIG, CANVAS_CONFIG, CURSOR_CONFIG } from '@/lib/constants';
 
 type ResizeEdge = 'left' | 'right' | 'top' | 'bottom';
 
-export default function PixelCanvas() {
+type PixelCanvasProps = {
+  onOpenReplaceColorDialog: (sourceColor: string, pixelKeys?: string[]) => void;
+};
+
+type WandSelection = {
+  x: number;
+  y: number;
+  color: string;
+  keys: string[];
+};
+
+export default function PixelCanvas({ onOpenReplaceColorDialog }: PixelCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const pixels = useEditorStore((state) => state.pixels);
@@ -51,6 +64,7 @@ export default function PixelCanvas() {
   const cursorPendingRef = useRef<{ x: number; y: number; visible: boolean }>(cursorOverlay);
   const strokeColorRegisteredRef = useRef(false);
   const [primaryThemeColor, setPrimaryThemeColor] = useState('oklch(0.68 0.19 48)');
+  const [wandSelection, setWandSelection] = useState<WandSelection | null>(null);
   const { theme } = useTheme();
   const [systemTheme, setSystemTheme] = useState<'dark' | 'light'>(() => {
     if (typeof window === 'undefined' || !('matchMedia' in window)) return 'light';
@@ -68,6 +82,19 @@ export default function PixelCanvas() {
   useEffect(() => {
     cursorPendingRef.current = cursorOverlay;
   }, [cursorOverlay]);
+
+  useEffect(() => {
+    if (!wandSelection) return;
+
+    const stillValid = wandSelection.keys.some((key) => {
+      const color = pixels[key];
+      return color && normalizeHex(color) === normalizeHex(wandSelection.color);
+    });
+
+    if (!stillValid) {
+      queueMicrotask(() => setWandSelection(null));
+    }
+  }, [pixels, wandSelection]);
 
   useEffect(() => {
     if (theme !== 'system') return;
@@ -215,6 +242,35 @@ export default function PixelCanvas() {
       ctx.restore();
     }
 
+    if (wandSelection) {
+      const selectedKeys = new Set(wandSelection.keys);
+      const outlineWidth = Math.max(1 / effectiveScale, 0.16);
+      const glowInset = outlineWidth / 2;
+      const glowSize = Math.max(1 - outlineWidth, 0);
+
+      ctx.save();
+      ctx.strokeStyle = primaryThemeColor;
+      ctx.lineWidth = outlineWidth;
+      for (const key of selectedKeys) {
+        const color = pixels[key];
+        if (!color || normalizeHex(color) !== normalizeHex(wandSelection.color)) continue;
+        const [x, y] = key.split(',').map(Number);
+        ctx.strokeRect(x + glowInset, y + glowInset, glowSize, glowSize);
+      }
+      ctx.restore();
+
+      ctx.save();
+      ctx.fillStyle = primaryThemeColor;
+      ctx.globalAlpha = 0.14;
+      for (const key of selectedKeys) {
+        const color = pixels[key];
+        if (!color || normalizeHex(color) !== normalizeHex(wandSelection.color)) continue;
+        const [x, y] = key.split(',').map(Number);
+        ctx.fillRect(x + 0.12, y + 0.12, 0.76, 0.76);
+      }
+      ctx.restore();
+    }
+
     const gridLineWidth = CANVAS_CONFIG.GRID_LINE_WIDTH / effectiveScale;
     const bold5LineWidth = (CANVAS_CONFIG.BOLD_LINE_WIDTH * CANVAS_CONFIG.GRID_LINE_WIDTH) / effectiveScale;
     const bold10LineWidth = (CANVAS_CONFIG.MAJOR_LINE_WIDTH * CANVAS_CONFIG.GRID_LINE_WIDTH) / effectiveScale;
@@ -268,7 +324,7 @@ export default function PixelCanvas() {
     ctx.strokeRect(0, 0, width, height);
 
     ctx.restore();
-  }, [pixels, width, height, zoom, viewOffset.x, viewOffset.y, viewportSize.width, viewportSize.height, theme, systemTheme, backgroundColor, selectedUsedColor, primaryThemeColor]);
+  }, [pixels, width, height, zoom, viewOffset.x, viewOffset.y, viewportSize.width, viewportSize.height, theme, systemTheme, backgroundColor, selectedUsedColor, wandSelection, primaryThemeColor]);
 
   const getCoordinates = (e: React.MouseEvent) => {
     const canvas = canvasRef.current;
@@ -308,6 +364,81 @@ export default function PixelCanvas() {
       return { x, y };
     }
     return null;
+  };
+
+  const getCanvasAnchorFromCoords = (coords: { x: number; y: number }) => {
+    const scale = zoom / 10;
+    return {
+      x: viewOffset.x + (coords.x + 0.5) * scale,
+      y: viewOffset.y + (coords.y + 0.5) * scale,
+    };
+  };
+
+  const getContiguousColorKeys = (startX: number, startY: number, targetColor: string) => {
+    const normalizedTargetColor = normalizeHex(targetColor);
+    const queue: [number, number][] = [[startX, startY]];
+    const visited = new Set<string>();
+    const selectedKeys: string[] = [];
+
+    while (queue.length > 0) {
+      const [x, y] = queue.shift()!;
+      const key = `${x},${y}`;
+
+      if (x < 0 || x >= width || y < 0 || y >= height) continue;
+      if (visited.has(key)) continue;
+      visited.add(key);
+
+      const currentColor = pixels[key];
+      if (!currentColor || normalizeHex(currentColor) !== normalizedTargetColor) continue;
+
+      selectedKeys.push(key);
+      queue.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
+    }
+
+    return selectedKeys;
+  };
+
+  const handleWandSelection = (coords: { x: number; y: number } | null) => {
+    if (!coords) return;
+
+    const targetColor = pixels[`${coords.x},${coords.y}`] ?? null;
+    if (!targetColor) {
+      setWandSelection(null);
+      return;
+    }
+
+    const normalizedTargetColor = normalizeHex(targetColor);
+    const selectedKeys = getContiguousColorKeys(coords.x, coords.y, targetColor);
+    const anchor = getCanvasAnchorFromCoords(coords);
+    useEditorStore.getState().setColor(targetColor);
+    setWandSelection({
+      ...anchor,
+      color: normalizedTargetColor,
+      keys: selectedKeys,
+    });
+  };
+
+  const handleClearWandSelection = () => {
+    if (!wandSelection) return;
+
+    const selectedKeys = new Set(wandSelection.keys);
+    let changed = false;
+    const currentPixels = useEditorStore.getState().pixels;
+    const nextPixels: Record<string, string> = {};
+
+    for (const [key, color] of Object.entries(currentPixels)) {
+      if (selectedKeys.has(key) && normalizeHex(color) === normalizeHex(wandSelection.color)) {
+        changed = true;
+        continue;
+      }
+      nextPixels[key] = color;
+    }
+
+    if (!changed) return;
+
+    setPixels(nextPixels);
+    saveHistory();
+    setWandSelection(null);
   };
 
   const floodFill = (startX: number, startY: number, targetColor: string | null, replacementColor: string) => {
@@ -446,6 +577,13 @@ export default function PixelCanvas() {
         queueCursorOverlay({ x: cursorPendingRef.current.x, y: cursorPendingRef.current.y, visible: false });
         return;
       }
+      if (currentTool === 'wand') {
+        e.preventDefault();
+        setIsDrawing(false);
+        setLastCoords(null);
+        handleWandSelection(getCoordinatesFromTouch(e));
+        return;
+      }
       strokeColorRegisteredRef.current = false;
       setIsDrawing(true);
       handleDraw(getCoordinatesFromTouch(e));
@@ -544,6 +682,13 @@ export default function PixelCanvas() {
       setIsPanning(true);
       panLastRef.current = { x: e.clientX, y: e.clientY };
       queueCursorOverlay({ x: cursorPendingRef.current.x, y: cursorPendingRef.current.y, visible: false });
+      return;
+    }
+    if (currentTool === 'wand') {
+      e.preventDefault();
+      setIsDrawing(false);
+      setLastCoords(null);
+      handleWandSelection(getCoordinates(e));
       return;
     }
     strokeColorRegisteredRef.current = false;
@@ -787,17 +932,19 @@ export default function PixelCanvas() {
     });
   };
 
-  const isOverlayTool = currentTool === 'brush' || currentTool === 'bucket' || currentTool === 'eraser' || currentTool === 'eyedropper';
+  const isOverlayTool = currentTool === 'brush' || currentTool === 'bucket' || currentTool === 'wand' || currentTool === 'eraser' || currentTool === 'eyedropper';
   const CursorIcon =
     currentTool === 'brush'
       ? Pencil
       : currentTool === 'bucket'
         ? PaintBucket
-        : currentTool === 'eraser'
-          ? Eraser
-          : currentTool === 'eyedropper'
-            ? Pipette
-            : null;
+        : currentTool === 'wand'
+          ? WandSparkles
+          : currentTool === 'eraser'
+            ? Eraser
+            : currentTool === 'eyedropper'
+              ? Pipette
+              : null;
 
   const cursorClass = resizeDrag
     ? resizeDrag.edge === 'left' || resizeDrag.edge === 'right'
@@ -905,11 +1052,13 @@ export default function PixelCanvas() {
       ? CURSOR_CONFIG.BRUSH_HOTSPOT
       : currentTool === 'bucket'
         ? CURSOR_CONFIG.BUCKET_HOTSPOT
-      : currentTool === 'eraser'
-        ? CURSOR_CONFIG.ERASER_HOTSPOT
-      : currentTool === 'eyedropper'
-        ? CURSOR_CONFIG.EYEDROPPER_HOTSPOT
-        : { x: CURSOR_CONFIG.ICON_SIZE / 2, y: CURSOR_CONFIG.ICON_SIZE / 2 };
+      : currentTool === 'wand'
+        ? { x: 4, y: 20 }
+        : currentTool === 'eraser'
+          ? CURSOR_CONFIG.ERASER_HOTSPOT
+        : currentTool === 'eyedropper'
+          ? CURSOR_CONFIG.EYEDROPPER_HOTSPOT
+          : { x: CURSOR_CONFIG.ICON_SIZE / 2, y: CURSOR_CONFIG.ICON_SIZE / 2 };
   const cursorIconSize = CURSOR_CONFIG.ICON_SIZE;
   const cursorHotspotScaled = cursorHotspot;
   const usesPrimaryColorCursor = currentTool === 'brush' || currentTool === 'bucket';
@@ -1040,6 +1189,43 @@ export default function PixelCanvas() {
           onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}
         />
+        <Popover
+          open={Boolean(wandSelection)}
+          onOpenChange={(open) => {
+            if (open) return;
+            setWandSelection(null);
+          }}
+        >
+          {wandSelection && (
+            <PopoverAnchor asChild>
+              <div
+                className="pointer-events-none absolute z-20 size-1"
+                style={{
+                  left: wandSelection.x,
+                  top: wandSelection.y,
+                  transform: "translate(-50%, -50%)",
+                }}
+              />
+            </PopoverAnchor>
+          )}
+          <PopoverContent
+            side="top"
+            align="center"
+            sideOffset={10}
+            className="z-[100] flex w-fit flex-row items-center gap-0 rounded-lg border bg-background/95 p-0.5 shadow-sm backdrop-blur-sm"
+            onOpenAutoFocus={(event) => event.preventDefault()}
+          >
+            <UsedColorActionButtons
+              selectedColor={wandSelection?.color ?? null}
+              onReplace={(sourceColor) => {
+                if (!wandSelection) return;
+                onOpenReplaceColorDialog(sourceColor, wandSelection.keys);
+              }}
+              onClear={handleClearWandSelection}
+              onClose={() => setWandSelection(null)}
+            />
+          </PopoverContent>
+        </Popover>
         {resizeHandles.map((handle) => (
           <div
             key={handle.edge}

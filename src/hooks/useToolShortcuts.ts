@@ -5,6 +5,7 @@ import type { ToolType } from '@/store/useEditorStore';
 const TOOL_SHORTCUTS: Record<string, ToolType> = {
   b: 'brush',
   g: 'bucket',
+  w: 'wand',
   h: 'hand',
   e: 'eraser',
   i: 'eyedropper',
