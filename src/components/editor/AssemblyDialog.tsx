@@ -59,6 +59,15 @@ type RenderResult = {
   height: number;
 };
 
+type AssemblyPreviewMetrics = {
+  cellSize: number;
+  contentWidth: number;
+  contentHeight: number;
+  edgePadding: number;
+  width: number;
+  height: number;
+};
+
 type AssemblyProgress = {
   activeIndex: number;
   completedColors: string[];
@@ -90,6 +99,37 @@ const DEFAULT_ASSEMBLY_SETTINGS: AssemblySettings = {
 
 function getAssemblyCellLabelFontSize(cellSize: number, labelLength: number) {
   return Math.max(8, Math.min(14, Math.floor(cellSize / Math.max(labelLength * 0.62, 2.8))));
+}
+
+function getAssemblyPreviewMetrics({
+  width,
+  height,
+  showAxis,
+}: {
+  width: number;
+  height: number;
+  showAxis: boolean;
+}): AssemblyPreviewMetrics {
+  const axisSize = showAxis ? ASSEMBLY_AXIS_SIZE : 0;
+  const edgePadding = axisSize + ASSEMBLY_PREVIEW_MARGIN;
+  const cellSize = Math.max(
+    ASSEMBLY_MIN_CELL_SIZE,
+    Math.min(
+      ASSEMBLY_PREVIEW_CELL_SIZE,
+      Math.floor((ASSEMBLY_MAX_EDGE - edgePadding * 2) / Math.max(width, height, 1))
+    )
+  );
+  const contentWidth = width * cellSize;
+  const contentHeight = height * cellSize;
+
+  return {
+    cellSize,
+    contentWidth,
+    contentHeight,
+    edgePadding,
+    width: contentWidth + edgePadding * 2,
+    height: contentHeight + edgePadding * 2,
+  };
 }
 
 function shouldOpenAssemblySettingsByDefault() {
@@ -249,7 +289,9 @@ function getTouchMidpoint(touches: TouchEvent<HTMLDivElement>["touches"]) {
   };
 }
 
-function renderAssemblyPreview({
+function drawAssemblyPreview(
+  canvas: HTMLCanvasElement,
+  {
   pixels,
   width,
   height,
@@ -265,41 +307,30 @@ function renderAssemblyPreview({
   excludedColorCodes,
   mirrorFlip,
 }: {
-  pixels: Record<string, string>;
-  width: number;
-  height: number;
-  activeColor: string | null;
-  activeLabel: string | null;
-  showGrid: boolean;
-  showMinorGrid: boolean;
-  gridInterval: number;
-  gridColor: string;
-  showAxis: boolean;
-  showBorder?: boolean;
-  showColorCode: boolean;
-  excludedColorCodes: Set<string>;
-  mirrorFlip: boolean;
-}): RenderResult | null {
-  if (typeof document === "undefined") return null;
+    pixels: Record<string, string>;
+    width: number;
+    height: number;
+    activeColor: string | null;
+    activeLabel: string | null;
+    showGrid: boolean;
+    showMinorGrid: boolean;
+    gridInterval: number;
+    gridColor: string;
+    showAxis: boolean;
+    showBorder?: boolean;
+    showColorCode: boolean;
+    excludedColorCodes: Set<string>;
+    mirrorFlip: boolean;
+  }
+) {
+  const { cellSize, contentWidth, contentHeight, edgePadding, width: canvasWidth, height: canvasHeight } =
+    getAssemblyPreviewMetrics({ width, height, showAxis });
 
-  const axisSize = showAxis ? ASSEMBLY_AXIS_SIZE : 0;
-  const margin = ASSEMBLY_PREVIEW_MARGIN;
-  const edgePadding = axisSize + margin;
-  const cellSize = Math.max(
-    ASSEMBLY_MIN_CELL_SIZE,
-    Math.min(
-      ASSEMBLY_PREVIEW_CELL_SIZE,
-      Math.floor((ASSEMBLY_MAX_EDGE - edgePadding * 2) / Math.max(width, height, 1))
-    )
-  );
-  const contentWidth = width * cellSize;
-  const contentHeight = height * cellSize;
-  const canvas = document.createElement("canvas");
-  canvas.width = contentWidth + edgePadding * 2;
-  canvas.height = contentHeight + edgePadding * 2;
+  if (canvas.width !== canvasWidth) canvas.width = canvasWidth;
+  if (canvas.height !== canvasHeight) canvas.height = canvasHeight;
 
   const ctx = canvas.getContext("2d");
-  if (!ctx) return null;
+  if (!ctx) return;
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = "#FFFFFF";
@@ -414,11 +445,7 @@ function renderAssemblyPreview({
   }
   ctx.restore();
 
-  return {
-    dataUrl: canvas.toDataURL("image/png"),
-    width: canvas.width,
-    height: canvas.height,
-  };
+  return;
 }
 
 function renderAssemblyThumbnail({
@@ -500,6 +527,7 @@ export default function AssemblyDialog({ open = true, onOpenChange, standalone =
   const [isDragging, setIsDragging] = useState(false);
   const [previewViewportElement, setPreviewViewportElement] = useState<HTMLDivElement | null>(null);
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
+  const previewCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const previewViewportRef = useRef<HTMLDivElement | null>(null);
   const previewScaleRef = useRef(previewScale);
   const previewOffsetRef = useRef(previewOffset);
@@ -563,37 +591,12 @@ export default function AssemblyDialog({ open = true, onOpenChange, standalone =
     () =>
       steps.length === 0
         ? null
-        : renderAssemblyPreview({
-            pixels,
+        : getAssemblyPreviewMetrics({
             width,
             height,
-            activeColor: activeStep?.color ?? null,
-            activeLabel: activeStep?.label ?? null,
-            showGrid,
-            showMinorGrid,
-            gridInterval,
-            gridColor,
             showAxis,
-            showColorCode,
-            excludedColorCodes,
-            mirrorFlip,
           }),
-    [
-      activeStep?.color,
-      activeStep?.label,
-      excludedColorCodes,
-      gridColor,
-      gridInterval,
-      height,
-      mirrorFlip,
-      pixels,
-      showAxis,
-      showColorCode,
-      showGrid,
-      showMinorGrid,
-      steps.length,
-      width,
-    ]
+    [height, showAxis, steps.length, width]
   );
   const completionPreviewResult = useMemo(
     () =>
@@ -606,6 +609,42 @@ export default function AssemblyDialog({ open = true, onOpenChange, standalone =
           }),
     [mirrorFlip, pixels, steps.length, width]
   );
+
+  useEffect(() => {
+    const canvas = previewCanvasRef.current;
+    if (!canvas || !previewResult) return;
+
+    drawAssemblyPreview(canvas, {
+      pixels,
+      width,
+      height,
+      activeColor: activeStep?.color ?? null,
+      activeLabel: activeStep?.label ?? null,
+      showGrid,
+      showMinorGrid,
+      gridInterval,
+      gridColor,
+      showAxis,
+      showColorCode,
+      excludedColorCodes,
+      mirrorFlip,
+    });
+  }, [
+    activeStep?.color,
+    activeStep?.label,
+    excludedColorCodes,
+    gridColor,
+    gridInterval,
+    height,
+    mirrorFlip,
+    pixels,
+    previewResult,
+    showAxis,
+    showColorCode,
+    showGrid,
+    showMinorGrid,
+    width,
+  ]);
 
   useEffect(() => {
     if (!completionOpen) return;
@@ -1339,9 +1378,10 @@ export default function AssemblyDialog({ open = true, onOpenChange, standalone =
               >
                 {previewResult ? (
                   <div className="flex h-full w-full min-h-0 min-w-0 items-center justify-center overflow-hidden p-3">
-                    <img
-                      src={previewResult.dataUrl}
-                      alt={t("editor.assembly.title")}
+                    <canvas
+                      ref={previewCanvasRef}
+                      aria-label={t("editor.assembly.title")}
+                      role="img"
                       className="rounded-xl object-contain border border-black/10 [image-rendering:pixelated]"
                       style={{
                         width: baseImageSize ? `${baseImageSize.width}px` : undefined,
