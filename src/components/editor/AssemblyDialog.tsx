@@ -92,18 +92,23 @@ function getAssemblyCellLabelFontSize(cellSize: number, labelLength: number) {
   return Math.max(8, Math.min(14, Math.floor(cellSize / Math.max(labelLength * 0.62, 2.8))));
 }
 
+function shouldOpenAssemblySettingsByDefault() {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia(`(min-width: ${ASSEMBLY_STEP_PANEL_BREAKPOINT}px)`).matches;
+}
+
 function getDefaultPreviewOffset(viewportSize: { width: number; height: number }) {
   if (viewportSize.width <= 0 || viewportSize.height <= 0) return { x: 0, y: 0 };
 
   if (viewportSize.width < ASSEMBLY_STEP_PANEL_BREAKPOINT) {
     return {
       x: 0,
-      y: Math.min(120, Math.round(viewportSize.height * 0.22)),
+      y: Math.min(72, Math.round(viewportSize.height * 0.14)),
     };
   }
 
   return {
-    x: -Math.min(200, Math.round(viewportSize.width * 0.18)),
+    x: -Math.min(36, Math.round(viewportSize.width * 0.03)),
     y: 0,
   };
 }
@@ -352,10 +357,10 @@ function renderAssemblyPreview({
       ctx.globalAlpha = 0.28;
       ctx.fillStyle = gridColor;
       for (let x = 0; x <= width; x++) {
-        drawVerticalGridLine(ctx, x * cellSize, 0, contentHeight, 1);
+        drawVerticalGridLine(ctx, x * cellSize, 0, contentHeight, 2);
       }
       for (let y = 0; y <= height; y++) {
-        drawHorizontalGridLine(ctx, 0, y * cellSize, contentWidth, 1);
+        drawHorizontalGridLine(ctx, 0, y * cellSize, contentWidth, 2);
       }
       ctx.globalAlpha = 1;
     }
@@ -748,9 +753,9 @@ export default function AssemblyDialog({ open = true, onOpenChange, standalone =
     if (!open) return;
     queueMicrotask(() => {
       restorePersistedProgress();
-      setSettingsOpen(false);
+      setSettingsOpen(standalone && shouldOpenAssemblySettingsByDefault());
     });
-  }, [open, restorePersistedProgress]);
+  }, [open, restorePersistedProgress, standalone]);
 
   const goToStep = (direction: -1 | 1) => {
     const nextActiveIndex = Math.min(Math.max(clampedActiveIndex + direction, 0), Math.max(steps.length - 1, 0));
@@ -1093,6 +1098,7 @@ export default function AssemblyDialog({ open = true, onOpenChange, standalone =
                 align="start"
                 side="bottom"
                 sideOffset={14}
+                onOpenAutoFocus={(event) => event.preventDefault()}
                 className="w-[308px] gap-0 rounded-2xl border border-border/60 p-0 shadow-xl"
               >
                 <div className="space-y-4 p-6">
@@ -1148,10 +1154,10 @@ export default function AssemblyDialog({ open = true, onOpenChange, standalone =
                     </div>
 
                     <div className="space-y-2">
-                      <Label className={cn("text-[11px] font-semibold", !showColorCode && "text-muted-foreground")}>
+                      <Label className="text-[11px] font-semibold">
                         {t("editor.exportDialog.excludeColors")}
                       </Label>
-                      <div className={cn("grid grid-cols-6 gap-2", !showColorCode && "pointer-events-none opacity-50")}>
+                      <div className="grid grid-cols-6 gap-2">
                         {nearWhiteSwatches.map((swatch) => {
                           const key = normalizeHex(swatch.color);
                           const isSelected = excludedColorCodes.has(key);
