@@ -72,7 +72,7 @@ export default function MobileEditorQuickActions({ onExport, className }: Props)
           <Download size={16} />
         </Button>
 
-        <div className="ml-auto flex shrink-0 items-center rounded-md border border-border bg-background p-1">
+        <div className="ml-auto flex shrink-0 items-center gap-1 rounded-md border border-border bg-background p-0.5">
           {tools.map((tool) => (
             <Button
               key={tool.id}
@@ -80,7 +80,7 @@ export default function MobileEditorQuickActions({ onExport, className }: Props)
               size="icon-sm"
               onClick={() => setTool(tool.id)}
               className={cn(
-                "h-8 w-8 shrink-0",
+                "h-7 w-7 shrink-0",
                 currentTool === tool.id && "bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary"
               )}
               aria-label={t(tool.labelKey)}
