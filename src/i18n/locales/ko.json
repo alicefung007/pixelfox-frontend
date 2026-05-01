@@ -143,6 +143,7 @@
       "resetTransform": "초기화",
       "patternPreview": "패턴 미리보기",
       "patternPreviewPlaceholder": "생성 버튼을 눌러 미리보기",
+      "actualPatternSize": "실제 크기: {{width}} x {{height}}",
       "cancel": "취소",
       "generate": "생성",
       "processing": "처리 중...",

@@ -143,6 +143,7 @@
       "resetTransform": "リセット",
       "patternPreview": "パターンプレビュー",
       "patternPreviewPlaceholder": "画像をアップロードするとプレビューされます",
+      "actualPatternSize": "実寸: {{width}} x {{height}}",
       "cancel": "キャンセル",
       "generate": "生成",
       "processing": "処理中...",

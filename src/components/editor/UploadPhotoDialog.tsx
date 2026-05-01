@@ -46,6 +46,49 @@ const extractionQualityOptions = [
   { value: "high", labelKey: "editor.uploadDialog.qualityHigh" },
 ];
 
+const MIN_BEADS = 1;
+const MAX_BEADS = 200;
+
+function normalizeAspectRatio(ratio: number) {
+  return Number.isFinite(ratio) && ratio > 0 ? ratio : 1;
+}
+
+function clampBeadNumber(value: number) {
+  return clamp(Math.round(value), MIN_BEADS, MAX_BEADS);
+}
+
+function fitLockedDimensionsFromWidth(width: number, heightOverWidth: number) {
+  const ratio = normalizeAspectRatio(heightOverWidth);
+  let nextWidth = clampBeadNumber(width);
+  let nextHeight = Math.round(nextWidth * ratio);
+
+  if (nextHeight > MAX_BEADS) {
+    nextHeight = MAX_BEADS;
+    nextWidth = clampBeadNumber(nextHeight / ratio);
+  } else if (nextHeight < MIN_BEADS) {
+    nextHeight = MIN_BEADS;
+    nextWidth = clampBeadNumber(nextHeight / ratio);
+  }
+
+  return { width: nextWidth, height: nextHeight };
+}
+
+function fitLockedDimensionsFromHeight(height: number, heightOverWidth: number) {
+  const ratio = normalizeAspectRatio(heightOverWidth);
+  let nextHeight = clampBeadNumber(height);
+  let nextWidth = Math.round(nextHeight / ratio);
+
+  if (nextWidth > MAX_BEADS) {
+    nextWidth = MAX_BEADS;
+    nextHeight = clampBeadNumber(nextWidth * ratio);
+  } else if (nextWidth < MIN_BEADS) {
+    nextWidth = MIN_BEADS;
+    nextHeight = clampBeadNumber(nextWidth * ratio);
+  }
+
+  return { width: nextWidth, height: nextHeight };
+}
+
 function trimColorMatchResult(result: ColorMatchResult): ColorMatchResult {
   if (result.width <= 1 || result.height <= 1) {
     return result;
@@ -197,6 +240,7 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
   const scrollRef = useRef<HTMLDivElement>(null);
   const resultCanvasRef = useRef<HTMLCanvasElement>(null);
   const widthBeadsRef = useRef(processingDimensions.width);
+  const aspectRatioRef = useRef(1);
 
   // Image flip state
   const [flipHorizontal, setFlipHorizontal] = useState(false);
@@ -253,15 +297,16 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
       }
 
       const currentWidth = parseInt(widthBeadsRef.current, 10) || 60;
-      const nextWidth = String(clamp(currentWidth, 1, 200));
-      const nextHeight = String(
-        clamp(Math.round(currentWidth * (img.height / img.width)), 1, 200)
-      );
+      const imageRatio = normalizeAspectRatio(img.height / img.width);
+      const nextDimensions = fitLockedDimensionsFromWidth(currentWidth, imageRatio);
+      const nextWidth = String(nextDimensions.width);
+      const nextHeight = String(nextDimensions.height);
 
+      aspectRatioRef.current = imageRatio;
       setWidthBeads(nextWidth);
       setHeightBeads(nextHeight);
       setProcessingDimensions({ width: nextWidth, height: nextHeight });
-      setAspectRatioLocked(img.width === img.height);
+      setAspectRatioLocked(true);
 
       URL.revokeObjectURL(url);
     };
@@ -369,13 +414,6 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
   }, [trimEdges, processingDimensions.width, processingDimensions.height]);
 
   useEffect(() => {
-    if (!trimEdges || !effectiveResult) return;
-
-    setWidthBeads(String(effectiveResult.width));
-    setHeightBeads(String(effectiveResult.height));
-  }, [trimEdges, effectiveResult]);
-
-  useEffect(() => {
     if (!effectiveResult) return;
     const canvas = resultCanvasRef.current;
     if (!canvas) return;
@@ -388,11 +426,17 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
     }
   }, [effectiveResult]);
 
+  const updateAspectRatioFromDimensions = () => {
+    const currentWidth = parseInt(processingDimensions.width, 10);
+    const currentHeight = parseInt(processingDimensions.height, 10);
+    aspectRatioRef.current = normalizeAspectRatio(currentHeight / currentWidth);
+  };
+
   // Clamp beads value between 1-200
   const clampBeads = (val: string) => {
     const num = parseInt(val, 10);
     if (isNaN(num)) return "";
-    return String(clamp(num, 1, 200));
+    return String(clamp(num, MIN_BEADS, MAX_BEADS));
   };
 
   // Clamp offset value between -200 to 200 (integers only)
@@ -406,70 +450,58 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
   // Aspect ratio handling (locked by width)
   const handleWidthBeadsChange = (val: string) => {
     const clamped = clampBeads(val);
-    setWidthBeads(clamped);
     if (aspectRatioLocked && clamped !== "") {
       const newWidth = parseInt(clamped, 10);
-      const currentHeight = parseInt(processingDimensions.height, 10) || 1;
-      const currentWidth = parseInt(processingDimensions.width, 10) || 1;
-      if (currentWidth > 0) {
-        const ratio = currentHeight / currentWidth;
-        const newHeight = Math.round(newWidth * ratio);
-        const nextHeight = String(clamp(newHeight, 1, 200));
-        setHeightBeads(nextHeight);
-        setProcessingDimensions({ width: clamped, height: nextHeight });
-        return;
-      }
+      const nextDimensions = fitLockedDimensionsFromWidth(newWidth, aspectRatioRef.current);
+      const nextWidth = String(nextDimensions.width);
+      const nextHeight = String(nextDimensions.height);
+      setWidthBeads(nextWidth);
+      setHeightBeads(nextHeight);
+      setProcessingDimensions({ width: nextWidth, height: nextHeight });
+      return;
     }
+    setWidthBeads(clamped);
     setProcessingDimensions((prev) => ({ ...prev, width: clamped }));
   };
 
   const handleHeightBeadsChange = (val: string) => {
     const clamped = clampBeads(val);
-    setHeightBeads(clamped);
     if (aspectRatioLocked && clamped !== "") {
       const newHeight = parseInt(clamped, 10);
-      const currentHeight = parseInt(processingDimensions.height, 10) || 1;
-      const currentWidth = parseInt(processingDimensions.width, 10) || 1;
-      if (currentHeight > 0) {
-        const ratio = currentWidth / currentHeight;
-        const newWidth = Math.round(newHeight * ratio);
-        const nextWidth = String(clamp(newWidth, 1, 200));
-        setWidthBeads(nextWidth);
-        setProcessingDimensions({ width: nextWidth, height: clamped });
-        return;
-      }
+      const nextDimensions = fitLockedDimensionsFromHeight(newHeight, aspectRatioRef.current);
+      const nextWidth = String(nextDimensions.width);
+      const nextHeight = String(nextDimensions.height);
+      setWidthBeads(nextWidth);
+      setHeightBeads(nextHeight);
+      setProcessingDimensions({ width: nextWidth, height: nextHeight });
+      return;
     }
+    setHeightBeads(clamped);
     setProcessingDimensions((prev) => ({ ...prev, height: clamped }));
   };
 
   const handleWidthBeadsDraftChange = (val: string) => {
     const clamped = clampBeads(val);
-    setWidthBeads(clamped);
     if (aspectRatioLocked && clamped !== "") {
       const newWidth = parseInt(clamped, 10);
-      const currentHeight = parseInt(processingDimensions.height, 10) || 1;
-      const currentWidth = parseInt(processingDimensions.width, 10) || 1;
-      if (currentWidth > 0) {
-        const ratio = currentHeight / currentWidth;
-        const newHeight = Math.round(newWidth * ratio);
-        setHeightBeads(String(clamp(newHeight, 1, 200)));
-      }
+      const nextDimensions = fitLockedDimensionsFromWidth(newWidth, aspectRatioRef.current);
+      setWidthBeads(String(nextDimensions.width));
+      setHeightBeads(String(nextDimensions.height));
+      return;
     }
+    setWidthBeads(clamped);
   };
 
   const handleHeightBeadsDraftChange = (val: string) => {
     const clamped = clampBeads(val);
-    setHeightBeads(clamped);
     if (aspectRatioLocked && clamped !== "") {
       const newHeight = parseInt(clamped, 10);
-      const currentHeight = parseInt(processingDimensions.height, 10) || 1;
-      const currentWidth = parseInt(processingDimensions.width, 10) || 1;
-      if (currentHeight > 0) {
-        const ratio = currentWidth / currentHeight;
-        const newWidth = Math.round(newHeight * ratio);
-        setWidthBeads(String(clamp(newWidth, 1, 200)));
-      }
+      const nextDimensions = fitLockedDimensionsFromHeight(newHeight, aspectRatioRef.current);
+      setWidthBeads(String(nextDimensions.width));
+      setHeightBeads(String(nextDimensions.height));
+      return;
     }
+    setHeightBeads(clamped);
   };
 
   const handleColorMergeThresholdCommit = (value: number[]) => {
@@ -750,8 +782,7 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
                         className={aspectRatioLocked ? "" : "text-muted-foreground"}
                         onClick={() => {
                           if (!aspectRatioLocked) {
-                            setHeightBeads(widthBeads);
-                            setProcessingDimensions((prev) => ({ ...prev, height: prev.width }));
+                            updateAspectRatioFromDimensions();
                           }
                           setAspectRatioLocked(!aspectRatioLocked);
                         }}
@@ -959,6 +990,14 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
                 <span className="text-sm text-muted-foreground">
                   {t("editor.uploadDialog.patternPreviewPlaceholder")}
                 </span>
+              )}
+              {!isProcessing && effectiveResult && (
+                <div className="pointer-events-none absolute bottom-2 right-2 rounded-md border bg-background/90 px-2 py-1 text-[11px] font-medium text-foreground shadow-sm backdrop-blur-sm">
+                  {t("editor.uploadDialog.actualPatternSize", {
+                    width: effectiveResult.width,
+                    height: effectiveResult.height,
+                  })}
+                </div>
               )}
             </div>
 

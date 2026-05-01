@@ -143,6 +143,7 @@
       "resetTransform": "重置",
       "patternPreview": "图案预览",
       "patternPreviewPlaceholder": "上传图片后即可预览",
+      "actualPatternSize": "实际尺寸：{{width}} x {{height}}",
       "cancel": "取消",
       "generate": "生成",
       "processing": "处理中...",

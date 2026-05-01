@@ -143,6 +143,7 @@
       "resetTransform": "Reset",
       "patternPreview": "Pattern Preview",
       "patternPreviewPlaceholder": "Upload a photo to preview",
+      "actualPatternSize": "Actual Size: {{width}} x {{height}}",
       "cancel": "Cancel",
       "generate": "Generate",
       "processing": "Processing...",
