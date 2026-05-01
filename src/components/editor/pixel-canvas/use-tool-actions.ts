@@ -9,8 +9,8 @@ export function useToolActions(params: {
   height: number;
   currentTool: string;
   primaryColor: string;
-  setPixel: (x: number, y: number, color: string) => void;
-  clearPixel: (x: number, y: number) => void;
+  setPixelFast: (x: number, y: number, color: string) => void;
+  clearPixelFast: (x: number, y: number) => void;
   setPixels: (pixels: Record<string, string>) => void;
   addUsedColor: (color: string) => void;
   addRecentColor: (color: string) => void;
@@ -24,8 +24,8 @@ export function useToolActions(params: {
     height,
     currentTool,
     primaryColor,
-    setPixel,
-    clearPixel,
+    setPixelFast,
+    clearPixelFast,
     setPixels,
     addUsedColor,
     addRecentColor,
@@ -51,10 +51,10 @@ export function useToolActions(params: {
 
       if (lastCoords) {
         const points = getLinePoints(lastCoords.x, lastCoords.y, coords.x, coords.y);
-        points.forEach(p => (isErase ? clearPixel(p.x, p.y) : setPixel(p.x, p.y, primaryColor)));
+        points.forEach(p => (isErase ? clearPixelFast(p.x, p.y) : setPixelFast(p.x, p.y, primaryColor)));
       } else {
-        if (isErase) clearPixel(coords.x, coords.y);
-        else setPixel(coords.x, coords.y, primaryColor);
+        if (isErase) clearPixelFast(coords.x, coords.y);
+        else setPixelFast(coords.x, coords.y, primaryColor);
       }
 
       if (!isErase && !strokeColorRegisteredRef.current) {

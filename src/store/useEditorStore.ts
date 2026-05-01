@@ -13,6 +13,8 @@ interface HistoryEntry {
 
 interface EditorState {
   pixels: Record<string, string>; // key: "x,y", value: hex color
+  pixelBuffer: Uint32Array; // length=width*height; 0=empty, else 0xFFRRGGBB
+  pixelsVersion: number; // bumped on any pixel mutation; used by renderer caches
   width: number;
   height: number;
   currentTool: ToolType;
@@ -26,6 +28,8 @@ interface EditorState {
 
   setPixel: (x: number, y: number, color: string) => void;
   clearPixel: (x: number, y: number) => void;
+  setPixelFast: (x: number, y: number, color: string) => void;
+  clearPixelFast: (x: number, y: number) => void;
   saveHistory: () => void;
   setPixels: (pixels: Record<string, string>) => void;
   setSize: (width: number, height: number) => void;
@@ -43,6 +47,67 @@ interface EditorState {
 
 const DEFAULT_WIDTH = EDITOR_CONFIG.DEFAULT_WIDTH;
 const DEFAULT_HEIGHT = EDITOR_CONFIG.DEFAULT_HEIGHT;
+
+const PIXEL_FILLED_FLAG = 0xff000000;
+
+const packPixelHex = (hex: string): number => {
+  const raw = hex.startsWith('#') ? hex.slice(1) : hex;
+  const full = raw.length === 3 ? raw.split('').map((c) => c + c).join('') : raw;
+  const rgb = parseInt(full, 16);
+  if (Number.isNaN(rgb)) return 0;
+  return (PIXEL_FILLED_FLAG | rgb) >>> 0;
+};
+
+const unpackPixelHex = (v: number): string => {
+  const rgb = v & 0xffffff;
+  return '#' + rgb.toString(16).padStart(6, '0').toUpperCase();
+};
+
+const buildBufferFromPixels = (
+  pixels: Record<string, string>,
+  width: number,
+  height: number,
+): Uint32Array => {
+  const buf = new Uint32Array(Math.max(1, width * height));
+  for (const key in pixels) {
+    const commaIdx = key.indexOf(',');
+    if (commaIdx < 0) continue;
+    const x = +key.slice(0, commaIdx);
+    const y = +key.slice(commaIdx + 1);
+    if (x < 0 || y < 0 || x >= width || y >= height) continue;
+    buf[y * width + x] = packPixelHex(pixels[key]);
+  }
+  return buf;
+};
+
+const areRecordsEqual = (
+  a: Record<string, string>,
+  b: Record<string, string>,
+): boolean => {
+  if (a === b) return true;
+  const keysA = Object.keys(a);
+  if (keysA.length !== Object.keys(b).length) return false;
+  for (const k of keysA) {
+    if (a[k] !== b[k]) return false;
+  }
+  return true;
+};
+
+const buildPixelsFromBuffer = (
+  buf: Uint32Array,
+  width: number,
+  height: number,
+): Record<string, string> => {
+  const result: Record<string, string> = {};
+  for (let y = 0; y < height; y++) {
+    const row = y * width;
+    for (let x = 0; x < width; x++) {
+      const v = buf[row + x];
+      if (v !== 0) result[`${x},${y}`] = unpackPixelHex(v);
+    }
+  }
+  return result;
+};
 const EDITOR_STORAGE_KEY = 'pixelfox-editor-storage';
 const EDITOR_CANVAS_STORAGE_KEY = 'pixelfox-editor-canvas-storage';
 const LEGACY_DEFAULT_PRIMARY_COLOR = '#FF61A6';
@@ -189,7 +254,7 @@ const loadPersistedCanvasState = (fallback?: Partial<EditorState>): PersistedCan
   }
 };
 
-const persistCanvasState = (state: PersistedCanvasState) => {
+const writeCanvasStateToStorage = (state: PersistedCanvasState) => {
   if (typeof window === 'undefined') return;
 
   const persistAttempt = (history: HistoryEntry[], historyIndex: number) =>
@@ -227,12 +292,61 @@ const persistCanvasState = (state: PersistedCanvasState) => {
   }
 };
 
+const PERSIST_DEBOUNCE_MS = 500;
+let persistTimer: ReturnType<typeof setTimeout> | null = null;
+let pendingPersistState: PersistedCanvasState | null = null;
+
+type IdleCallbackHandle = number;
+type IdleDeadline = { didTimeout: boolean; timeRemaining: () => number };
+type IdleWindow = Window & {
+  requestIdleCallback?: (cb: (deadline: IdleDeadline) => void, opts?: { timeout: number }) => IdleCallbackHandle;
+};
+
+const flushPersist = () => {
+  persistTimer = null;
+  const state = pendingPersistState;
+  pendingPersistState = null;
+  if (!state) return;
+  const idleWindow = window as IdleWindow;
+  if (typeof idleWindow.requestIdleCallback === 'function') {
+    idleWindow.requestIdleCallback(() => writeCanvasStateToStorage(state), { timeout: 1000 });
+  } else {
+    writeCanvasStateToStorage(state);
+  }
+};
+
+const persistCanvasState = (state: PersistedCanvasState) => {
+  if (typeof window === 'undefined') return;
+  pendingPersistState = state;
+  if (persistTimer !== null) return;
+  persistTimer = setTimeout(flushPersist, PERSIST_DEBOUNCE_MS);
+};
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', () => {
+    if (persistTimer !== null) {
+      clearTimeout(persistTimer);
+      persistTimer = null;
+    }
+    if (pendingPersistState) {
+      writeCanvasStateToStorage(pendingPersistState);
+      pendingPersistState = null;
+    }
+  });
+}
+
 const initialCanvasState = loadPersistedCanvasState(getDefaultCanvasState());
 
 export const useEditorStore = create<EditorState>()(
   persist(
     (set) => ({
   pixels: initialCanvasState.pixels,
+  pixelBuffer: buildBufferFromPixels(
+    initialCanvasState.pixels,
+    initialCanvasState.width,
+    initialCanvasState.height,
+  ),
+  pixelsVersion: 0,
   width: initialCanvasState.width,
   height: initialCanvasState.height,
   currentTool: 'brush',
@@ -245,22 +359,50 @@ export const useEditorStore = create<EditorState>()(
   exportOpen: false,
 
   setPixel: (x, y, color) => set((state) => {
+    if (x < 0 || y < 0 || x >= state.width || y >= state.height) return state;
     const key = `${x},${y}`;
     if (state.pixels[key] === color) return state;
+    const idx = y * state.width + x;
+    state.pixelBuffer[idx] = packPixelHex(color);
     return {
-      pixels: { ...state.pixels, [key]: color }
+      pixels: { ...state.pixels, [key]: color },
+      pixelsVersion: state.pixelsVersion + 1,
     };
   }),
 
   clearPixel: (x, y) => set((state) => {
+    if (x < 0 || y < 0 || x >= state.width || y >= state.height) return state;
     const key = `${x},${y}`;
     if (!(key in state.pixels)) return state;
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { [key]: _, ...rest } = state.pixels;
-    return { pixels: rest };
+    state.pixelBuffer[y * state.width + x] = 0;
+    return { pixels: rest, pixelsVersion: state.pixelsVersion + 1 };
   }),
 
-  setPixels: (newPixels) => set({ pixels: newPixels }),
+  // Hot-path: buffer-only writes, O(1), no Record clone. Record reconciles in saveHistory.
+  setPixelFast: (x, y, color) => set((state) => {
+    if (x < 0 || y < 0 || x >= state.width || y >= state.height) return state;
+    const idx = y * state.width + x;
+    const packed = packPixelHex(color);
+    if (state.pixelBuffer[idx] === packed) return state;
+    state.pixelBuffer[idx] = packed;
+    return { pixelsVersion: state.pixelsVersion + 1 };
+  }),
+
+  clearPixelFast: (x, y) => set((state) => {
+    if (x < 0 || y < 0 || x >= state.width || y >= state.height) return state;
+    const idx = y * state.width + x;
+    if (state.pixelBuffer[idx] === 0) return state;
+    state.pixelBuffer[idx] = 0;
+    return { pixelsVersion: state.pixelsVersion + 1 };
+  }),
+
+  setPixels: (newPixels) => set((state) => ({
+    pixels: newPixels,
+    pixelBuffer: buildBufferFromPixels(newPixels, state.width, state.height),
+    pixelsVersion: state.pixelsVersion + 1,
+  })),
 
   setSize: (nextWidth, nextHeight) => set((state) => {
     const width = Math.max(1, Math.min(200, Math.floor(nextWidth)));
@@ -279,7 +421,13 @@ export const useEditorStore = create<EditorState>()(
       pixels = cropped;
     }
 
-    return { width, height, pixels };
+    return {
+      width,
+      height,
+      pixels,
+      pixelBuffer: buildBufferFromPixels(pixels, width, height),
+      pixelsVersion: state.pixelsVersion + 1,
+    };
   }),
 
   resizeFromEdge: (edge, nextSize) => set((state) => {
@@ -312,30 +460,36 @@ export const useEditorStore = create<EditorState>()(
       width: nextWidth,
       height: nextHeight,
       pixels: nextPixels,
+      pixelBuffer: buildBufferFromPixels(nextPixels, nextWidth, nextHeight),
+      pixelsVersion: state.pixelsVersion + 1,
     };
   }),
 
   saveHistory: () => set((state) => {
-    const currentPixels = state.pixels;
+    // Reconcile pixels Record from the buffer (which is the source of truth during fast-path strokes).
+    const reconciledPixels = buildPixelsFromBuffer(state.pixelBuffer, state.width, state.height);
     const lastHistoryEntry = state.history[state.historyIndex];
 
     if (
-      JSON.stringify(currentPixels) === JSON.stringify(lastHistoryEntry.pixels) &&
       state.width === lastHistoryEntry.width &&
-      state.height === lastHistoryEntry.height
+      state.height === lastHistoryEntry.height &&
+      areRecordsEqual(reconciledPixels, lastHistoryEntry.pixels)
     ) {
-      return state;
+      // Still update Record reference if buffer-driven changes produced an equal-but-new map.
+      if (state.pixels === reconciledPixels) return state;
+      return { pixels: reconciledPixels };
     }
 
     const newHistory = state.history.slice(0, state.historyIndex + 1);
-    newHistory.push({ pixels: { ...currentPixels }, width: state.width, height: state.height });
+    newHistory.push({ pixels: reconciledPixels, width: state.width, height: state.height });
     const limitedHistory = limitHistory(newHistory, newHistory.length - 1);
     const nextState = {
+      pixels: reconciledPixels,
       history: limitedHistory.history,
       historyIndex: limitedHistory.historyIndex,
     };
     persistCanvasState({
-      pixels: currentPixels,
+      pixels: reconciledPixels,
       width: state.width,
       height: state.height,
       history: limitedHistory.history,
@@ -361,6 +515,8 @@ export const useEditorStore = create<EditorState>()(
         pixels: entry.pixels,
         width: entry.width,
         height: entry.height,
+        pixelBuffer: buildBufferFromPixels(entry.pixels, entry.width, entry.height),
+        pixelsVersion: state.pixelsVersion + 1,
       };
       persistCanvasState({
         pixels: entry.pixels,
@@ -383,6 +539,8 @@ export const useEditorStore = create<EditorState>()(
         pixels: entry.pixels,
         width: entry.width,
         height: entry.height,
+        pixelBuffer: buildBufferFromPixels(entry.pixels, entry.width, entry.height),
+        pixelsVersion: state.pixelsVersion + 1,
       };
       persistCanvasState({
         pixels: entry.pixels,
@@ -402,6 +560,8 @@ export const useEditorStore = create<EditorState>()(
     const limitedHistory = limitHistory(newHistory, newHistory.length - 1);
     const nextState = {
       pixels: {},
+      pixelBuffer: new Uint32Array(Math.max(1, state.width * state.height)),
+      pixelsVersion: state.pixelsVersion + 1,
       history: limitedHistory.history,
       historyIndex: limitedHistory.historyIndex,
     };
@@ -428,9 +588,15 @@ export const useEditorStore = create<EditorState>()(
     currentTool: state.currentTool,
     zoom: state.zoom,
   }),
-  migrate: (persistedState) => ({
-    ...sanitizePersistedEditorState(persistedState as Partial<EditorState>),
-    ...loadPersistedCanvasState(persistedState as Partial<EditorState>),
-  }),
+  migrate: (persistedState) => {
+    const sanitized = sanitizePersistedEditorState(persistedState as Partial<EditorState>);
+    const canvas = loadPersistedCanvasState(persistedState as Partial<EditorState>);
+    return {
+      ...sanitized,
+      ...canvas,
+      pixelBuffer: buildBufferFromPixels(canvas.pixels, canvas.width, canvas.height),
+      pixelsVersion: 0,
+    };
+  },
 }
 ));

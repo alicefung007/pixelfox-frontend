@@ -73,9 +73,10 @@ export function getContiguousColorKeys(
   const queue: [number, number][] = [[startX, startY]];
   const visited = new Set<string>();
   const selectedKeys: string[] = [];
+  let head = 0;
 
-  while (queue.length > 0) {
-    const [x, y] = queue.shift()!;
+  while (head < queue.length) {
+    const [x, y] = queue[head++];
     const key = `${x},${y}`;
 
     // Flood-search only through existing pixels that match the normalized target color.
@@ -110,9 +111,10 @@ export function computeFloodFill(
   const newPixels = { ...pixels };
   const queue: [number, number][] = [[startX, startY]];
   const visited = new Set<string>();
+  let head = 0;
 
-  while (queue.length > 0) {
-    const [x, y] = queue.shift()!;
+  while (head < queue.length) {
+    const [x, y] = queue[head++];
     const key = `${x},${y}`;
 
     if (x < 0 || x >= width || y < 0 || y >= height) continue;

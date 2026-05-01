@@ -31,8 +31,10 @@ export default function PixelCanvas({ onOpenReplaceColorDialog }: PixelCanvasPro
   const height = useEditorStore((state) => state.height);
   const backgroundColor = useEditorStore((state) => state.backgroundColor);
   const zoom = useEditorStore((state) => state.zoom);
-  const setPixel = useEditorStore((state) => state.setPixel);
-  const clearPixel = useEditorStore((state) => state.clearPixel);
+  const pixelBuffer = useEditorStore((state) => state.pixelBuffer);
+  const pixelsVersion = useEditorStore((state) => state.pixelsVersion);
+  const setPixelFast = useEditorStore((state) => state.setPixelFast);
+  const clearPixelFast = useEditorStore((state) => state.clearPixelFast);
   const setPixels = useEditorStore((state) => state.setPixels);
   const resizeFromEdge = useEditorStore((state) => state.resizeFromEdge);
   const currentTool = useEditorStore((state) => state.currentTool);
@@ -83,6 +85,8 @@ export default function PixelCanvas({ onOpenReplaceColorDialog }: PixelCanvasPro
     canvasRef,
     containerRef,
     pixels,
+    pixelBuffer,
+    pixelsVersion,
     width,
     height,
     zoom,
@@ -128,8 +132,8 @@ export default function PixelCanvas({ onOpenReplaceColorDialog }: PixelCanvasPro
     height,
     currentTool,
     primaryColor,
-    setPixel,
-    clearPixel,
+    setPixelFast,
+    clearPixelFast,
     setPixels,
     addUsedColor,
     addRecentColor,
