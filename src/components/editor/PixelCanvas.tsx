@@ -23,6 +23,7 @@ type WandSelection = {
 };
 
 const COLOR_NEIGHBOR_OFFSETS =
+  // Shared by bucket fill and wand selection; switch between 4-way and 8-way connectivity.
   SELECTION_CONFIG.COLOR_CONNECTIVITY === 8
     ? [
         [1, 0],
@@ -60,6 +61,8 @@ export default function PixelCanvas({ onOpenReplaceColorDialog }: PixelCanvasPro
   const addUsedColor = usePaletteStore((state) => state.addUsedColor);
   const addRecentColor = usePaletteStore((state) => state.addRecentColor);
   const selectedUsedColor = usePaletteStore((state) => state.selectedUsedColor);
+
+  // Viewport state: auto-fit centers the canvas, manual pan/zoom disables it.
   const [isAutoZoom, setIsAutoZoom] = useState(true);
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
   const [viewOffset, setViewOffset] = useState({ x: 0, y: 0 });
@@ -74,10 +77,14 @@ export default function PixelCanvas({ onOpenReplaceColorDialog }: PixelCanvasPro
     previewSize: number;
   } | null>(null);
   const panLastRef = useRef<{ x: number; y: number } | null>(null);
+
+  // Native/global event handlers need fresh zoom and offset values without re-binding.
   const zoomRef = useRef(zoom);
   const isGestureRef = useRef(false);
   const gestureStartRef = useRef<{ distance: number; midpoint: { x: number; y: number }; zoom: number; offset: { x: number; y: number } } | null>(null);
   const viewOffsetRef = useRef(viewOffset);
+
+  // Cursor updates are animation-frame throttled so mousemove does not force every React render.
   const [cursorOverlay, setCursorOverlay] = useState<{ x: number; y: number; visible: boolean }>({ x: 0, y: 0, visible: false });
   const cursorRafRef = useRef<number | null>(null);
   const cursorPendingRef = useRef<{ x: number; y: number; visible: boolean }>(cursorOverlay);
@@ -105,6 +112,7 @@ export default function PixelCanvas({ onOpenReplaceColorDialog }: PixelCanvasPro
   useEffect(() => {
     if (!wandSelection) return;
 
+    // Drop the floating wand actions when the selected color region no longer exists.
     const stillValid = wandSelection.keys.some((key) => {
       const color = pixels[key];
       return color && normalizeHex(color) === normalizeHex(wandSelection.color);
@@ -135,6 +143,7 @@ export default function PixelCanvas({ onOpenReplaceColorDialog }: PixelCanvasPro
     const container = containerRef.current;
     if (!container) return;
 
+    // Fit zoom is based on the current container size and pixel-art dimensions.
     const updateZoomToFit = () => {
       if (!isAutoZoom) return;
       if (container.offsetParent === null) return;
@@ -176,6 +185,7 @@ export default function PixelCanvas({ onOpenReplaceColorDialog }: PixelCanvasPro
     if (!isAutoZoom) return;
     if (viewportSize.width === 0 || viewportSize.height === 0) return;
 
+    // Keep the canvas centered after auto-fit recalculates zoom or viewport size changes.
     const scale = zoom / 10;
     const contentWidth = width * scale;
     const contentHeight = height * scale;
@@ -199,6 +209,7 @@ export default function PixelCanvas({ onOpenReplaceColorDialog }: PixelCanvasPro
     const viewW = container.clientWidth;
     const viewH = container.clientHeight;
 
+    // The canvas backing store is scaled for DPR, then all drawing uses CSS pixels.
     canvas.width = Math.max(1, Math.floor(viewW * dpr));
     canvas.height = Math.max(1, Math.floor(viewH * dpr));
 
@@ -214,6 +225,7 @@ export default function PixelCanvas({ onOpenReplaceColorDialog }: PixelCanvasPro
     ctx.scale(scale, scale);
     ctx.imageSmoothingEnabled = false;
 
+    // Draw the transparent checkerboard or the configured solid background first.
     if (backgroundColor) {
       ctx.fillStyle = backgroundColor;
       ctx.fillRect(0, 0, width, height);
@@ -234,6 +246,7 @@ export default function PixelCanvas({ onOpenReplaceColorDialog }: PixelCanvasPro
 
     const effectiveScale = dpr * scale;
 
+    // Highlight all pixels matching the selected palette color.
     if (selectedUsedColor) {
       const normalizedSelectedColor = normalizeHex(selectedUsedColor);
       const outlineWidth = Math.max(1 / effectiveScale, 0.16);
@@ -261,6 +274,7 @@ export default function PixelCanvas({ onOpenReplaceColorDialog }: PixelCanvasPro
       ctx.restore();
     }
 
+    // Highlight only the current contiguous magic-wand selection.
     if (wandSelection) {
       const selectedKeys = new Set(wandSelection.keys);
       const outlineWidth = Math.max(1 / effectiveScale, 0.16);
@@ -295,6 +309,7 @@ export default function PixelCanvas({ onOpenReplaceColorDialog }: PixelCanvasPro
     const bold10LineWidth = (CANVAS_CONFIG.MAJOR_LINE_WIDTH * CANVAS_CONFIG.GRID_LINE_WIDTH) / effectiveScale;
     const gridColor = CANVAS_CONFIG.GRID_COLOR;
 
+    // Grid lines stay visually thin by scaling line widths against the effective zoom.
     ctx.strokeStyle = gridColor;
     ctx.lineWidth = gridLineWidth;
     ctx.beginPath();
@@ -356,6 +371,7 @@ export default function PixelCanvas({ onOpenReplaceColorDialog }: PixelCanvasPro
     const viewX = clientX - rect.left;
     const viewY = clientY - rect.top;
     const scale = zoom / 10;
+    // Convert viewport coordinates into pixel-art coordinates.
     const x = Math.floor((viewX - viewOffset.x) / scale);
     const y = Math.floor((viewY - viewOffset.y) / scale);
 
@@ -376,6 +392,7 @@ export default function PixelCanvas({ onOpenReplaceColorDialog }: PixelCanvasPro
     const viewX = clientX - rect.left;
     const viewY = clientY - rect.top;
     const scale = zoom / 10;
+    // Touch input uses the same viewport-to-canvas conversion as mouse input.
     const x = Math.floor((viewX - viewOffset.x) / scale);
     const y = Math.floor((viewY - viewOffset.y) / scale);
 
@@ -403,6 +420,7 @@ export default function PixelCanvas({ onOpenReplaceColorDialog }: PixelCanvasPro
       const [x, y] = queue.shift()!;
       const key = `${x},${y}`;
 
+      // Flood-search only through existing pixels that match the normalized target color.
       if (x < 0 || x >= width || y < 0 || y >= height) continue;
       if (visited.has(key)) continue;
       visited.add(key);
@@ -422,6 +440,7 @@ export default function PixelCanvas({ onOpenReplaceColorDialog }: PixelCanvasPro
   const handleWandSelection = (coords: { x: number; y: number } | null) => {
     if (!coords) return;
 
+    // Empty pixels clear the current wand selection instead of opening the action popover.
     const targetColor = pixels[`${coords.x},${coords.y}`] ?? null;
     if (!targetColor) {
       setWandSelection(null);
@@ -442,6 +461,7 @@ export default function PixelCanvas({ onOpenReplaceColorDialog }: PixelCanvasPro
   const handleClearWandSelection = useCallback(() => {
     if (!wandSelection) return;
 
+    // Rebuild the pixel map so only still-matching selected pixels are removed.
     const selectedKeys = new Set(wandSelection.keys);
     let changed = false;
     const currentPixels = useEditorStore.getState().pixels;
@@ -490,6 +510,7 @@ export default function PixelCanvas({ onOpenReplaceColorDialog }: PixelCanvasPro
   const floodFill = (startX: number, startY: number, targetColor: string | null, replacementColor: string) => {
     if (targetColor === replacementColor) return;
     
+    // Bucket fill uses the configured connectivity and works across empty pixels when targetColor is null.
     const newPixels = { ...pixels };
     const queue: [number, number][] = [[startX, startY]];
     const visited = new Set<string>();
@@ -520,6 +541,7 @@ export default function PixelCanvas({ onOpenReplaceColorDialog }: PixelCanvasPro
   const handleDraw = (coords: { x: number; y: number } | null) => {
     if (!coords) return;
 
+    // Brush and eraser interpolate between points so quick drags do not leave gaps.
     if (currentTool === 'brush' || currentTool === 'eraser') {
       const isErase = currentTool === 'eraser';
 
@@ -538,6 +560,7 @@ export default function PixelCanvas({ onOpenReplaceColorDialog }: PixelCanvasPro
       }
       setLastCoords(coords);
     } else if (currentTool === 'bucket') {
+      // Bucket commits through setPixels, then history is saved when the pointer interaction ends.
       const targetColor = pixels[`${coords.x},${coords.y}`] ?? null;
       floodFill(coords.x, coords.y, targetColor, primaryColor);
       if (!strokeColorRegisteredRef.current) {
@@ -546,6 +569,7 @@ export default function PixelCanvas({ onOpenReplaceColorDialog }: PixelCanvasPro
         strokeColorRegisteredRef.current = true;
       }
     } else if (currentTool === 'eyedropper') {
+      // Eyedropper returns to brush after picking to keep drawing flow fast.
       const pickedColor = pixels[`${coords.x},${coords.y}`] || '#FFFFFF';
       useEditorStore.getState().setColor(pickedColor);
       useEditorStore.getState().setTool('brush');
@@ -561,6 +585,8 @@ export default function PixelCanvas({ onOpenReplaceColorDialog }: PixelCanvasPro
   const queueCursorOverlay = (next: { x: number; y: number; visible: boolean }) => {
     cursorPendingRef.current = next;
     if (cursorRafRef.current !== null) return;
+
+    // Coalesce cursor overlay updates to one React state update per frame.
     cursorRafRef.current = requestAnimationFrame(() => {
       cursorRafRef.current = null;
       setCursorOverlay(cursorPendingRef.current);
@@ -592,7 +618,7 @@ export default function PixelCanvas({ onOpenReplaceColorDialog }: PixelCanvasPro
   const onTouchStart = (e: React.TouchEvent) => {
     if (resizeDrag) return;
     if (e.touches.length >= 2) {
-      // Two-finger gesture: pinch zoom + pan
+      // Two-finger gesture: pinch zoom + pan.
       e.preventDefault();
       isGestureRef.current = true;
       setIsAutoZoom(false);
@@ -662,11 +688,10 @@ export default function PixelCanvas({ onOpenReplaceColorDialog }: PixelCanvasPro
         const newZoom = clampZoom(Math.round(start.zoom * scale));
         const nextScale = newZoom / 10;
 
-        // Calculate pan delta
+        // Preserve the world point under the gesture midpoint while zooming.
         const dx = screenMidpoint.x - start.midpoint.x;
         const dy = screenMidpoint.y - start.midpoint.y;
 
-        // Convert start midpoint to world coordinates
         const startScale = start.zoom / 10;
         const worldX = (start.midpoint.x - start.offset.x) / startScale;
         const worldY = (start.midpoint.y - start.offset.y) / startScale;
@@ -787,6 +812,7 @@ export default function PixelCanvas({ onOpenReplaceColorDialog }: PixelCanvasPro
   useEffect(() => {
     if (!isPanning) return;
 
+    // Continue panning even if the pointer leaves the canvas.
     const handleWindowMouseMove = (e: MouseEvent) => {
       const last = panLastRef.current;
       if (!last) return;
@@ -814,6 +840,7 @@ export default function PixelCanvas({ onOpenReplaceColorDialog }: PixelCanvasPro
   useEffect(() => {
     if (!isDrawing || isPanning) return;
 
+    // A drawing stroke should still be committed if the mouseup happens outside the canvas.
     const finishDrawing = () => {
       strokeColorRegisteredRef.current = false;
       setIsDrawing((drawing) => {
@@ -836,6 +863,7 @@ export default function PixelCanvas({ onOpenReplaceColorDialog }: PixelCanvasPro
   useEffect(() => {
     if (!resizeDrag) return;
 
+    // Resize drag previews dimensions in pixels; the store is updated only on pointer release.
     const handleWindowPointerMove = (event: PointerEvent) => {
       const scale = zoomRef.current / 10;
       if (scale <= 0) return;
@@ -915,6 +943,7 @@ export default function PixelCanvas({ onOpenReplaceColorDialog }: PixelCanvasPro
     const container = containerRef.current;
     if (!container) return;
 
+    // Wheel input zooms around the pointer for mouse wheels, and pans for trackpad scroll.
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault();
       setIsAutoZoom(false);
@@ -964,6 +993,8 @@ export default function PixelCanvas({ onOpenReplaceColorDialog }: PixelCanvasPro
   const zoomByStep = (direction: 'in' | 'out') => {
     const container = containerRef.current;
     if (!container) return;
+
+    // Toolbar zoom keeps the center of the viewport anchored.
     setIsAutoZoom(false);
     const anchorX = container.clientWidth / 2;
     const anchorY = container.clientHeight / 2;
@@ -1014,6 +1045,8 @@ export default function PixelCanvas({ onOpenReplaceColorDialog }: PixelCanvasPro
     width: width * scale,
     height: height * scale,
   };
+
+  // Resize handles and previews are positioned in screen space around the transformed canvas.
   const resizeHandleThickness = 12;
   const resizeHandleGap = 4;
   const resizePreview = resizeDrag
@@ -1104,6 +1137,7 @@ export default function PixelCanvas({ onOpenReplaceColorDialog }: PixelCanvasPro
   const cursorHotspotScaled = cursorHotspot;
   const usesPrimaryColorCursor = currentTool === 'brush' || currentTool === 'bucket';
   const cursorShadowColor = (() => {
+    // Pick a contrasting drop shadow for cursors that inherit the active color.
     const hex = primaryColor.replace('#', '');
     const r = parseInt(hex.substring(0, 2), 16);
     const g = parseInt(hex.substring(2, 4), 16);
@@ -1120,6 +1154,8 @@ export default function PixelCanvas({ onOpenReplaceColorDialog }: PixelCanvasPro
   const startResize = (edge: ResizeEdge, event: React.PointerEvent<HTMLDivElement>) => {
     event.preventDefault();
     event.stopPropagation();
+
+    // Lock the resize interaction to the handle, then finish globally on pointerup.
     event.currentTarget.setPointerCapture(event.pointerId);
     setIsAutoZoom(false);
     setIsPanning(false);
