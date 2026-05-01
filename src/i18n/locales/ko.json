@@ -8,6 +8,7 @@
     "feedbackDialog": {
       "title": "피드백",
       "description": "PixelFox를 개선할 수 있도록 도와주세요.",
+      "recipientEmail": "(피드백 받는 이메일: {{email}})",
       "contentLabel": "피드백 내용",
       "contentPlaceholder": "제안이나 문제를 설명해 주세요...",
       "emailLabel": "이메일 (선택 사항)",

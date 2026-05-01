@@ -8,6 +8,7 @@
     "feedbackDialog": {
       "title": "反馈",
       "description": "帮助我们改进拼豆阿特。",
+      "recipientEmail": "（反馈收件邮箱：{{email}}）",
       "contentLabel": "反馈内容",
       "contentPlaceholder": "请描述您的建议或问题...",
       "emailLabel": "邮箱（可选）",

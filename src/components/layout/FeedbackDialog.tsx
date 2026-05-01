@@ -62,7 +62,10 @@ export default function FeedbackDialog() {
                   <span>{t("nav.feedbackDialog.title")}</span>
                 </DialogTitle>
                 <DialogDescription className="mt-2 text-sm font-medium">
-                  {t("nav.feedbackDialog.description")}
+                  {t("nav.feedbackDialog.description")}{" "}
+                  {t("nav.feedbackDialog.recipientEmail", {
+                    email: FEEDBACK_CONFIG.EMAIL,
+                  })}
                 </DialogDescription>
               </div>
               <DialogClose asChild>

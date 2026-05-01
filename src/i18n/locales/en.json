@@ -8,6 +8,7 @@
     "feedbackDialog": {
       "title": "Feedback",
       "description": "Help us improve PixelFox.",
+      "recipientEmail": "(Feedback recipient: {{email}})",
       "contentLabel": "Feedback",
       "contentPlaceholder": "Describe your suggestion or issue...",
       "emailLabel": "Email (optional)",
