@@ -5,6 +5,18 @@
     "feedback": "Feedback",
     "language": "Language",
     "comingSoon": "(Coming soon...)",
+    "feedbackDialog": {
+      "title": "Feedback",
+      "description": "Help us improve PixelFox.",
+      "contentLabel": "Feedback",
+      "contentPlaceholder": "Describe your suggestion or issue...",
+      "emailLabel": "Email (optional)",
+      "emailPlaceholder": "Your email address",
+      "emailSubject": "PixelFox Feedback",
+      "cancel": "Cancel",
+      "submit": "Send Feedback",
+      "close": "Close feedback"
+    },
     "appearance": {
       "label": "Appearance",
       "light": "Light Mode",

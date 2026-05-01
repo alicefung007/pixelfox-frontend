@@ -5,6 +5,18 @@
     "feedback": "피드백",
     "language": "언어",
     "comingSoon": "(곧 출시...)",
+    "feedbackDialog": {
+      "title": "피드백",
+      "description": "PixelFox를 개선할 수 있도록 도와주세요.",
+      "contentLabel": "피드백 내용",
+      "contentPlaceholder": "제안이나 문제를 설명해 주세요...",
+      "emailLabel": "이메일 (선택 사항)",
+      "emailPlaceholder": "이메일 주소",
+      "emailSubject": "PixelFox 피드백",
+      "cancel": "취소",
+      "submit": "피드백 보내기",
+      "close": "피드백 닫기"
+    },
     "appearance": {
       "label": "화면 표시",
       "light": "라이트 모드",

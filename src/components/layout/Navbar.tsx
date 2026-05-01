@@ -1,7 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router-dom";
 import { 
-  Bug, 
   Languages, 
   Sun,
   Moon,
@@ -12,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/components/theme-provider";
 import i18n from "@/i18n/config";
+import FeedbackDialog from "@/components/layout/FeedbackDialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -101,15 +101,7 @@ export default function Navbar({ onMenuClick }: Props) {
       </div>
 
       <div className="flex items-center gap-1 sm:gap-2">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-muted-foreground h-9 w-9"
-          aria-label={t("nav.feedback")}
-          title={t("nav.feedback")}
-        >
-          <Bug className="h-[18px] w-[18px]" />
-        </Button>
+        <FeedbackDialog />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button

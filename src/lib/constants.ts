@@ -68,3 +68,7 @@ export const PANEL_CONFIG = {
   MAX_HEIGHT: 600,
   STORAGE_KEY: 'palette-height',
 } as const;
+
+export const FEEDBACK_CONFIG = {
+  EMAIL: import.meta.env.VITE_FEEDBACK_EMAIL || 'pixelfox@gmail.com',
+} as const;
