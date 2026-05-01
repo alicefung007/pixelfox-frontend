@@ -2,8 +2,11 @@
   "nav": {
     "editor": "Editor",
     "explore": "Explore",
+    "feedback": "Feedback",
+    "language": "Language",
     "comingSoon": "(Coming soon...)",
-    "theme": {
+    "appearance": {
+      "label": "Appearance",
       "light": "Light Mode",
       "dark": "Dark Mode",
       "system": "System"

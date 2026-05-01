@@ -1,8 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router-dom";
 import { 
-  User, 
-  Bell, 
+  Bug, 
   Languages, 
   Sun,
   Moon,
@@ -102,15 +101,24 @@ export default function Navbar({ onMenuClick }: Props) {
       </div>
 
       <div className="flex items-center gap-1 sm:gap-2">
-        <Button variant="ghost" size="icon" className="text-muted-foreground h-9 w-9">
-          <User className="h-[18px] w-[18px]" />
-        </Button>
-        <Button variant="ghost" size="icon" className="text-muted-foreground h-9 w-9">
-          <Bell className="h-[18px] w-[18px]" />
+        <Button
+          variant="ghost"
+          size="icon"
+          className="text-muted-foreground h-9 w-9"
+          aria-label={t("nav.feedback")}
+          title={t("nav.feedback")}
+        >
+          <Bug className="h-[18px] w-[18px]" />
         </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="text-muted-foreground h-9 w-9">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-muted-foreground h-9 w-9"
+              aria-label={t("nav.language")}
+              title={t("nav.language")}
+            >
               <Languages className="h-[18px] w-[18px]" />
             </Button>
           </DropdownMenuTrigger>
@@ -131,7 +139,13 @@ export default function Navbar({ onMenuClick }: Props) {
         </DropdownMenu>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="text-muted-foreground h-9 w-9">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-muted-foreground h-9 w-9"
+              aria-label={t("nav.appearance.label")}
+              title={t("nav.appearance.label")}
+            >
               {theme === "system" ? (
                 <Monitor className="h-[18px] w-[18px]" />
               ) : theme === "dark" ? (
@@ -145,15 +159,15 @@ export default function Navbar({ onMenuClick }: Props) {
             <DropdownMenuRadioGroup value={theme} onValueChange={(v) => setTheme(v as "light" | "dark" | "system")}>
               <DropdownMenuRadioItem value="light" className="flex items-center gap-2">
                 <Sun className="h-4 w-4" />
-                {t("nav.theme.light")}
+                {t("nav.appearance.light")}
               </DropdownMenuRadioItem>
               <DropdownMenuRadioItem value="dark" className="flex items-center gap-2">
                 <Moon className="h-4 w-4" />
-                {t("nav.theme.dark")}
+                {t("nav.appearance.dark")}
               </DropdownMenuRadioItem>
               <DropdownMenuRadioItem value="system" className="flex items-center gap-2">
                 <Monitor className="h-4 w-4" />
-                {t("nav.theme.system")}
+                {t("nav.appearance.system")}
               </DropdownMenuRadioItem>
             </DropdownMenuRadioGroup>
           </DropdownMenuContent>

@@ -2,8 +2,11 @@
   "nav": {
     "editor": "편집기",
     "explore": "탐색",
+    "feedback": "피드백",
+    "language": "언어",
     "comingSoon": "(곧 출시...)",
-    "theme": {
+    "appearance": {
+      "label": "화면 표시",
       "light": "라이트 모드",
       "dark": "다크 모드",
       "system": "시스템"

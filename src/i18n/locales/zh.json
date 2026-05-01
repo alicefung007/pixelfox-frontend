@@ -2,8 +2,11 @@
   "nav": {
     "editor": "编辑器",
     "explore": "探索",
+    "feedback": "反馈",
+    "language": "语言",
     "comingSoon": "（即将推出…）",
-    "theme": {
+    "appearance": {
+      "label": "外观",
       "light": "浅色模式",
       "dark": "深色模式",
       "system": "跟随系统"

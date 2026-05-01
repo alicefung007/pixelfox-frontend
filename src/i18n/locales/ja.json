@@ -2,8 +2,11 @@
   "nav": {
     "editor": "エディター",
     "explore": "探索",
+    "feedback": "フィードバック",
+    "language": "言語",
     "comingSoon": "（近日公開…）",
-    "theme": {
+    "appearance": {
+      "label": "外観",
       "light": "ライトモード",
       "dark": "ダークモード",
       "system": "システム"
