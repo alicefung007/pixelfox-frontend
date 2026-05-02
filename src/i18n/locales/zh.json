@@ -55,6 +55,7 @@
   "palette": {
     "palette": "调色盘",
     "manage": "管理",
+    "current": "当前",
     "changeConfirmTitle": "确认切换色盘？",
     "changeConfirmDescription": "当前有 {{count}} 个已用颜色不在 {{palette}} 色盘中。继续切换将会清空图案。",
     "changeConfirmNote": "只有新色盘里缺失的颜色对应部分会被重置。如果可以接受，再继续切换。",

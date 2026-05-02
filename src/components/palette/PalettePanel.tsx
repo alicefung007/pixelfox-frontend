@@ -195,7 +195,7 @@ function PaletteSwatchItem({
           side="top"
           align="end"
           sideOffset={8}
-          className="z-[100] flex w-fit flex-row items-center gap-0 rounded-lg border bg-background/95 p-0.5 shadow-sm backdrop-blur-sm"
+          className="flex w-fit flex-row items-center gap-0 rounded-lg border bg-background/95 p-0.5 shadow-sm backdrop-blur-sm"
           onOpenAutoFocus={(event) => event.preventDefault()}
         >
           <UsedColorActionButtons
@@ -429,20 +429,23 @@ export default function PalettePanel({ onOpenReplaceColorDialog }: PalettePanelP
         <div className="flex items-center gap-2 shrink-0">
           <Palette size={16} className="text-muted-foreground" />
           <span className="text-sm font-medium text-muted-foreground hidden sm:inline">{t("palette.palette")}</span>
+        </div>
+
+        <div className="flex items-center gap-1.5 shrink-0">
           <Button
             variant="outline"
             size="sm"
-            className="h-8 gap-2"
+            className="h-8 gap-1.5 px-2.5"
             onClick={() => setIsManageOpen(true)}
           >
             <Settings size={14} />
             <span className="text-xs">{t("palette.manage")}</span>
           </Button>
-          <div className="bg-primary/10 dark:bg-primary/20 text-primary px-2 py-1 rounded-md border border-primary/20 shrink-0 flex flex-col items-center gap-0.5">
-            <span className="text-[11px] font-semibold leading-none">
+          <div className="flex h-8 items-center gap-1.5 rounded-md border border-primary/20 bg-primary/10 px-2.5 text-primary dark:bg-primary/20">
+            <span className="hidden text-[10px] font-medium leading-none text-primary/60 sm:inline">{t("palette.current")}</span>
+            <span className="max-w-24 truncate text-xs font-semibold leading-none">
               {palette.i18nKey ? t(palette.i18nKey) : palette.name}
             </span>
-            <span className="text-[9px] text-primary/60 leading-none">Current Palette</span>
           </div>
         </div>
 

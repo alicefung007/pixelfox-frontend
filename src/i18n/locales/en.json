@@ -55,6 +55,7 @@
   "palette": {
     "palette": "Palette",
     "manage": "Manage",
+    "current": "Current",
     "changeConfirmTitle": "Switch palette?",
     "changeConfirmDescription": "{{count}} used colors are not available in {{palette}}. Continuing will clear the pattern.",
     "changeConfirmNote": "Only the parts that use colors missing from the new palette will be reset. If that's okay, continue to switch.",

@@ -55,6 +55,7 @@
   "palette": {
     "palette": "パレット",
     "manage": "管理",
+    "current": "現在",
     "changeConfirmTitle": "パレットを切り替えますか？",
     "changeConfirmDescription": "現在使用中の {{count}} 色は {{palette}} に含まれていません。このまま切り替えると図案はクリアされます。",
     "changeConfirmNote": "新しいパレットにない色を使っている部分だけがリセットされます。問題なければ切り替えてください。",

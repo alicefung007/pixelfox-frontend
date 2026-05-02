@@ -34,7 +34,7 @@ export default function WandActionPopover({ wandSelection, onClose, onClear, onO
         side="top"
         align="center"
         sideOffset={10}
-        className="z-[100] flex w-fit flex-row items-center gap-0 rounded-lg border bg-background/95 p-0.5 shadow-sm backdrop-blur-sm"
+        className="flex w-fit flex-row items-center gap-0 rounded-lg border bg-background/95 p-0.5 shadow-sm backdrop-blur-sm"
         onOpenAutoFocus={(event) => event.preventDefault()}
       >
         <UsedColorActionButtons
