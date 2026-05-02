@@ -4,12 +4,21 @@ import type { WandSelection } from './types';
 
 type Props = {
   wandSelection: WandSelection | null;
+  anchorSelection: WandSelection | null;
   onClose: () => void;
   onClear: () => void;
   onOpenReplaceColorDialog: (sourceColor: string, pixelKeys?: string[]) => void;
 };
 
-export default function WandActionPopover({ wandSelection, onClose, onClear, onOpenReplaceColorDialog }: Props) {
+export default function WandActionPopover({
+  wandSelection,
+  anchorSelection,
+  onClose,
+  onClear,
+  onOpenReplaceColorDialog,
+}: Props) {
+  const anchoredSelection = wandSelection ?? anchorSelection;
+
   return (
     <Popover
       open={Boolean(wandSelection)}
@@ -18,13 +27,13 @@ export default function WandActionPopover({ wandSelection, onClose, onClear, onO
         onClose();
       }}
     >
-      {wandSelection && (
+      {anchoredSelection && (
         <PopoverAnchor asChild>
           <div
             className="pointer-events-none absolute z-20 size-1"
             style={{
-              left: wandSelection.x,
-              top: wandSelection.y,
+              left: anchoredSelection.x,
+              top: anchoredSelection.y,
               transform: 'translate(-50%, -50%)',
             }}
           />
@@ -38,10 +47,10 @@ export default function WandActionPopover({ wandSelection, onClose, onClear, onO
         onOpenAutoFocus={(event) => event.preventDefault()}
       >
         <UsedColorActionButtons
-          selectedColor={wandSelection?.color ?? null}
+          selectedColor={anchoredSelection?.color ?? null}
           onReplace={(sourceColor) => {
-            if (!wandSelection) return;
-            onOpenReplaceColorDialog(sourceColor, wandSelection.keys);
+            if (!anchoredSelection) return;
+            onOpenReplaceColorDialog(sourceColor, anchoredSelection.keys);
           }}
           onClear={onClear}
           onClose={onClose}

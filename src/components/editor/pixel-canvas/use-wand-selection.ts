@@ -14,7 +14,15 @@ export function useWandSelection(params: {
   saveHistory: () => void;
 }) {
   const { pixels, width, height, zoom, viewOffset, setPixels, saveHistory } = params;
-  const [wandSelection, setWandSelection] = useState<WandSelection | null>(null);
+  const [wandSelection, setWandSelectionState] = useState<WandSelection | null>(null);
+  const [wandAnchorSelection, setWandAnchorSelection] = useState<WandSelection | null>(null);
+
+  const setWandSelection = useCallback((selection: WandSelection | null) => {
+    if (selection) {
+      setWandAnchorSelection(selection);
+    }
+    setWandSelectionState(selection);
+  }, []);
 
   useEffect(() => {
     if (!wandSelection) return;
@@ -28,7 +36,7 @@ export function useWandSelection(params: {
     if (!stillValid) {
       queueMicrotask(() => setWandSelection(null));
     }
-  }, [pixels, wandSelection]);
+  }, [pixels, setWandSelection, wandSelection]);
 
   const handleWandSelection = (coords: { x: number; y: number } | null) => {
     if (!coords) return;
@@ -73,7 +81,7 @@ export function useWandSelection(params: {
     setPixels(nextPixels);
     saveHistory();
     setWandSelection(null);
-  }, [saveHistory, setPixels, wandSelection]);
+  }, [saveHistory, setPixels, setWandSelection, wandSelection]);
 
   useEffect(() => {
     if (!wandSelection) return;
@@ -100,5 +108,5 @@ export function useWandSelection(params: {
     return () => window.removeEventListener('keydown', handleKeyDown, { capture: true });
   }, [handleClearWandSelection, wandSelection]);
 
-  return { wandSelection, setWandSelection, handleWandSelection, handleClearWandSelection };
+  return { wandSelection, wandAnchorSelection, setWandSelection, handleWandSelection, handleClearWandSelection };
 }

@@ -71,7 +71,7 @@ export default function PixelCanvas({ onOpenReplaceColorDialog }: PixelCanvasPro
 
   const { cursorOverlay, cursorPendingRef, queueCursorOverlay, updateCursorFromMouseEvent } = useCursorOverlay(containerRef);
 
-  const { wandSelection, setWandSelection, handleWandSelection, handleClearWandSelection } = useWandSelection({
+  const { wandSelection, wandAnchorSelection, setWandSelection, handleWandSelection, handleClearWandSelection } = useWandSelection({
     pixels,
     width,
     height,
@@ -261,6 +261,7 @@ export default function PixelCanvas({ onOpenReplaceColorDialog }: PixelCanvasPro
         />
         <WandActionPopover
           wandSelection={wandSelection}
+          anchorSelection={wandAnchorSelection}
           onClose={() => setWandSelection(null)}
           onClear={handleClearWandSelection}
           onOpenReplaceColorDialog={onOpenReplaceColorDialog}
