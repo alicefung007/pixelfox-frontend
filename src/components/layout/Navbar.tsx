@@ -1,17 +1,10 @@
-import { useTranslation } from "react-i18next";
-import { Link, useLocation } from "react-router-dom";
-import { 
-  Languages, 
-  Sun,
-  Moon,
-  Monitor,
-  Check,
-  Menu
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useTheme } from "@/components/theme-provider";
-import i18n from "@/i18n/config";
-import FeedbackDialog from "@/components/layout/FeedbackDialog";
+import { useTranslation } from "react-i18next"
+import { Link, useLocation } from "react-router-dom"
+import { Languages, Sun, Moon, Monitor, Check, Menu } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { useTheme } from "@/components/theme-provider"
+import i18n from "@/i18n/config"
+import FeedbackDialog from "@/components/layout/FeedbackDialog"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,45 +12,47 @@ import {
   DropdownMenuTrigger,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
-} from "@/components/ui/dropdown-menu";
+} from "@/components/ui/dropdown-menu"
 
 type Props = {
-  onMenuClick?: () => void;
-};
+  onMenuClick?: () => void
+}
 
 type NavItem =
   | { label: string; path: string; disabled?: false }
-  | { label: string; disabled: true };
+  | { label: string; disabled: true }
 
 export default function Navbar({ onMenuClick }: Props) {
-  const { t } = useTranslation();
-  const location = useLocation();
-  const { theme, setTheme } = useTheme();
+  const { t } = useTranslation()
+  const location = useLocation()
+  const { theme, setTheme } = useTheme()
 
   const languages = [
-    { code: 'en', label: 'English' },
-    { code: 'zh', label: '简体中文' },
-    { code: 'ko', label: '한국어' },
-    { code: 'ja', label: '日本語' },
-  ];
+    { code: "en", label: "English" },
+    { code: "zh", label: "简体中文" },
+    { code: "ko", label: "한국어" },
+    { code: "ja", label: "日本語" },
+  ]
 
   const changeLanguage = (lng: string) => {
-    i18n.changeLanguage(lng);
-  };
+    i18n.changeLanguage(lng)
+  }
 
   const navItems: NavItem[] = [
     { label: t("nav.editor"), path: "/" },
     { label: t("nav.explore"), disabled: true },
-  ];
+  ]
+  const activeMenuItemClass =
+    "bg-primary/10 !text-primary hover:!bg-primary/10 hover:!text-primary focus:!bg-primary/10 focus:!text-primary [&_*]:!text-primary [&_svg]:!text-primary [&[data-highlighted]]:!bg-primary/10 [&[data-highlighted]]:!text-primary [&[data-highlighted]_*]:!text-primary [&:focus_*]:!text-primary"
 
   return (
-    <nav className="relative h-14 sm:h-16 border-b flex items-center justify-between px-3 sm:px-4 bg-background z-50">
+    <nav className="relative z-50 flex h-14 items-center justify-between border-b bg-background px-3 sm:h-16 sm:px-4">
       <div className="flex items-center gap-2 sm:gap-4 md:gap-8">
         {onMenuClick && (
           <Button
             variant="ghost"
             size="icon"
-            className="text-muted-foreground h-9 w-9 md:hidden"
+            className="h-9 w-9 text-muted-foreground md:hidden"
             onClick={onMenuClick}
           >
             <Menu className="h-5 w-5" />
@@ -82,7 +77,7 @@ export default function Navbar({ onMenuClick }: Props) {
               aria-disabled="true"
             >
               <span className="leading-none">{item.label}</span>
-              <span className="text-[10px] font-medium leading-none text-muted-foreground/50">
+              <span className="text-[10px] leading-none font-medium text-muted-foreground/50">
                 {t("nav.comingSoon")}
               </span>
             </span>
@@ -91,7 +86,9 @@ export default function Navbar({ onMenuClick }: Props) {
               key={item.path}
               to={item.path}
               className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors hover:bg-primary/10 hover:text-primary ${
-                location.pathname === item.path ? "bg-primary/10 text-primary" : "text-muted-foreground"
+                location.pathname === item.path
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground"
               }`}
             >
               {item.label}
@@ -107,23 +104,25 @@ export default function Navbar({ onMenuClick }: Props) {
             <Button
               variant="ghost"
               size="icon"
-              className="text-muted-foreground h-9 w-9"
+              className="h-9 w-9 text-muted-foreground"
               aria-label={t("nav.language")}
               title={t("nav.language")}
             >
               <Languages className="h-[18px] w-[18px]" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent align="end" className="w-44 space-y-1">
             {languages.map((lang) => (
               <DropdownMenuItem
                 key={lang.code}
                 onClick={() => changeLanguage(lang.code)}
-                className="flex items-center justify-between"
+                className={`flex items-center justify-between ${
+                  i18n.language === lang.code ? activeMenuItemClass : ""
+                }`}
               >
-                {lang.label}
+                <span>{lang.label}</span>
                 {i18n.language === lang.code && (
-                  <Check className="h-4 w-4 ml-2 opacity-50" />
+                  <Check className="ml-2 h-4 w-4 opacity-90" />
                 )}
               </DropdownMenuItem>
             ))}
@@ -134,7 +133,7 @@ export default function Navbar({ onMenuClick }: Props) {
             <Button
               variant="ghost"
               size="icon"
-              className="text-muted-foreground h-9 w-9"
+              className="h-9 w-9 text-muted-foreground"
               aria-label={t("nav.appearance.label")}
               title={t("nav.appearance.label")}
             >
@@ -147,17 +146,36 @@ export default function Navbar({ onMenuClick }: Props) {
               )}
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuRadioGroup value={theme} onValueChange={(v) => setTheme(v as "light" | "dark" | "system")}>
-              <DropdownMenuRadioItem value="light" className="flex items-center gap-2">
+          <DropdownMenuContent align="end" className="space-y-1">
+            <DropdownMenuRadioGroup
+              value={theme}
+              onValueChange={(v) => setTheme(v as "light" | "dark" | "system")}
+              className="space-y-1"
+            >
+              <DropdownMenuRadioItem
+                value="light"
+                className={`flex items-center gap-2 ${
+                  theme === "light" ? activeMenuItemClass : ""
+                }`}
+              >
                 <Sun className="h-4 w-4" />
                 {t("nav.appearance.light")}
               </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="dark" className="flex items-center gap-2">
+              <DropdownMenuRadioItem
+                value="dark"
+                className={`flex items-center gap-2 ${
+                  theme === "dark" ? activeMenuItemClass : ""
+                }`}
+              >
                 <Moon className="h-4 w-4" />
                 {t("nav.appearance.dark")}
               </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="system" className="flex items-center gap-2">
+              <DropdownMenuRadioItem
+                value="system"
+                className={`flex items-center gap-2 ${
+                  theme === "system" ? activeMenuItemClass : ""
+                }`}
+              >
                 <Monitor className="h-4 w-4" />
                 {t("nav.appearance.system")}
               </DropdownMenuRadioItem>
@@ -166,5 +184,5 @@ export default function Navbar({ onMenuClick }: Props) {
         </DropdownMenu>
       </div>
     </nav>
-  );
+  )
 }

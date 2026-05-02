@@ -201,7 +201,7 @@ export default function Preview3DDialog({ open, onOpenChange }: Props) {
 
         <Separator />
 
-        <div className="flex-1 min-h-0 relative bg-white">
+        <div className="flex-1 min-h-0 relative bg-white dark:bg-neutral-950">
           {entries.length === 0 ? (
             <div className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">
               {t("editor.preview3d.empty")}
