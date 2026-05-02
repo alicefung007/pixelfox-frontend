@@ -48,6 +48,8 @@ const extractionQualityOptions = [
 
 const MIN_BEADS = 1;
 const MAX_BEADS = 200;
+const DEFAULT_WIDTH_BEADS = "50";
+const DEFAULT_HEIGHT_BEADS = "60";
 
 function normalizeAspectRatio(ratio: number) {
   return Number.isFinite(ratio) && ratio > 0 ? ratio : 1;
@@ -216,9 +218,12 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
   const { t } = useTranslation();
   
   // Pattern size beads (1-200)
-  const [widthBeads, setWidthBeads] = useState("60");
-  const [heightBeads, setHeightBeads] = useState("60");
-  const [processingDimensions, setProcessingDimensions] = useState({ width: "60", height: "60" });
+  const [widthBeads, setWidthBeads] = useState(DEFAULT_WIDTH_BEADS);
+  const [heightBeads, setHeightBeads] = useState(DEFAULT_HEIGHT_BEADS);
+  const [processingDimensions, setProcessingDimensions] = useState({
+    width: DEFAULT_WIDTH_BEADS,
+    height: DEFAULT_HEIGHT_BEADS,
+  });
   const [aspectRatioLocked, setAspectRatioLocked] = useState(true);
 
   // Offset values (-200 to 200)
@@ -296,7 +301,7 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
         return;
       }
 
-      const currentWidth = parseInt(widthBeadsRef.current, 10) || 60;
+      const currentWidth = parseInt(widthBeadsRef.current, 10) || Number(DEFAULT_WIDTH_BEADS);
       const imageRatio = normalizeAspectRatio(img.height / img.width);
       const nextDimensions = fitLockedDimensionsFromWidth(currentWidth, imageRatio);
       const nextWidth = String(nextDimensions.width);
@@ -384,8 +389,8 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
         const poolSize = colorMerging ? colorMergeThreshold[0] : 1;
 
         const result = await convertImageToPixelArt(processedImg, selectedPalette, {
-          width: (parseInt(processingDimensions.width, 10) || 60) * poolSize,
-          height: (parseInt(processingDimensions.height, 10) || 60) * poolSize,
+          width: (parseInt(processingDimensions.width, 10) || Number(DEFAULT_WIDTH_BEADS)) * poolSize,
+          height: (parseInt(processingDimensions.height, 10) || Number(DEFAULT_HEIGHT_BEADS)) * poolSize,
           poolSize,
           ciede2000Threshold: colorMerging ? colorMergeThreshold[0] : 0,
         });
