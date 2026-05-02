@@ -84,6 +84,10 @@
       "title": "Brush color adjusted",
       "description": "Current brush color is not available in {{palette}}, so it was changed to the closest match, {{to}}."
     },
+    "replaceNotice": {
+      "title": "Color replaced",
+      "description": "{{from}} was replaced with {{to}}."
+    },
     "usedActions": {
       "replace": "Replace",
       "clear": "Clear",

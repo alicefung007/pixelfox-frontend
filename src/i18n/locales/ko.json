@@ -84,6 +84,10 @@
       "title": "브러시 색상을 자동 조정했어요",
       "description": "{{palette}} 팔레트에 현재 브러시 색상이 없어 가장 가까운 {{to}}(으)로 자동 변경했습니다."
     },
+    "replaceNotice": {
+      "title": "색상을 교체했습니다",
+      "description": "{{from}}을(를) {{to}}로 교체했습니다."
+    },
     "usedActions": {
       "replace": "Replace",
       "clear": "Clear",

@@ -13,8 +13,9 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
-import { useEditorStore } from "@/store/useEditorStore"
 import { usePaletteStore } from "@/store/usePaletteStore"
+import { replaceCanvasColor } from "@/lib/palette-replace"
+import { showUsedColorReplaceToast } from "@/lib/palette-notice"
 import { getSystemPalette } from "@/lib/palettes"
 import { cn, getRgbColorDistance, isDarkColor, normalizeHex } from "@/lib/utils"
 
@@ -57,20 +58,10 @@ export default function PaletteReplaceColorDialog({
   const [search, setSearch] = useState("")
   const hasSearch = search.trim().length > 0
   const currentPaletteId = usePaletteStore((state) => state.currentPaletteId)
-  const setSelectedUsedColor = usePaletteStore(
-    (state) => state.setSelectedUsedColor
-  )
-  const setColor = useEditorStore((state) => state.setColor)
-  const setPixels = useEditorStore((state) => state.setPixels)
-  const saveHistory = useEditorStore((state) => state.saveHistory)
   const palette = getSystemPalette(currentPaletteId)!
   const normalizedSourceColor = useMemo(
     () => (sourceColor ? normalizeHex(sourceColor) : null),
     [sourceColor]
-  )
-  const targetPixelKeySet = useMemo(
-    () => (pixelKeys ? new Set(pixelKeys) : null),
-    [pixelKeys]
   )
   const filteredSwatches = useMemo(() => {
     const keyword = search.trim().toLowerCase()
@@ -105,41 +96,26 @@ export default function PaletteReplaceColorDialog({
   }, [open, search])
 
   const handleReplaceColor = (nextColor: string) => {
-    if (!normalizedSourceColor) return
+    if (!sourceColor) return
 
-    const replacementColor = `#${normalizeHex(nextColor)}`
-    if (normalizedSourceColor === normalizeHex(replacementColor)) {
+    const result = replaceCanvasColor({
+      sourceColor,
+      replacementColor: nextColor,
+      pixelKeys,
+      selectReplacementColor: true,
+    })
+
+    if (!result.changed) {
       onOpenChange(false)
       return
     }
 
-    let changed = false
-    const currentPixels = useEditorStore.getState().pixels
-    const nextPixels: Record<string, string> = {}
-    for (const [key, color] of Object.entries(currentPixels)) {
-      const isTargetPixel = targetPixelKeySet
-        ? targetPixelKeySet.has(key) && normalizeHex(color) === normalizedSourceColor
-        : normalizeHex(color) === normalizedSourceColor
-
-      if (isTargetPixel) {
-        nextPixels[key] = replacementColor
-        changed = true
-      } else {
-        nextPixels[key] = color
-      }
-    }
-
-    if (!changed) {
-      onOpenChange(false)
-      return
-    }
-
-    setPixels(nextPixels)
-    saveHistory()
-    setColor(replacementColor)
-    if (!targetPixelKeySet) {
-      setSelectedUsedColor(replacementColor)
-    }
+    showUsedColorReplaceToast({
+      fromColor: sourceColor,
+      toColor: result.replacementColor,
+      palette,
+      t,
+    })
     onOpenChange(false)
   }
 

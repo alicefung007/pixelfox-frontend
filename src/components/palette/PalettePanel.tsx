@@ -1,6 +1,18 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { PaletteTabId } from "@/store/usePaletteStore";
 import { useTranslation } from "react-i18next";
+import {
+  DndContext,
+  DragOverlay,
+  MouseSensor,
+  TouchSensor,
+  useDraggable,
+  useDroppable,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragStartEvent,
+} from "@dnd-kit/core";
 import {
   Flower,
   Palette,
@@ -24,15 +36,190 @@ import UsedColorActionButtons from "@/components/palette/UsedColorActionButtons"
 import PaletteManageDialog from "@/components/palette/PaletteManageDialog";
 import { getSystemPalette, type PaletteSwatch, type SystemPaletteId } from "@/lib/palettes";
 import { resolvePaletteColor } from "@/lib/palette-color";
-import { showPaletteRemapToast } from "@/lib/palette-notice";
+import { replaceCanvasColor } from "@/lib/palette-replace";
+import { showPaletteRemapToast, showUsedColorReplaceToast } from "@/lib/palette-notice";
 import { cn, normalizeHex, hexLabel, isDarkColor } from "@/lib/utils";
 
 type PalettePanelProps = {
   onOpenReplaceColorDialog: (sourceColor: string) => void;
 };
 
+type SwatchTileProps = {
+  swatch: PaletteSwatch;
+  primaryColor: string;
+  usedCount: number;
+  isSelectedUsedColor?: boolean;
+  isDropTarget?: boolean;
+  isUsedTab?: boolean;
+  isOverlay?: boolean;
+};
+
+function SwatchTile({
+  swatch,
+  primaryColor,
+  usedCount,
+  isSelectedUsedColor = false,
+  isDropTarget = false,
+  isUsedTab = false,
+  isOverlay = false,
+}: SwatchTileProps) {
+  return (
+    <>
+      <span className={cn(
+        "text-[8px] sm:text-[9px] md:text-[10px] font-bold transition-colors",
+        isDarkColor(swatch.color) ? "text-white" : "text-black/60"
+      )}>
+        {swatch.label}
+      </span>
+      {primaryColor === swatch.color && !isOverlay && (
+        <div className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 size-3 sm:size-4 rounded-full bg-primary text-white flex items-center justify-center shadow-sm">
+          <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        </div>
+      )}
+      {isUsedTab && !isOverlay && (
+        <span className="absolute -bottom-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-foreground/80 text-background text-[9px] font-semibold leading-none flex items-center justify-center shadow-sm tabular-nums">
+          {usedCount}
+        </span>
+      )}
+      {(isSelectedUsedColor || isDropTarget) && (
+        <span className="pointer-events-none absolute inset-0 rounded-md ring-2 ring-primary/25" />
+      )}
+    </>
+  );
+}
+
+type PaletteSwatchItemProps = {
+  swatch: PaletteSwatch;
+  normalizedSwatch: string;
+  tab: PaletteTabId;
+  primaryColor: string;
+  usedCount: number;
+  selectedUsedColor: string | null;
+  isSelectedUsedColor: boolean;
+  isUsedActionPopoverOpen: boolean;
+  onSelect: () => void;
+  onPopoverOpenChange: (open: boolean) => void;
+  onOpenReplaceColorDialog: (sourceColor: string) => void;
+  onClearSelectedColor: () => void;
+  onCloseUsedActionPopover: () => void;
+};
+
+function PaletteSwatchItem({
+  swatch,
+  normalizedSwatch,
+  tab,
+  primaryColor,
+  usedCount,
+  selectedUsedColor,
+  isSelectedUsedColor,
+  isUsedActionPopoverOpen,
+  onSelect,
+  onPopoverOpenChange,
+  onOpenReplaceColorDialog,
+  onClearSelectedColor,
+  onCloseUsedActionPopover,
+}: PaletteSwatchItemProps) {
+  const isUsedTab = tab === "used";
+  const dragData = useMemo(
+    () => ({ color: swatch.color }),
+    [swatch.color]
+  );
+  const {
+    attributes,
+    listeners,
+    setNodeRef: setDraggableRef,
+    isDragging,
+  } = useDraggable({
+    id: `used-color-drag-${normalizedSwatch}`,
+    data: dragData,
+    disabled: !isUsedTab,
+  });
+  const { setNodeRef: setDroppableRef, isOver } = useDroppable({
+    id: `used-color-drop-${normalizedSwatch}`,
+    data: dragData,
+    disabled: !isUsedTab,
+  });
+  const setSwatchRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      setDraggableRef(node);
+      setDroppableRef(node);
+    },
+    [setDraggableRef, setDroppableRef]
+  );
+  return (
+    <div className="relative flex flex-col items-center gap-1 p-0.5 sm:p-1">
+      <Popover
+        open={isUsedActionPopoverOpen}
+        onOpenChange={onPopoverOpenChange}
+      >
+        <PopoverAnchor asChild>
+          <div
+            ref={setSwatchRef}
+            className={cn(
+              "w-full select-none",
+              isUsedTab && "touch-none",
+              isDragging && "opacity-35"
+            )}
+          >
+            <button
+              type="button"
+              className={cn(
+                "w-full aspect-square select-none rounded-md border-2 relative flex items-center justify-center transition-transform hover:scale-105 active:scale-95",
+                isUsedTab ? "cursor-grab active:cursor-grabbing" : "cursor-pointer",
+                isSelectedUsedColor
+                  ? "border-primary ring-2 ring-primary/25"
+                  : primaryColor === swatch.color
+                    ? "border-primary"
+                    : "border-gray-400/20",
+                isOver && !isDragging && "scale-105 border-primary ring-2 ring-primary/30"
+              )}
+              style={{ backgroundColor: swatch.color }}
+              onClick={onSelect}
+              {...(isUsedTab ? attributes : {})}
+              {...(isUsedTab ? listeners : {})}
+            >
+              <SwatchTile
+                swatch={swatch}
+                primaryColor={primaryColor}
+                usedCount={usedCount}
+                isSelectedUsedColor={isSelectedUsedColor}
+                isDropTarget={isOver && !isDragging}
+                isUsedTab={isUsedTab}
+              />
+            </button>
+          </div>
+        </PopoverAnchor>
+        <PopoverContent
+          side="top"
+          align="end"
+          sideOffset={8}
+          className="z-[100] flex w-fit flex-row items-center gap-0 rounded-lg border bg-background/95 p-0.5 shadow-sm backdrop-blur-sm"
+          onOpenAutoFocus={(event) => event.preventDefault()}
+        >
+          <UsedColorActionButtons
+            selectedColor={selectedUsedColor}
+            onReplace={onOpenReplaceColorDialog}
+            onClear={onClearSelectedColor}
+            onClose={onCloseUsedActionPopover}
+          />
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+}
+
 export default function PalettePanel({ onOpenReplaceColorDialog }: PalettePanelProps) {
   const { t } = useTranslation();
+  const usedColorDragSensors = useSensors(
+    useSensor(MouseSensor, {
+      activationConstraint: { distance: 8 },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 120, tolerance: 6 },
+    })
+  );
   const primaryColor = useEditorStore((state) => state.primaryColor);
   const setColor = useEditorStore((state) => state.setColor);
   const clear = useEditorStore((state) => state.clear);
@@ -47,10 +234,12 @@ export default function PalettePanel({ onOpenReplaceColorDialog }: PalettePanelP
   const setSelectedUsedColor = usePaletteStore((state) => state.setSelectedUsedColor);
   const usedTabFlashAt = usePaletteStore((state) => state.usedTabFlashAt);
   const handledUsedTabFlashAtRef = useRef(usedTabFlashAt);
+  const didDragUsedColorRef = useRef(false);
   const [isManageOpen, setIsManageOpen] = useState(false);
   const [isUsedFlashing, setIsUsedFlashing] = useState(false);
   const [pendingPaletteId, setPendingPaletteId] = useState<SystemPaletteId | null>(null);
   const [usedActionPopoverColor, setUsedActionPopoverColor] = useState<string | null>(null);
+  const [draggedUsedColor, setDraggedUsedColor] = useState<string | null>(null);
 
   useEffect(() => {
     if (!usedTabFlashAt || handledUsedTabFlashAtRef.current === usedTabFlashAt) return;
@@ -91,6 +280,13 @@ export default function PalettePanel({ onOpenReplaceColorDialog }: PalettePanelP
       color,
     }));
   }, [palette.swatches, canvasUsedColors, paletteLabelMap, tab]);
+  const draggedUsedSwatch = useMemo(() => {
+    if (!draggedUsedColor) return null;
+    const normalizedDraggedColor = normalizeHex(draggedUsedColor);
+    return visibleSwatches.find(
+      (swatch) => normalizeHex(swatch.color) === normalizedDraggedColor
+    ) ?? null;
+  }, [draggedUsedColor, visibleSwatches]);
 
   const getLabelFromColor = (hex: string) => {
     const normalizedHex = normalizeHex(hex);
@@ -188,6 +384,45 @@ export default function PalettePanel({ onOpenReplaceColorDialog }: PalettePanelP
     setUsedActionPopoverColor(null);
   };
 
+  const clearUsedColorDragState = useCallback(() => {
+    setDraggedUsedColor(null);
+    window.setTimeout(() => {
+      didDragUsedColorRef.current = false;
+    }, 0);
+  }, []);
+
+  const handleUsedColorDragStart = useCallback((event: DragStartEvent) => {
+    const sourceColor = event.active.data.current?.color;
+    didDragUsedColorRef.current = true;
+    setUsedActionPopoverColor(null);
+    setDraggedUsedColor(typeof sourceColor === "string" ? sourceColor : null);
+  }, []);
+
+  const handleUsedColorDragEnd = useCallback((event: DragEndEvent) => {
+    const sourceColor = event.active.data.current?.color;
+    const targetColor = event.over?.data.current?.color;
+    clearUsedColorDragState();
+
+    if (typeof sourceColor !== "string" || typeof targetColor !== "string") return;
+    if (normalizeHex(sourceColor) === normalizeHex(targetColor)) return;
+
+    const result = replaceCanvasColor({
+      sourceColor,
+      replacementColor: targetColor,
+      selectReplacementColor: true,
+    });
+
+    if (!result.changed) return;
+
+    setUsedActionPopoverColor(null);
+    showUsedColorReplaceToast({
+      fromColor: sourceColor,
+      toColor: result.replacementColor,
+      palette,
+      t,
+    });
+  }, [clearUsedColorDragState, palette, t]);
+
   return (
     <div className="h-full bg-background flex flex-col overflow-hidden shadow-sm">
       <div className="flex items-center justify-between gap-2 shrink-0 px-3 sm:px-4 py-2 overflow-x-auto">
@@ -235,113 +470,96 @@ export default function PalettePanel({ onOpenReplaceColorDialog }: PalettePanelP
       </div>
 
       <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-2 mt-1">
-        <div
-          key={tab}
-          className="grid grid-cols-7 gap-2 sm:gap-3 py-1 sm:[grid-template-columns:repeat(auto-fill,minmax(52px,1fr))]"
+        <DndContext
+          sensors={usedColorDragSensors}
+          onDragStart={handleUsedColorDragStart}
+          onDragCancel={clearUsedColorDragState}
+          onDragEnd={handleUsedColorDragEnd}
         >
-          {visibleSwatches.map((swatch, i) => {
-            const normalizedSwatch = normalizeHex(swatch.color);
-            const isSelectedUsedColor =
-              tab === "used" &&
-              selectedUsedColor &&
-              normalizeHex(selectedUsedColor) === normalizedSwatch;
-            const isUsedActionPopoverOpen =
-              tab === "used" && usedActionPopoverColor === normalizedSwatch;
+          <div
+            key={tab}
+            className="grid grid-cols-7 gap-2 sm:gap-3 py-1 sm:[grid-template-columns:repeat(auto-fill,minmax(52px,1fr))]"
+          >
+            {visibleSwatches.map((swatch, i) => {
+              const normalizedSwatch = normalizeHex(swatch.color);
+              const isSelectedUsedColor =
+                tab === "used" &&
+                selectedUsedColor !== null &&
+                normalizeHex(selectedUsedColor) === normalizedSwatch;
+              const isUsedActionPopoverOpen =
+                tab === "used" && usedActionPopoverColor === normalizedSwatch;
 
-            return (
-            <div key={i} className="relative flex flex-col items-center gap-1 p-0.5 sm:p-1">
-              <Popover
-                open={isUsedActionPopoverOpen}
-                onOpenChange={(open) => {
-                  if (open) {
-                    setUsedActionPopoverColor(normalizedSwatch);
-                    return;
-                  }
-                  setUsedActionPopoverColor(null);
-                  if (isSelectedUsedColor) {
-                    setSelectedUsedColor(null);
-                  }
-                }}
-              >
-                <PopoverAnchor asChild>
-                  <div className="w-full">
-                  <button
-                    type="button"
-                    className={cn(
-                      "w-full aspect-square rounded-md border-2 relative flex items-center justify-center transition-transform hover:scale-105 active:scale-95",
-                      isSelectedUsedColor
-                        ? "border-primary ring-2 ring-primary/25"
-                        : primaryColor === swatch.color
-                          ? "border-primary"
-                          : "border-gray-400/20"
-                    )}
-                    style={{ backgroundColor: swatch.color }}
-                    onClick={() => {
-                      setColor(swatch.color);
-                      if (tab === "used") {
-                        const isSameSelection =
-                          selectedUsedColor && normalizeHex(selectedUsedColor) === normalizedSwatch;
+              return (
+                <PaletteSwatchItem
+                  key={`${tab}-${swatch.label}-${normalizedSwatch}-${i}`}
+                  swatch={swatch}
+                  normalizedSwatch={normalizedSwatch}
+                  tab={tab}
+                  primaryColor={primaryColor}
+                  usedCount={usedCounts.get(swatch.color) ?? 0}
+                  selectedUsedColor={selectedUsedColor}
+                  isSelectedUsedColor={isSelectedUsedColor}
+                  isUsedActionPopoverOpen={isUsedActionPopoverOpen}
+                  onSelect={() => {
+                    if (didDragUsedColorRef.current) return;
+                    setColor(swatch.color);
+                    if (tab === "used") {
+                      const isSameSelection =
+                        selectedUsedColor && normalizeHex(selectedUsedColor) === normalizedSwatch;
 
-                        if (isSameSelection) {
-                          if (isUsedActionPopoverOpen) {
-                            setSelectedUsedColor(null);
-                            setUsedActionPopoverColor(null);
-                          } else {
-                            setUsedActionPopoverColor(normalizedSwatch);
-                          }
-                          return;
+                      if (isSameSelection) {
+                        if (isUsedActionPopoverOpen) {
+                          setSelectedUsedColor(null);
+                          setUsedActionPopoverColor(null);
+                        } else {
+                          setUsedActionPopoverColor(normalizedSwatch);
                         }
-
-                        setSelectedUsedColor(normalizedSwatch);
-                        setUsedActionPopoverColor(normalizedSwatch);
                         return;
                       }
-                      if (selectedUsedColor) {
-                        setSelectedUsedColor(null);
-                      }
-                      setUsedActionPopoverColor(null);
-                    }}
-                  >
-                    <span className={cn(
-                      "text-[8px] sm:text-[9px] md:text-[10px] font-bold transition-colors",
-                      isDarkColor(swatch.color) ? "text-white" : "text-black/60"
-                    )}>
-                      {swatch.label}
-                    </span>
-                    {primaryColor === swatch.color && (
-                      <div className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 size-3 sm:size-4 rounded-full bg-primary text-white flex items-center justify-center shadow-sm">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="20 6 9 17 4 12" />
-                        </svg>
-                      </div>
-                    )}
-                    {tab === "used" && (
-                      <span className="absolute -bottom-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-foreground/80 text-background text-[9px] font-semibold leading-none flex items-center justify-center shadow-sm tabular-nums">
-                        {usedCounts.get(swatch.color) ?? 0}
-                      </span>
-                    )}
-                  </button>
-                  </div>
-                </PopoverAnchor>
-                <PopoverContent
-                  side="top"
-                  align="end"
-                  sideOffset={8}
-                  className="z-[100] flex w-fit flex-row items-center gap-0 rounded-lg border bg-background/95 p-0.5 shadow-sm backdrop-blur-sm"
-                  onOpenAutoFocus={(event) => event.preventDefault()}
-                >
-                  <UsedColorActionButtons
-                    selectedColor={selectedUsedColor}
-                    onReplace={onOpenReplaceColorDialog}
-                    onClear={handleClearSelectedColor}
-                    onClose={() => setUsedActionPopoverColor(null)}
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-            );
-          })}
-        </div>
+
+                      setSelectedUsedColor(normalizedSwatch);
+                      setUsedActionPopoverColor(normalizedSwatch);
+                      return;
+                    }
+                    if (selectedUsedColor) {
+                      setSelectedUsedColor(null);
+                    }
+                    setUsedActionPopoverColor(null);
+                  }}
+                  onPopoverOpenChange={(open) => {
+                    if (open) {
+                      setUsedActionPopoverColor(normalizedSwatch);
+                      return;
+                    }
+                    setUsedActionPopoverColor(null);
+                    if (isSelectedUsedColor) {
+                      setSelectedUsedColor(null);
+                    }
+                  }}
+                  onOpenReplaceColorDialog={onOpenReplaceColorDialog}
+                  onClearSelectedColor={handleClearSelectedColor}
+                  onCloseUsedActionPopover={() => setUsedActionPopoverColor(null)}
+                />
+              );
+            })}
+          </div>
+          <DragOverlay dropAnimation={null}>
+            {draggedUsedSwatch ? (
+              <div
+                className="flex aspect-square w-9 cursor-grabbing items-center justify-center rounded-md border-2 border-primary bg-background shadow-lg ring-2 ring-primary/25 sm:w-11"
+                style={{ backgroundColor: draggedUsedSwatch.color }}
+              >
+                <SwatchTile
+                  swatch={draggedUsedSwatch}
+                  primaryColor={primaryColor}
+                  usedCount={usedCounts.get(draggedUsedSwatch.color) ?? 0}
+                  isUsedTab
+                  isOverlay
+                />
+              </div>
+            ) : null}
+          </DragOverlay>
+        </DndContext>
       </div>
 
       <PaletteManageDialog

@@ -84,6 +84,10 @@
       "title": "画笔颜色已自动调整",
       "description": "{{palette}} 色盘里没有当前画笔颜色，已自动切换为最接近的 {{to}}。"
     },
+    "replaceNotice": {
+      "title": "颜色已替换",
+      "description": "已将 {{from}} 替换为 {{to}}。"
+    },
     "usedActions": {
       "replace": "Replace",
       "clear": "Clear",
