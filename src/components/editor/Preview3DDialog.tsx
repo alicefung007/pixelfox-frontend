@@ -121,7 +121,7 @@ function PixelMesh({
   }, [entries, count, width, height, dummy, tmpColor]);
 
   return (
-    <instancedMesh ref={meshRef} args={[beadGeometry, undefined, count]} castShadow receiveShadow>
+    <instancedMesh ref={meshRef} args={[beadGeometry, undefined, count]} frustumCulled={false}>
       <meshStandardMaterial roughness={0.3} metalness={0.05} />
     </instancedMesh>
   );
@@ -145,13 +145,10 @@ function Scene({
     <>
       <ambientLight intensity={0.9} />
       <hemisphereLight intensity={0.6} groundColor="#ffffff" />
-      <directionalLight position={[dist, dist, dist]} intensity={1.3} castShadow />
-      <directionalLight position={[-dist, dist * 0.5, dist * 0.5]} intensity={0.7} />
-      <directionalLight position={[0, dist * 0.5, -dist]} intensity={0.8} />
-      <directionalLight position={[dist, 0, -dist * 0.5]} intensity={0.5} />
-      <directionalLight position={[-dist, 0, -dist * 0.5]} intensity={0.5} />
+      <directionalLight position={[dist, dist, dist]} intensity={1.3} />
+      <directionalLight position={[-dist, dist * 0.5, -dist * 0.5]} intensity={0.7} />
       <PixelMesh entries={entries} width={width} height={height} beadShape={beadShape} />
-      <OrbitControls enableDamping makeDefault minDistance={dist * 0.3} maxDistance={dist * 4} autoRotate={autoRotate} autoRotateSpeed={3.5} zoomToCursor={true} />
+      <OrbitControls enableDamping makeDefault minDistance={dist * 0.03} maxDistance={dist * 4} autoRotate={autoRotate} autoRotateSpeed={3.5} zoomToCursor={true} />
     </>
   );
 }
@@ -246,10 +243,9 @@ export default function Preview3DDialog({ open, onOpenChange }: Props) {
               </div>
               <Canvas
               key={beadShape}
-              shadows
-              gl={{ alpha: true }}
-              camera={{ position: [0, 0, cameraDist], fov: 40, near: 0.1, far: cameraDist * 10 }}
-              dpr={[1, 2]}
+              gl={{ alpha: true, antialias: true, powerPreference: "high-performance" }}
+              camera={{ position: [0, 0, cameraDist], fov: 40, near: 0.01, far: cameraDist * 10 }}
+              dpr={[1, 1.5]}
               style={{ background: "transparent" }}
             >
               <Scene entries={entries} width={width} height={height} beadShape={beadShape} autoRotate={autoRotate} />
