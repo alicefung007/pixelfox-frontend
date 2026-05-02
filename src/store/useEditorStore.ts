@@ -257,6 +257,25 @@ const loadPersistedCanvasState = (fallback?: Partial<EditorState>): PersistedCan
 const writeCanvasStateToStorage = (state: PersistedCanvasState) => {
   if (typeof window === 'undefined') return;
 
+  if (!EDITOR_CONFIG.PERSIST_HISTORY) {
+    // Persist only the current snapshot. Cheap regardless of history depth.
+    const payload = JSON.stringify({
+      pixels: state.pixels,
+      width: state.width,
+      height: state.height,
+      history: [{ pixels: state.pixels, width: state.width, height: state.height }],
+      historyIndex: 0,
+    });
+    try {
+      window.localStorage.setItem(EDITOR_CANVAS_STORAGE_KEY, payload);
+    } catch {
+      // Quota exceeded or storage disabled: skip silently.
+    }
+    return;
+  }
+
+  // Full-history persistence: serialize the entire undo stack and shrink it on
+  // QuotaExceededError by dropping the oldest entries until it fits.
   const persistAttempt = (history: HistoryEntry[], historyIndex: number) =>
     JSON.stringify({
       pixels: state.pixels,
@@ -269,6 +288,13 @@ const writeCanvasStateToStorage = (state: PersistedCanvasState) => {
   const limited = limitHistory(state.history, state.historyIndex);
   let history = limited.history;
   let historyIndex = limited.historyIndex;
+
+  const persistLimit = Math.max(1, EDITOR_CONFIG.PERSIST_HISTORY_LIMIT);
+  if (history.length > persistLimit) {
+    const overflow = history.length - persistLimit;
+    history = history.slice(overflow);
+    historyIndex = Math.max(0, historyIndex - overflow);
+  }
 
   while (history.length > 0) {
     try {
@@ -294,7 +320,12 @@ const writeCanvasStateToStorage = (state: PersistedCanvasState) => {
 
 const PERSIST_DEBOUNCE_MS = 500;
 let persistTimer: ReturnType<typeof setTimeout> | null = null;
+// pendingPersistState: queued by persistCanvasState, drained when the debounce timer fires.
+// inFlightPersistState: handed off to requestIdleCallback but not yet written to storage.
+// Both are tracked separately so beforeunload can flush whichever one represents the
+// latest unsaved state (otherwise a refresh inside the idle window loses the last stroke).
 let pendingPersistState: PersistedCanvasState | null = null;
+let inFlightPersistState: PersistedCanvasState | null = null;
 
 type IdleCallbackHandle = number;
 type IdleDeadline = { didTimeout: boolean; timeRemaining: () => number };
@@ -307,11 +338,16 @@ const flushPersist = () => {
   const state = pendingPersistState;
   pendingPersistState = null;
   if (!state) return;
+  inFlightPersistState = state;
   const idleWindow = window as IdleWindow;
-  if (typeof idleWindow.requestIdleCallback === 'function') {
-    idleWindow.requestIdleCallback(() => writeCanvasStateToStorage(state), { timeout: 1000 });
-  } else {
+  const doWrite = () => {
     writeCanvasStateToStorage(state);
+    if (inFlightPersistState === state) inFlightPersistState = null;
+  };
+  if (typeof idleWindow.requestIdleCallback === 'function') {
+    idleWindow.requestIdleCallback(doWrite, { timeout: 1000 });
+  } else {
+    doWrite();
   }
 };
 
@@ -323,16 +359,22 @@ const persistCanvasState = (state: PersistedCanvasState) => {
 };
 
 if (typeof window !== 'undefined') {
-  window.addEventListener('beforeunload', () => {
+  const flushOnUnload = () => {
     if (persistTimer !== null) {
       clearTimeout(persistTimer);
       persistTimer = null;
     }
-    if (pendingPersistState) {
-      writeCanvasStateToStorage(pendingPersistState);
+    // Pending (newest, not yet drained) wins over in-flight (older, idle-callback queued).
+    const toWrite = pendingPersistState ?? inFlightPersistState;
+    if (toWrite) {
+      writeCanvasStateToStorage(toWrite);
       pendingPersistState = null;
+      inFlightPersistState = null;
     }
-  });
+  };
+  window.addEventListener('beforeunload', flushOnUnload);
+  // pagehide is more reliable than beforeunload on mobile / bfcache scenarios.
+  window.addEventListener('pagehide', flushOnUnload);
 }
 
 const initialCanvasState = loadPersistedCanvasState(getDefaultCanvasState());

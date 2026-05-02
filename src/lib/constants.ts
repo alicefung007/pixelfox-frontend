@@ -8,6 +8,15 @@ export const EDITOR_CONFIG = {
   PAN_SPEED: 1.5,
   AUTO_FIT_PADDING: 96,
   ZOOM_STEP: 10,
+  // When true, the full undo/redo history is serialized into localStorage on every
+  // saveHistory. This restores history across page reloads but the JSON blob can
+  // grow to tens of MB on large canvases (200×200 with many filled pixels), which
+  // blocks the main thread when the debounced persist fires during user interaction.
+  // Set to false to persist only the current canvas snapshot.
+  PERSIST_HISTORY: false,
+  // When PERSIST_HISTORY is true, cap how many of the most recent history entries
+  // are written to localStorage. The in-memory undo stack is independent of this.
+  PERSIST_HISTORY_LIMIT: 5,
 } as const;
 
 export const PALETTE_CONFIG = {
