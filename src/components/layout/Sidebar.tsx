@@ -45,6 +45,8 @@ export default function Sidebar({ isOpen = true, onClose, onUpload, onAssembly, 
   const setTool = useEditorStore((state) => state.setTool);
   const undo = useEditorStore((state) => state.undo);
   const redo = useEditorStore((state) => state.redo);
+  const canUndo = useEditorStore((state) => state.historyIndex > 0);
+  const canRedo = useEditorStore((state) => state.historyIndex < state.history.length - 1);
   const clear = useEditorStore((state) => state.clear);
   const width = useEditorStore((state) => state.width);
   const height = useEditorStore((state) => state.height);
@@ -91,6 +93,8 @@ export default function Sidebar({ isOpen = true, onClose, onUpload, onAssembly, 
             onBackgroundColorChange={setBackgroundColor}
             undo={undo}
             redo={redo}
+            canUndo={canUndo}
+            canRedo={canRedo}
             clear={clear}
             onExport={onExport}
             hasExportableContent={hasPixels}
@@ -155,6 +159,8 @@ export default function Sidebar({ isOpen = true, onClose, onUpload, onAssembly, 
             onBackgroundColorChange={setBackgroundColor}
             undo={undo}
             redo={redo}
+            canUndo={canUndo}
+            canRedo={canRedo}
             clear={clear}
             onExport={onExport}
             hasExportableContent={hasPixels}
@@ -180,6 +186,8 @@ type SidebarContentProps = {
   onBackgroundColorChange: (color: string | null) => void;
   undo: () => void;
   redo: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
   clear: () => void;
   onExport?: () => void;
   hasExportableContent: boolean;
@@ -200,6 +208,8 @@ function SidebarContent({
   onBackgroundColorChange,
   undo,
   redo,
+  canUndo,
+  canRedo,
   clear,
   onExport,
   hasExportableContent,
@@ -262,14 +272,26 @@ function SidebarContent({
       <Separator />
 
       <div className="grid grid-cols-2 gap-2">
-        <Button variant="outline" size="sm" className="h-auto py-2 flex flex-col gap-1 items-center" onClick={undo}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-auto py-2 flex flex-col gap-1 items-center"
+          onClick={undo}
+          disabled={!canUndo}
+        >
           <div className="flex items-center gap-1">
             <Undo2 size={16} />
             <span className="text-xs">{t("sidebar.undo")}</span>
           </div>
           <div className="text-[9px] text-muted-foreground uppercase text-center w-full">⌘ Z</div>
         </Button>
-        <Button variant="outline" size="sm" className="h-auto py-2 flex flex-col gap-1 items-center" onClick={redo}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-auto py-2 flex flex-col gap-1 items-center"
+          onClick={redo}
+          disabled={!canRedo}
+        >
           <div className="flex items-center gap-1">
             <Redo2 size={16} />
             <span className="text-xs">{t("sidebar.redo")}</span>

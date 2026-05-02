@@ -25,6 +25,8 @@ export default function MobileEditorQuickActions({ onExport, className }: Props)
   const setTool = useEditorStore((state) => state.setTool);
   const undo = useEditorStore((state) => state.undo);
   const redo = useEditorStore((state) => state.redo);
+  const canUndo = useEditorStore((state) => state.historyIndex > 0);
+  const canRedo = useEditorStore((state) => state.historyIndex < state.history.length - 1);
   const clear = useEditorStore((state) => state.clear);
   const hasPixels = useEditorStore((state) => Object.keys(state.pixels).length > 0);
 
@@ -36,6 +38,7 @@ export default function MobileEditorQuickActions({ onExport, className }: Props)
           size="icon-sm"
           className="h-8 w-8 shrink-0"
           onClick={undo}
+          disabled={!canUndo}
           aria-label={t("sidebar.undo")}
           title={t("sidebar.undo")}
         >
@@ -46,6 +49,7 @@ export default function MobileEditorQuickActions({ onExport, className }: Props)
           size="icon-sm"
           className="h-8 w-8 shrink-0"
           onClick={redo}
+          disabled={!canRedo}
           aria-label={t("sidebar.redo")}
           title={t("sidebar.redo")}
         >
