@@ -38,13 +38,13 @@ export default function HomeWorkflow() {
 
         <Carousel
           aria-label={t("home.workflow.carouselLabel")}
-          className="-mx-4 overflow-visible"
+          className="-mx-4 overflow-hidden sm:overflow-visible"
         >
           <CarouselContent>
             {workflowSteps.map((step) => (
               <CarouselItem
                 key={step.key}
-                className="basis-[88%] sm:basis-[48%] lg:basis-[31%]"
+                className="basis-full sm:basis-[48%] lg:basis-[31%]"
               >
                 <Card className="h-full border-border/70 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                   <CardHeader>
@@ -59,8 +59,8 @@ export default function HomeWorkflow() {
                     <p className="leading-7 text-muted-foreground">
                       {t(`home.workflow.steps.${step.key}.description`)}
                     </p>
-                    <p className="mt-5 flex items-center gap-2 text-sm font-medium">
-                      <CheckCircle2 className="size-4 text-emerald-500" />
+                    <p className="mt-5 flex min-w-0 items-start gap-2 text-sm font-medium">
+                      <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-500" />
                       {t("home.workflow.editorReady")}
                     </p>
                   </CardContent>
@@ -68,8 +68,8 @@ export default function HomeWorkflow() {
               </CarouselItem>
             ))}
           </CarouselContent>
-          <CarouselPrevious className="-left-8 sm:-left-10" />
-          <CarouselNext className="-right-8 sm:-right-10" />
+          <CarouselPrevious className="hidden sm:-left-5 sm:inline-flex lg:-left-10" />
+          <CarouselNext className="hidden sm:-right-5 sm:inline-flex lg:-right-10" />
         </Carousel>
       </div>
     </section>

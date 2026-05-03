@@ -5,15 +5,6 @@ import { useTranslation } from "react-i18next"
 import { homeNavItems } from "@/components/home/home-data"
 import { Button } from "@/components/ui/button"
 import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -26,6 +17,16 @@ import {
   NavigationMenuList,
 } from "@/components/ui/navigation-menu"
 import { Separator } from "@/components/ui/separator"
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"
 import i18n from "@/i18n/config"
 
 const languages = [
@@ -123,8 +124,8 @@ export default function HomeNavbar() {
           </Button>
         </section>
 
-        <Dialog>
-          <DialogTrigger asChild>
+        <Sheet>
+          <SheetTrigger asChild>
             <Button
               variant="ghost"
               size="icon"
@@ -134,18 +135,24 @@ export default function HomeNavbar() {
             >
               <Menu className="size-5" />
             </Button>
-          </DialogTrigger>
-          <DialogContent className="top-4 left-1/2 max-h-[calc(100svh-2rem)] max-w-[calc(100%-2rem)] translate-y-0 overflow-y-auto rounded-2xl p-5 sm:hidden">
-            <DialogHeader>
-              <DialogTitle>PixelFox</DialogTitle>
-              <DialogDescription>
+          </SheetTrigger>
+          <SheetContent
+            className="sm:hidden"
+            onCloseAutoFocus={(event) => event.preventDefault()}
+          >
+            <SheetHeader className="px-5 pt-5 pr-12">
+              <SheetTitle>PixelFox</SheetTitle>
+              <SheetDescription>
                 {t("home.nav.mobileDescription")}
-              </DialogDescription>
-            </DialogHeader>
+              </SheetDescription>
+            </SheetHeader>
             <Separator />
-            <nav aria-label={t("home.nav.mobileLabel")} className="grid gap-1">
+            <nav
+              aria-label={t("home.nav.mobileLabel")}
+              className="grid gap-1 overflow-y-auto px-3"
+            >
               {homeNavItems.map((item) => (
-                <DialogClose asChild key={item.href}>
+                <SheetClose asChild key={item.href}>
                   <a
                     href={item.href}
                     className="rounded-lg px-3 py-3 text-sm font-medium transition-colors hover:bg-muted"
@@ -153,13 +160,13 @@ export default function HomeNavbar() {
                   >
                     {t(`home.nav.items.${item.key}.label`)}
                   </a>
-                </DialogClose>
+                </SheetClose>
               ))}
             </nav>
             <Separator />
-            <section
+            <SheetFooter
               aria-label={t("home.nav.mobileActionsLabel")}
-              className="grid gap-2"
+              className="px-5 pb-5"
             >
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -183,17 +190,17 @@ export default function HomeNavbar() {
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
-              <DialogClose asChild>
+              <SheetClose asChild>
                 <Button asChild>
                   <Link to="/editor">
                     {t("home.cta.primary")}
                     <ArrowRight className="size-4" />
                   </Link>
                 </Button>
-              </DialogClose>
-            </section>
-          </DialogContent>
-        </Dialog>
+              </SheetClose>
+            </SheetFooter>
+          </SheetContent>
+        </Sheet>
       </nav>
     </header>
   )

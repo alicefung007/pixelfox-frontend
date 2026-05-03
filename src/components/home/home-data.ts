@@ -1,9 +1,9 @@
 import type { LucideIcon } from "lucide-react"
 import {
+  Box,
   BookOpenCheck,
   Brush,
   Download,
-  Eye,
   FolderArchive,
   ImageUp,
   Layers,
@@ -62,7 +62,7 @@ export const featureItems: HomeFeature[] = [
   },
   {
     key: "preview",
-    icon: Eye,
+    icon: Box,
   },
   {
     key: "assembly",
