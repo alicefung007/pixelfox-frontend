@@ -1,7 +1,8 @@
 node_modules/
 coverage/
 .pnpm-store/
-pnpm-lock.yaml
+.claude/
+.vercel/
 package-lock.json
 pnpm-lock.yaml
 yarn.lock

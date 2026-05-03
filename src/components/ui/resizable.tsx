@@ -47,7 +47,7 @@ function ResizableHandle({
   return (
     <Separator
       className={cn(
-        "relative flex touch-manipulation-none items-center justify-center bg-border transition-colors hover:bg-primary/50 active:bg-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-1 aria-[orientation=vertical]:h-full aria-[orientation=vertical]:w-px aria-[orientation=horizontal]:h-px aria-[orientation=horizontal]:w-full",
+        "relative flex touch-manipulation-none items-center justify-center bg-border transition-colors hover:bg-primary/50 focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:outline-none active:bg-primary aria-[orientation=horizontal]:h-px aria-[orientation=horizontal]:w-full aria-[orientation=vertical]:h-full aria-[orientation=vertical]:w-px",
         className
       )}
       {...props}

@@ -1,11 +1,11 @@
-import i18n from 'i18next';
-import { initReactI18next } from 'react-i18next';
-import en from './locales/en.json';
-import zh from './locales/zh.json';
-import ko from './locales/ko.json';
-import ja from './locales/ja.json';
+import i18n from "i18next"
+import { initReactI18next } from "react-i18next"
+import en from "./locales/en.json"
+import zh from "./locales/zh.json"
+import ko from "./locales/ko.json"
+import ja from "./locales/ja.json"
 
-const savedLanguage = localStorage.getItem('i18nextLng') || 'en';
+const savedLanguage = localStorage.getItem("i18nextLng") || "en"
 
 i18n.use(initReactI18next).init({
   resources: {
@@ -15,14 +15,14 @@ i18n.use(initReactI18next).init({
     ja: { translation: ja },
   },
   lng: savedLanguage,
-  fallbackLng: 'en',
+  fallbackLng: "en",
   interpolation: {
     escapeValue: false,
   },
-});
+})
 
-i18n.on('languageChanged', (lng) => {
-  localStorage.setItem('i18nextLng', lng);
-});
+i18n.on("languageChanged", (lng) => {
+  localStorage.setItem("i18nextLng", lng)
+})
 
-export default i18n;
+export default i18n

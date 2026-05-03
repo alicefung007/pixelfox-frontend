@@ -1,7 +1,7 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import AppLayout from "./components/layout/AppLayout";
-import Assembly from "./pages/Assembly";
-import Editor from "./pages/Editor";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom"
+import AppLayout from "./components/layout/AppLayout"
+import Assembly from "./pages/Assembly"
+import Editor from "./pages/Editor"
 
 function App() {
   return (
@@ -13,7 +13,7 @@ function App() {
         </Route>
       </Routes>
     </Router>
-  );
+  )
 }
 
-export default App;
+export default App

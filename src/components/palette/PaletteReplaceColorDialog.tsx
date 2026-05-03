@@ -126,7 +126,8 @@ export default function PaletteReplaceColorDialog({
     <div className="grid grid-cols-6 gap-2 sm:[grid-template-columns:repeat(auto-fill,minmax(52px,1fr))] sm:gap-3">
       {swatches.map((swatch) => {
         const isCurrent = normalizedSourceColor === normalizeHex(swatch.color)
-        const isNameMatched = hasSearch && isNameSearchMatch(swatch.label, search)
+        const isNameMatched =
+          hasSearch && isNameSearchMatch(swatch.label, search)
         const isHexMatched =
           hasSearch && !isNameMatched && isHexSearchMatch(swatch.color, search)
 
@@ -155,7 +156,7 @@ export default function PaletteReplaceColorDialog({
                 {swatch.label}
               </span>
               {isHexMatched && (
-                <span className="absolute -right-1 -bottom-1 rounded-full bg-foreground/85 px-1 py-0.5 text-[8px] font-semibold leading-none text-background shadow-sm">
+                <span className="absolute -right-1 -bottom-1 rounded-full bg-foreground/85 px-1 py-0.5 text-[8px] leading-none font-semibold text-background shadow-sm">
                   HEX
                 </span>
               )}
@@ -168,7 +169,7 @@ export default function PaletteReplaceColorDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl w-[calc(100vw-32px)] max-h-[calc(100vh-32px)] overflow-hidden p-0 gap-0">
+      <DialogContent className="max-h-[calc(100vh-32px)] w-[calc(100vw-32px)] max-w-2xl gap-0 overflow-hidden p-0">
         <DialogHeader className="px-6 pt-6 pb-3">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
@@ -214,7 +215,7 @@ export default function PaletteReplaceColorDialog({
               {!hasSearch && similarSwatches.length > 0 && (
                 <section className="flex flex-col gap-3">
                   <div className="flex items-center gap-3">
-                    <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                    <span className="shrink-0 text-[10px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
                       {t("palette.replaceDialog.similarGroup")}
                     </span>
                     <Separator className="flex-1" />
@@ -225,7 +226,7 @@ export default function PaletteReplaceColorDialog({
 
               <section className="flex flex-col gap-3">
                 <div className="flex items-center gap-3">
-                  <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                  <span className="shrink-0 text-[10px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
                     {t("palette.replaceDialog.allGroup")}
                   </span>
                   <Separator className="flex-1" />

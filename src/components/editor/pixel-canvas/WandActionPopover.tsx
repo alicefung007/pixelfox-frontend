@@ -1,14 +1,14 @@
-import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover';
-import UsedColorActionButtons from '@/components/palette/UsedColorActionButtons';
-import type { WandSelection } from './types';
+import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover"
+import UsedColorActionButtons from "@/components/palette/UsedColorActionButtons"
+import type { WandSelection } from "./types"
 
 type Props = {
-  wandSelection: WandSelection | null;
-  anchorSelection: WandSelection | null;
-  onClose: () => void;
-  onClear: () => void;
-  onOpenReplaceColorDialog: (sourceColor: string, pixelKeys?: string[]) => void;
-};
+  wandSelection: WandSelection | null
+  anchorSelection: WandSelection | null
+  onClose: () => void
+  onClear: () => void
+  onOpenReplaceColorDialog: (sourceColor: string, pixelKeys?: string[]) => void
+}
 
 export default function WandActionPopover({
   wandSelection,
@@ -17,14 +17,14 @@ export default function WandActionPopover({
   onClear,
   onOpenReplaceColorDialog,
 }: Props) {
-  const anchoredSelection = wandSelection ?? anchorSelection;
+  const anchoredSelection = wandSelection ?? anchorSelection
 
   return (
     <Popover
       open={Boolean(wandSelection)}
       onOpenChange={(open) => {
-        if (open) return;
-        onClose();
+        if (open) return
+        onClose()
       }}
     >
       {anchoredSelection && (
@@ -34,7 +34,7 @@ export default function WandActionPopover({
             style={{
               left: anchoredSelection.x,
               top: anchoredSelection.y,
-              transform: 'translate(-50%, -50%)',
+              transform: "translate(-50%, -50%)",
             }}
           />
         </PopoverAnchor>
@@ -49,13 +49,13 @@ export default function WandActionPopover({
         <UsedColorActionButtons
           selectedColor={anchoredSelection?.color ?? null}
           onReplace={(sourceColor) => {
-            if (!anchoredSelection) return;
-            onOpenReplaceColorDialog(sourceColor, anchoredSelection.keys);
+            if (!anchoredSelection) return
+            onOpenReplaceColorDialog(sourceColor, anchoredSelection.keys)
           }}
           onClear={onClear}
           onClose={onClose}
         />
       </PopoverContent>
     </Popover>
-  );
+  )
 }

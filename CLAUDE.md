@@ -9,13 +9,13 @@ pixelfox is a pixel art editor web application (pixelfox.art) built with React 1
 ## Commands
 
 ```bash
-npm install      # Install dependencies (run once after cloning)
-npm run dev      # Start development server
-npm run build    # Build for production (typecheck + vite build)
-npm run lint      # Run ESLint
-npm run format    # Format code with Prettier
-npm run typecheck # Run TypeScript type checking
-npm run preview   # Preview production build
+pnpm install      # Install dependencies (run once after cloning)
+pnpm dev          # Start development server
+pnpm build        # Build for production (typecheck + vite build)
+pnpm lint         # Run ESLint
+pnpm format       # Format code with Prettier
+pnpm typecheck    # Run TypeScript type checking
+pnpm preview      # Preview production build
 ```
 
 ## Tech Stack
@@ -44,6 +44,7 @@ Pixel data is stored as `Record<string, string>` where key is `"x,y"` and value 
 ### Routing
 
 `App.tsx` defines routes under `AppLayout`:
+
 - `/` — Editor page (main pixel canvas + palette)
 - `/gallery` — Placeholder
 - `/upscaler` — Placeholder
@@ -51,6 +52,7 @@ Pixel data is stored as `Record<string, string>` where key is `"x,y"` and value 
 ### Image Processing Pipeline
 
 `src/lib/image-processor.ts` handles converting photos to pixel art:
+
 1. Image loaded and resized maintaining aspect ratio
 2. Pooling (default 2x2 pixels → 1 bead)
 3. K-d tree based nearest-color matching using CIEDE2000 color difference
@@ -76,6 +78,31 @@ src/lib/
 
 ## Code Standards
 
+### Formatting
+
+Prettier is the source of truth for formatting. Before finishing any code
+change, run:
+
+```bash
+pnpm format
+```
+
+Use the repository `.prettierrc` settings:
+
+- `printWidth`: 80
+- `tabWidth`: 2
+- `semi`: false
+- `singleQuote`: false
+- `trailingComma`: `es5`
+- `endOfLine`: `lf`
+- `prettier-plugin-tailwindcss` enabled
+- Tailwind classes are sorted using `src/index.css`
+- Tailwind-aware functions: `cn`, `cva`
+
+Do not hand-format files against a different style. If a formatting-only diff
+appears, prefer applying Prettier to the touched files or running `pnpm format`
+once for the repo.
+
 ### Constants (`src/lib/constants.ts`)
 
 All magic numbers MUST be centralized here. No hardcoded values in components.
@@ -89,6 +116,7 @@ Shared utilities: `cn()` (clsx+tailwind-merge), `normalizeHex`, `isDarkColor`, `
 ### shadcn/ui Components
 
 Components are in `src/components/ui/` and use the `cn()` utility. The `components.json` at root configures shadcn settings including:
+
 - Style: `radix-luma`
 - Icon library: `hugeicons`
 - Component prefix: none
@@ -97,11 +125,11 @@ Components are in `src/components/ui/` and use the `cn()` utility. The `componen
 ### Import Conventions
 
 ```typescript
-import { create } from 'zustand';
-import { cn, normalizeHex } from '@/lib/utils';
-import { EDITOR_CONFIG } from '@/lib/constants';
-import { Button } from '@/components/ui/button';
-import type { PaletteDefinition } from '@/lib/palettes/types';
+import { create } from "zustand"
+import { cn, normalizeHex } from "@/lib/utils"
+import { EDITOR_CONFIG } from "@/lib/constants"
+import { Button } from "@/components/ui/button"
+import type { PaletteDefinition } from "@/lib/palettes/types"
 ```
 
 ## Key Configuration Files

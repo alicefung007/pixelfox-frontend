@@ -1,7 +1,18 @@
-import { useState, useMemo, useRef, useEffect } from "react";
-import { useTranslation } from "react-i18next";
-import { X, Sparkles, Link, Unlink, Check, ChevronsUpDown, Upload, FlipHorizontal, FlipVertical, Crop } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useState, useMemo, useRef, useEffect } from "react"
+import { useTranslation } from "react-i18next"
+import {
+  X,
+  Sparkles,
+  Link,
+  Unlink,
+  Check,
+  ChevronsUpDown,
+  Upload,
+  FlipHorizontal,
+  FlipVertical,
+  Crop,
+} from "lucide-react"
+import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogClose,
@@ -9,199 +20,205 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
-import { ButtonGroup, ButtonGroupButton } from "@/components/ui/button-group";
-import { Switch } from "@/components/ui/switch";
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Slider } from "@/components/ui/slider"
+import { ButtonGroup, ButtonGroupButton } from "@/components/ui/button-group"
+import { Switch } from "@/components/ui/switch"
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
+} from "@/components/ui/popover"
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { Separator } from "@/components/ui/separator";
-import { cn, clamp } from "@/lib/utils";
-import { SYSTEM_PALETTES, type SystemPaletteId } from "@/lib/palettes";
-import { usePaletteStore } from "@/store/usePaletteStore";
-import { convertImageToPixelArt, type ColorMatchResult } from "@/lib/image-processor";
+} from "@/components/ui/tooltip"
+import { Separator } from "@/components/ui/separator"
+import { cn, clamp } from "@/lib/utils"
+import { SYSTEM_PALETTES, type SystemPaletteId } from "@/lib/palettes"
+import { usePaletteStore } from "@/store/usePaletteStore"
+import {
+  convertImageToPixelArt,
+  type ColorMatchResult,
+} from "@/lib/image-processor"
 
 type Props = {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onGenerate: (result: ColorMatchResult, paletteId: SystemPaletteId) => void;
-};
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onGenerate: (result: ColorMatchResult, paletteId: SystemPaletteId) => void
+}
 
 const extractionButtonClass =
-  "h-7 min-w-0 cursor-pointer gap-1.5 rounded-md px-1.5 text-xs font-medium text-muted-foreground transition-all hover:bg-accent/70 hover:text-foreground data-active:bg-muted data-active:text-foreground sm:px-2.5";
+  "h-7 min-w-0 cursor-pointer gap-1.5 rounded-md px-1.5 text-xs font-medium text-muted-foreground transition-all hover:bg-accent/70 hover:text-foreground data-active:bg-muted data-active:text-foreground sm:px-2.5"
 
 const extractionQualityOptions = [
   { value: "recommended", labelKey: "editor.uploadDialog.qualityRecommended" },
   { value: "average", labelKey: "editor.uploadDialog.qualityAverage" },
   { value: "high", labelKey: "editor.uploadDialog.qualityHigh" },
-];
+]
 
-const MIN_BEADS = 1;
-const MAX_BEADS = 200;
-const DEFAULT_WIDTH_BEADS = "50";
-const DEFAULT_HEIGHT_BEADS = "60";
+const MIN_BEADS = 1
+const MAX_BEADS = 200
+const DEFAULT_WIDTH_BEADS = "50"
+const DEFAULT_HEIGHT_BEADS = "60"
 
 function normalizeAspectRatio(ratio: number) {
-  return Number.isFinite(ratio) && ratio > 0 ? ratio : 1;
+  return Number.isFinite(ratio) && ratio > 0 ? ratio : 1
 }
 
 function clampBeadNumber(value: number) {
-  return clamp(Math.round(value), MIN_BEADS, MAX_BEADS);
+  return clamp(Math.round(value), MIN_BEADS, MAX_BEADS)
 }
 
 function fitLockedDimensionsFromWidth(width: number, heightOverWidth: number) {
-  const ratio = normalizeAspectRatio(heightOverWidth);
-  let nextWidth = clampBeadNumber(width);
-  let nextHeight = Math.round(nextWidth * ratio);
+  const ratio = normalizeAspectRatio(heightOverWidth)
+  let nextWidth = clampBeadNumber(width)
+  let nextHeight = Math.round(nextWidth * ratio)
 
   if (nextHeight > MAX_BEADS) {
-    nextHeight = MAX_BEADS;
-    nextWidth = clampBeadNumber(nextHeight / ratio);
+    nextHeight = MAX_BEADS
+    nextWidth = clampBeadNumber(nextHeight / ratio)
   } else if (nextHeight < MIN_BEADS) {
-    nextHeight = MIN_BEADS;
-    nextWidth = clampBeadNumber(nextHeight / ratio);
+    nextHeight = MIN_BEADS
+    nextWidth = clampBeadNumber(nextHeight / ratio)
   }
 
-  return { width: nextWidth, height: nextHeight };
+  return { width: nextWidth, height: nextHeight }
 }
 
-function fitLockedDimensionsFromHeight(height: number, heightOverWidth: number) {
-  const ratio = normalizeAspectRatio(heightOverWidth);
-  let nextHeight = clampBeadNumber(height);
-  let nextWidth = Math.round(nextHeight / ratio);
+function fitLockedDimensionsFromHeight(
+  height: number,
+  heightOverWidth: number
+) {
+  const ratio = normalizeAspectRatio(heightOverWidth)
+  let nextHeight = clampBeadNumber(height)
+  let nextWidth = Math.round(nextHeight / ratio)
 
   if (nextWidth > MAX_BEADS) {
-    nextWidth = MAX_BEADS;
-    nextHeight = clampBeadNumber(nextWidth * ratio);
+    nextWidth = MAX_BEADS
+    nextHeight = clampBeadNumber(nextWidth * ratio)
   } else if (nextWidth < MIN_BEADS) {
-    nextWidth = MIN_BEADS;
-    nextHeight = clampBeadNumber(nextWidth * ratio);
+    nextWidth = MIN_BEADS
+    nextHeight = clampBeadNumber(nextWidth * ratio)
   }
 
-  return { width: nextWidth, height: nextHeight };
+  return { width: nextWidth, height: nextHeight }
 }
 
 function trimColorMatchResult(result: ColorMatchResult): ColorMatchResult {
   if (result.width <= 1 || result.height <= 1) {
-    return result;
+    return result
   }
 
-  const { imageData, width, height } = result;
-  const data = imageData.data;
+  const { imageData, width, height } = result
+  const data = imageData.data
   const cornerOffsets = [
     0,
     (width - 1) * 4,
-    ((height - 1) * width) * 4,
-    ((height * width) - 1) * 4,
-  ];
+    (height - 1) * width * 4,
+    (height * width - 1) * 4,
+  ]
 
-  const counts = new Map<string, number>();
+  const counts = new Map<string, number>()
   cornerOffsets.forEach((offset) => {
-    const key = `${data[offset]},${data[offset + 1]},${data[offset + 2]},${data[offset + 3]}`;
-    counts.set(key, (counts.get(key) ?? 0) + 1);
-  });
+    const key = `${data[offset]},${data[offset + 1]},${data[offset + 2]},${data[offset + 3]}`
+    counts.set(key, (counts.get(key) ?? 0) + 1)
+  })
 
-  let backgroundColor = `${data[0]},${data[1]},${data[2]},${data[3]}`;
-  let maxCount = 0;
+  let backgroundColor = `${data[0]},${data[1]},${data[2]},${data[3]}`
+  let maxCount = 0
   counts.forEach((count, key) => {
     if (count > maxCount) {
-      backgroundColor = key;
-      maxCount = count;
+      backgroundColor = key
+      maxCount = count
     }
-  });
+  })
 
-  const [bgR, bgG, bgB, bgA] = backgroundColor.split(",").map(Number);
+  const [bgR, bgG, bgB, bgA] = backgroundColor.split(",").map(Number)
   const isBackground = (x: number, y: number) => {
-    const offset = (y * width + x) * 4;
+    const offset = (y * width + x) * 4
     return (
       data[offset] === bgR &&
       data[offset + 1] === bgG &&
       data[offset + 2] === bgB &&
       data[offset + 3] === bgA
-    );
-  };
+    )
+  }
 
-  let top = 0;
+  let top = 0
   while (top < height) {
-    let allBackground = true;
+    let allBackground = true
     for (let x = 0; x < width; x += 1) {
       if (!isBackground(x, top)) {
-        allBackground = false;
-        break;
+        allBackground = false
+        break
       }
     }
-    if (!allBackground) break;
-    top += 1;
+    if (!allBackground) break
+    top += 1
   }
 
-  let bottom = height - 1;
+  let bottom = height - 1
   while (bottom >= top) {
-    let allBackground = true;
+    let allBackground = true
     for (let x = 0; x < width; x += 1) {
       if (!isBackground(x, bottom)) {
-        allBackground = false;
-        break;
+        allBackground = false
+        break
       }
     }
-    if (!allBackground) break;
-    bottom -= 1;
+    if (!allBackground) break
+    bottom -= 1
   }
 
-  let left = 0;
+  let left = 0
   while (left < width) {
-    let allBackground = true;
+    let allBackground = true
     for (let y = top; y <= bottom; y += 1) {
       if (!isBackground(left, y)) {
-        allBackground = false;
-        break;
+        allBackground = false
+        break
       }
     }
-    if (!allBackground) break;
-    left += 1;
+    if (!allBackground) break
+    left += 1
   }
 
-  let right = width - 1;
+  let right = width - 1
   while (right >= left) {
-    let allBackground = true;
+    let allBackground = true
     for (let y = top; y <= bottom; y += 1) {
       if (!isBackground(right, y)) {
-        allBackground = false;
-        break;
+        allBackground = false
+        break
       }
     }
-    if (!allBackground) break;
-    right -= 1;
+    if (!allBackground) break
+    right -= 1
   }
 
   if (top === 0 && bottom === height - 1 && left === 0 && right === width - 1) {
-    return result;
+    return result
   }
 
-  const trimmedWidth = right - left + 1;
-  const trimmedHeight = bottom - top + 1;
+  const trimmedWidth = right - left + 1
+  const trimmedHeight = bottom - top + 1
   if (trimmedWidth <= 0 || trimmedHeight <= 0) {
-    return result;
+    return result
   }
 
-  const trimmedImageData = new ImageData(trimmedWidth, trimmedHeight);
+  const trimmedImageData = new ImageData(trimmedWidth, trimmedHeight)
   for (let y = 0; y < trimmedHeight; y += 1) {
     for (let x = 0; x < trimmedWidth; x += 1) {
-      const srcOffset = ((top + y) * width + left + x) * 4;
-      const dstOffset = (y * trimmedWidth + x) * 4;
-      trimmedImageData.data[dstOffset] = data[srcOffset];
-      trimmedImageData.data[dstOffset + 1] = data[srcOffset + 1];
-      trimmedImageData.data[dstOffset + 2] = data[srcOffset + 2];
-      trimmedImageData.data[dstOffset + 3] = data[srcOffset + 3];
+      const srcOffset = ((top + y) * width + left + x) * 4
+      const dstOffset = (y * trimmedWidth + x) * 4
+      trimmedImageData.data[dstOffset] = data[srcOffset]
+      trimmedImageData.data[dstOffset + 1] = data[srcOffset + 1]
+      trimmedImageData.data[dstOffset + 2] = data[srcOffset + 2]
+      trimmedImageData.data[dstOffset + 3] = data[srcOffset + 3]
     }
   }
 
@@ -211,313 +228,362 @@ function trimColorMatchResult(result: ColorMatchResult): ColorMatchResult {
     width: trimmedWidth,
     height: trimmedHeight,
     beadCount: trimmedWidth * trimmedHeight,
-  };
+  }
 }
 
-export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Props) {
-  const { t } = useTranslation();
-  
+export default function UploadPhotoDialog({
+  open,
+  onOpenChange,
+  onGenerate,
+}: Props) {
+  const { t } = useTranslation()
+
   // Pattern size beads (1-200)
-  const [widthBeads, setWidthBeads] = useState(DEFAULT_WIDTH_BEADS);
-  const [heightBeads, setHeightBeads] = useState(DEFAULT_HEIGHT_BEADS);
+  const [widthBeads, setWidthBeads] = useState(DEFAULT_WIDTH_BEADS)
+  const [heightBeads, setHeightBeads] = useState(DEFAULT_HEIGHT_BEADS)
   const [processingDimensions, setProcessingDimensions] = useState({
     width: DEFAULT_WIDTH_BEADS,
     height: DEFAULT_HEIGHT_BEADS,
-  });
-  const [aspectRatioLocked, setAspectRatioLocked] = useState(true);
+  })
+  const [aspectRatioLocked, setAspectRatioLocked] = useState(true)
 
   // Offset values (-200 to 200)
-  const [offsetX, setOffsetX] = useState("0");
-  const [offsetY, setOffsetY] = useState("0");
+  const [offsetX, setOffsetX] = useState("0")
+  const [offsetY, setOffsetY] = useState("0")
 
   // Extraction settings
-  const [extractionQuality, setExtractionQuality] = useState("recommended");
-  const [colorPaletteId, setColorPaletteId] = useState<SystemPaletteId>(SYSTEM_PALETTES[0].id);
-  const [colorMerging, setColorMerging] = useState(true);
-  const [colorMergeThreshold, setColorMergeThreshold] = useState([2]);
-  const [colorMergeThresholdDraft, setColorMergeThresholdDraft] = useState([2]);
-  const [palettePopoverOpen, setPalettePopoverOpen] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [processedResult, setProcessedResult] = useState<ColorMatchResult | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const resultCanvasRef = useRef<HTMLCanvasElement>(null);
-  const widthBeadsRef = useRef(processingDimensions.width);
-  const aspectRatioRef = useRef(1);
+  const [extractionQuality, setExtractionQuality] = useState("recommended")
+  const [colorPaletteId, setColorPaletteId] = useState<SystemPaletteId>(
+    SYSTEM_PALETTES[0].id
+  )
+  const [colorMerging, setColorMerging] = useState(true)
+  const [colorMergeThreshold, setColorMergeThreshold] = useState([2])
+  const [colorMergeThresholdDraft, setColorMergeThresholdDraft] = useState([2])
+  const [palettePopoverOpen, setPalettePopoverOpen] = useState(false)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [isDragging, setIsDragging] = useState(false)
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [processedResult, setProcessedResult] =
+    useState<ColorMatchResult | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const resultCanvasRef = useRef<HTMLCanvasElement>(null)
+  const widthBeadsRef = useRef(processingDimensions.width)
+  const aspectRatioRef = useRef(1)
 
   // Image flip state
-  const [flipHorizontal, setFlipHorizontal] = useState(false);
-  const [flipVertical, setFlipVertical] = useState(false);
+  const [flipHorizontal, setFlipHorizontal] = useState(false)
+  const [flipVertical, setFlipVertical] = useState(false)
 
   // Image rotation state (0, 90, 180, 270)
-  const [rotation, setRotation] = useState(0);
-  const [trimEdges, setTrimEdges] = useState(false);
+  const [rotation, setRotation] = useState(0)
+  const [trimEdges, setTrimEdges] = useState(false)
 
-  widthBeadsRef.current = processingDimensions.width;
+  widthBeadsRef.current = processingDimensions.width
 
   // Sync color palette to editor's selected palette when dialog opens
-  const currentPaletteId = usePaletteStore((s) => s.currentPaletteId);
+  const currentPaletteId = usePaletteStore((s) => s.currentPaletteId)
   useEffect(() => {
     if (open) {
-      setColorPaletteId(currentPaletteId);
+      setColorPaletteId(currentPaletteId)
     }
-  }, [open, currentPaletteId]);
+  }, [open, currentPaletteId])
 
   // Truncate filename with ellipsis in the middle
   const truncateFilename = (name: string) => {
-    if (name.length <= 100) return name;
-    const half = Math.floor((100 - 3) / 2);
-    return `${name.slice(0, half)}...${name.slice(-half)}`;
-  };
+    if (name.length <= 100) return name
+    const half = Math.floor((100 - 3) / 2)
+    return `${name.slice(0, half)}...${name.slice(-half)}`
+  }
 
-  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null)
   useEffect(() => {
     if (!open || !selectedFile) {
-      setImagePreviewUrl(null);
-      return;
+      setImagePreviewUrl(null)
+      return
     }
 
-    const url = URL.createObjectURL(selectedFile);
-    setImagePreviewUrl(url);
+    const url = URL.createObjectURL(selectedFile)
+    setImagePreviewUrl(url)
 
     return () => {
-      URL.revokeObjectURL(url);
-    };
-  }, [open, selectedFile]);
+      URL.revokeObjectURL(url)
+    }
+  }, [open, selectedFile])
 
   // Recalculate processing dimensions whenever a new image is uploaded so the
   // preview uses the new image's aspect ratio instead of the previous file's.
   useEffect(() => {
-    if (!selectedFile) return;
+    if (!selectedFile) return
 
-    let cancelled = false;
-    const url = URL.createObjectURL(selectedFile);
-    const img = new Image();
+    let cancelled = false
+    const url = URL.createObjectURL(selectedFile)
+    const img = new Image()
     img.onload = () => {
       if (cancelled) {
-        URL.revokeObjectURL(url);
-        return;
+        URL.revokeObjectURL(url)
+        return
       }
 
-      const currentWidth = parseInt(widthBeadsRef.current, 10) || Number(DEFAULT_WIDTH_BEADS);
-      const imageRatio = normalizeAspectRatio(img.height / img.width);
-      const nextDimensions = fitLockedDimensionsFromWidth(currentWidth, imageRatio);
-      const nextWidth = String(nextDimensions.width);
-      const nextHeight = String(nextDimensions.height);
+      const currentWidth =
+        parseInt(widthBeadsRef.current, 10) || Number(DEFAULT_WIDTH_BEADS)
+      const imageRatio = normalizeAspectRatio(img.height / img.width)
+      const nextDimensions = fitLockedDimensionsFromWidth(
+        currentWidth,
+        imageRatio
+      )
+      const nextWidth = String(nextDimensions.width)
+      const nextHeight = String(nextDimensions.height)
 
-      aspectRatioRef.current = imageRatio;
-      setWidthBeads(nextWidth);
-      setHeightBeads(nextHeight);
-      setProcessingDimensions({ width: nextWidth, height: nextHeight });
-      setAspectRatioLocked(true);
+      aspectRatioRef.current = imageRatio
+      setWidthBeads(nextWidth)
+      setHeightBeads(nextHeight)
+      setProcessingDimensions({ width: nextWidth, height: nextHeight })
+      setAspectRatioLocked(true)
 
-      URL.revokeObjectURL(url);
-    };
+      URL.revokeObjectURL(url)
+    }
     img.onerror = () => {
-      URL.revokeObjectURL(url);
-    };
-    img.src = url;
+      URL.revokeObjectURL(url)
+    }
+    img.src = url
 
     return () => {
-      cancelled = true;
-      URL.revokeObjectURL(url);
-    };
-  }, [selectedFile]);
+      cancelled = true
+      URL.revokeObjectURL(url)
+    }
+  }, [selectedFile])
 
   const selectedPalette = useMemo(
-    () => SYSTEM_PALETTES.find((p) => p.id === colorPaletteId) ?? SYSTEM_PALETTES[0],
+    () =>
+      SYSTEM_PALETTES.find((p) => p.id === colorPaletteId) ??
+      SYSTEM_PALETTES[0],
     [colorPaletteId]
-  );
+  )
 
   // Process image when file or palette changes
   useEffect(() => {
     if (!imagePreviewUrl) {
-      setProcessedResult(null);
-      return;
+      setProcessedResult(null)
+      return
     }
 
     const processImage = async () => {
-      setIsProcessing(true);
+      setIsProcessing(true)
       try {
-        const img = new Image();
-        img.crossOrigin = "anonymous";
+        const img = new Image()
+        img.crossOrigin = "anonymous"
         await new Promise<void>((resolve, reject) => {
-          img.onload = () => resolve();
-          img.onerror = reject;
-          img.src = imagePreviewUrl;
-        });
+          img.onload = () => resolve()
+          img.onerror = reject
+          img.src = imagePreviewUrl
+        })
 
         // Apply flip transformations using canvas
-        let processedImg = img;
-        const needsTransform = flipHorizontal || flipVertical || rotation !== 0;
+        let processedImg = img
+        const needsTransform = flipHorizontal || flipVertical || rotation !== 0
 
         if (needsTransform) {
           // Determine final dimensions after rotation
-          let finalWidth = img.width;
-          let finalHeight = img.height;
+          let finalWidth = img.width
+          let finalHeight = img.height
           if (rotation === 90 || rotation === 270) {
-            finalWidth = img.height;
-            finalHeight = img.width;
+            finalWidth = img.height
+            finalHeight = img.width
           }
 
-          const transformCanvas = document.createElement("canvas");
-          transformCanvas.width = finalWidth;
-          transformCanvas.height = finalHeight;
-          const ctx = transformCanvas.getContext("2d");
+          const transformCanvas = document.createElement("canvas")
+          transformCanvas.width = finalWidth
+          transformCanvas.height = finalHeight
+          const ctx = transformCanvas.getContext("2d")
           if (ctx) {
             if (rotation !== 0) {
-              ctx.translate(finalWidth / 2, finalHeight / 2);
-              ctx.rotate((rotation * Math.PI) / 180);
-              ctx.translate(-img.width / 2, -img.height / 2);
+              ctx.translate(finalWidth / 2, finalHeight / 2)
+              ctx.rotate((rotation * Math.PI) / 180)
+              ctx.translate(-img.width / 2, -img.height / 2)
             } else {
               // No rotation, just flip
-              ctx.translate(flipHorizontal ? img.width : 0, flipVertical ? img.height : 0);
-              ctx.scale(flipHorizontal ? -1 : 1, flipVertical ? -1 : 1);
+              ctx.translate(
+                flipHorizontal ? img.width : 0,
+                flipVertical ? img.height : 0
+              )
+              ctx.scale(flipHorizontal ? -1 : 1, flipVertical ? -1 : 1)
             }
-            ctx.drawImage(img, 0, 0);
-            processedImg = new Image();
-            processedImg.src = transformCanvas.toDataURL();
+            ctx.drawImage(img, 0, 0)
+            processedImg = new Image()
+            processedImg.src = transformCanvas.toDataURL()
             await new Promise<void>((resolve, reject) => {
-              processedImg.onload = () => resolve();
-              processedImg.onerror = reject;
-            });
+              processedImg.onload = () => resolve()
+              processedImg.onerror = reject
+            })
           }
         }
 
-        const poolSize = colorMerging ? colorMergeThreshold[0] : 1;
+        const poolSize = colorMerging ? colorMergeThreshold[0] : 1
 
-        const result = await convertImageToPixelArt(processedImg, selectedPalette, {
-          width: (parseInt(processingDimensions.width, 10) || Number(DEFAULT_WIDTH_BEADS)) * poolSize,
-          height: (parseInt(processingDimensions.height, 10) || Number(DEFAULT_HEIGHT_BEADS)) * poolSize,
-          poolSize,
-          ciede2000Threshold: colorMerging ? colorMergeThreshold[0] : 0,
-        });
-        setProcessedResult(result);
+        const result = await convertImageToPixelArt(
+          processedImg,
+          selectedPalette,
+          {
+            width:
+              (parseInt(processingDimensions.width, 10) ||
+                Number(DEFAULT_WIDTH_BEADS)) * poolSize,
+            height:
+              (parseInt(processingDimensions.height, 10) ||
+                Number(DEFAULT_HEIGHT_BEADS)) * poolSize,
+            poolSize,
+            ciede2000Threshold: colorMerging ? colorMergeThreshold[0] : 0,
+          }
+        )
+        setProcessedResult(result)
       } catch (error) {
-        console.error("Failed to process image:", error);
-        setProcessedResult(null);
+        console.error("Failed to process image:", error)
+        setProcessedResult(null)
       } finally {
-        setIsProcessing(false);
+        setIsProcessing(false)
       }
-    };
+    }
 
-    processImage();
-  }, [imagePreviewUrl, selectedPalette, processingDimensions.width, processingDimensions.height, colorMerging, colorMergeThreshold, flipHorizontal, flipVertical, rotation]);
+    processImage()
+  }, [
+    imagePreviewUrl,
+    selectedPalette,
+    processingDimensions.width,
+    processingDimensions.height,
+    colorMerging,
+    colorMergeThreshold,
+    flipHorizontal,
+    flipVertical,
+    rotation,
+  ])
 
   const effectiveResult = useMemo(
-    () => (processedResult && trimEdges ? trimColorMatchResult(processedResult) : processedResult),
+    () =>
+      processedResult && trimEdges
+        ? trimColorMatchResult(processedResult)
+        : processedResult,
     [processedResult, trimEdges]
-  );
+  )
 
   useEffect(() => {
-    if (trimEdges) return;
+    if (trimEdges) return
 
-    setWidthBeads(processingDimensions.width);
-    setHeightBeads(processingDimensions.height);
-  }, [trimEdges, processingDimensions.width, processingDimensions.height]);
+    setWidthBeads(processingDimensions.width)
+    setHeightBeads(processingDimensions.height)
+  }, [trimEdges, processingDimensions.width, processingDimensions.height])
 
   useEffect(() => {
-    if (!effectiveResult) return;
-    const canvas = resultCanvasRef.current;
-    if (!canvas) return;
+    if (!effectiveResult) return
+    const canvas = resultCanvasRef.current
+    if (!canvas) return
 
-    canvas.width = effectiveResult.width;
-    canvas.height = effectiveResult.height;
-    const ctx = canvas.getContext("2d");
+    canvas.width = effectiveResult.width
+    canvas.height = effectiveResult.height
+    const ctx = canvas.getContext("2d")
     if (ctx) {
-      ctx.putImageData(effectiveResult.imageData, 0, 0);
+      ctx.putImageData(effectiveResult.imageData, 0, 0)
     }
-  }, [effectiveResult]);
+  }, [effectiveResult])
 
   const updateAspectRatioFromDimensions = () => {
-    const currentWidth = parseInt(processingDimensions.width, 10);
-    const currentHeight = parseInt(processingDimensions.height, 10);
-    aspectRatioRef.current = normalizeAspectRatio(currentHeight / currentWidth);
-  };
+    const currentWidth = parseInt(processingDimensions.width, 10)
+    const currentHeight = parseInt(processingDimensions.height, 10)
+    aspectRatioRef.current = normalizeAspectRatio(currentHeight / currentWidth)
+  }
 
   // Clamp beads value between 1-200
   const clampBeads = (val: string) => {
-    const num = parseInt(val, 10);
-    if (isNaN(num)) return "";
-    return String(clamp(num, MIN_BEADS, MAX_BEADS));
-  };
+    const num = parseInt(val, 10)
+    if (isNaN(num)) return ""
+    return String(clamp(num, MIN_BEADS, MAX_BEADS))
+  }
 
   // Clamp offset value between -200 to 200 (integers only)
   const clampOffset = (val: string) => {
-    if (val === "" || val === "-") return val;
-    const num = parseInt(val, 10);
-    if (isNaN(num)) return "";
-    return String(clamp(num, -200, 200));
-  };
+    if (val === "" || val === "-") return val
+    const num = parseInt(val, 10)
+    if (isNaN(num)) return ""
+    return String(clamp(num, -200, 200))
+  }
 
   // Aspect ratio handling (locked by width)
   const handleWidthBeadsChange = (val: string) => {
-    const clamped = clampBeads(val);
+    const clamped = clampBeads(val)
     if (aspectRatioLocked && clamped !== "") {
-      const newWidth = parseInt(clamped, 10);
-      const nextDimensions = fitLockedDimensionsFromWidth(newWidth, aspectRatioRef.current);
-      const nextWidth = String(nextDimensions.width);
-      const nextHeight = String(nextDimensions.height);
-      setWidthBeads(nextWidth);
-      setHeightBeads(nextHeight);
-      setProcessingDimensions({ width: nextWidth, height: nextHeight });
-      return;
+      const newWidth = parseInt(clamped, 10)
+      const nextDimensions = fitLockedDimensionsFromWidth(
+        newWidth,
+        aspectRatioRef.current
+      )
+      const nextWidth = String(nextDimensions.width)
+      const nextHeight = String(nextDimensions.height)
+      setWidthBeads(nextWidth)
+      setHeightBeads(nextHeight)
+      setProcessingDimensions({ width: nextWidth, height: nextHeight })
+      return
     }
-    setWidthBeads(clamped);
-    setProcessingDimensions((prev) => ({ ...prev, width: clamped }));
-  };
+    setWidthBeads(clamped)
+    setProcessingDimensions((prev) => ({ ...prev, width: clamped }))
+  }
 
   const handleHeightBeadsChange = (val: string) => {
-    const clamped = clampBeads(val);
+    const clamped = clampBeads(val)
     if (aspectRatioLocked && clamped !== "") {
-      const newHeight = parseInt(clamped, 10);
-      const nextDimensions = fitLockedDimensionsFromHeight(newHeight, aspectRatioRef.current);
-      const nextWidth = String(nextDimensions.width);
-      const nextHeight = String(nextDimensions.height);
-      setWidthBeads(nextWidth);
-      setHeightBeads(nextHeight);
-      setProcessingDimensions({ width: nextWidth, height: nextHeight });
-      return;
+      const newHeight = parseInt(clamped, 10)
+      const nextDimensions = fitLockedDimensionsFromHeight(
+        newHeight,
+        aspectRatioRef.current
+      )
+      const nextWidth = String(nextDimensions.width)
+      const nextHeight = String(nextDimensions.height)
+      setWidthBeads(nextWidth)
+      setHeightBeads(nextHeight)
+      setProcessingDimensions({ width: nextWidth, height: nextHeight })
+      return
     }
-    setHeightBeads(clamped);
-    setProcessingDimensions((prev) => ({ ...prev, height: clamped }));
-  };
+    setHeightBeads(clamped)
+    setProcessingDimensions((prev) => ({ ...prev, height: clamped }))
+  }
 
   const handleWidthBeadsDraftChange = (val: string) => {
-    const clamped = clampBeads(val);
+    const clamped = clampBeads(val)
     if (aspectRatioLocked && clamped !== "") {
-      const newWidth = parseInt(clamped, 10);
-      const nextDimensions = fitLockedDimensionsFromWidth(newWidth, aspectRatioRef.current);
-      setWidthBeads(String(nextDimensions.width));
-      setHeightBeads(String(nextDimensions.height));
-      return;
+      const newWidth = parseInt(clamped, 10)
+      const nextDimensions = fitLockedDimensionsFromWidth(
+        newWidth,
+        aspectRatioRef.current
+      )
+      setWidthBeads(String(nextDimensions.width))
+      setHeightBeads(String(nextDimensions.height))
+      return
     }
-    setWidthBeads(clamped);
-  };
+    setWidthBeads(clamped)
+  }
 
   const handleHeightBeadsDraftChange = (val: string) => {
-    const clamped = clampBeads(val);
+    const clamped = clampBeads(val)
     if (aspectRatioLocked && clamped !== "") {
-      const newHeight = parseInt(clamped, 10);
-      const nextDimensions = fitLockedDimensionsFromHeight(newHeight, aspectRatioRef.current);
-      setWidthBeads(String(nextDimensions.width));
-      setHeightBeads(String(nextDimensions.height));
-      return;
+      const newHeight = parseInt(clamped, 10)
+      const nextDimensions = fitLockedDimensionsFromHeight(
+        newHeight,
+        aspectRatioRef.current
+      )
+      setWidthBeads(String(nextDimensions.width))
+      setHeightBeads(String(nextDimensions.height))
+      return
     }
-    setHeightBeads(clamped);
-  };
+    setHeightBeads(clamped)
+  }
 
   const handleColorMergeThresholdCommit = (value: number[]) => {
-    setColorMergeThresholdDraft(value);
-    setColorMergeThreshold(value);
-  };
+    setColorMergeThresholdDraft(value)
+    setColorMergeThreshold(value)
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[980px] w-[calc(100vw-32px)] md:w-full p-0 flex flex-col gap-0 max-h-[95vh]">
-        <DialogHeader className="px-3 pt-3 pb-2 md:px-6 md:pt-6 md:pb-4 shrink-0 text-left">
+      <DialogContent className="flex max-h-[95vh] w-[calc(100vw-32px)] max-w-[980px] flex-col gap-0 p-0 md:w-full">
+        <DialogHeader className="shrink-0 px-3 pt-3 pb-2 text-left md:px-6 md:pt-6 md:pb-4">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0 space-y-1">
               <DialogTitle className="flex items-center gap-2">
@@ -526,7 +592,9 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
                 </span>
                 <span>{t("editor.uploadDialog.title")}</span>
               </DialogTitle>
-              <DialogDescription>{t("editor.uploadDialog.description")}</DialogDescription>
+              <DialogDescription>
+                {t("editor.uploadDialog.description")}
+              </DialogDescription>
             </div>
             <DialogClose asChild>
               <Button variant="ghost" size="icon" className="rounded-full">
@@ -538,63 +606,65 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
 
         <Separator className="shrink-0" />
 
-        <div className="flex-1 overflow-auto px-3 pb-3 md:px-6 md:pb-6 flex flex-col md:flex-row gap-3 md:gap-5">
-          <div className="w-full md:w-[260px] md:shrink-0 space-y-3 md:space-y-4">
+        <div className="flex flex-1 flex-col gap-3 overflow-auto px-3 pb-3 md:flex-row md:gap-5 md:px-6 md:pb-6">
+          <div className="w-full space-y-3 md:w-[260px] md:shrink-0 md:space-y-4">
             <div className="space-y-2 pt-3">
-              <h3 className="text-sm font-semibold">{t("editor.uploadDialog.uploadPhoto")}</h3>
+              <h3 className="text-sm font-semibold">
+                {t("editor.uploadDialog.uploadPhoto")}
+              </h3>
               <div
                 className={cn(
-                  "relative flex flex-col items-center justify-center w-full h-20 rounded-xl border-2 border-dashed cursor-pointer transition-colors",
+                  "relative flex h-20 w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed transition-colors",
                   isDragging
-                    ? "border-primary bg-primary/10 border-solid"
+                    ? "border-solid border-primary bg-primary/10"
                     : selectedFile
-                    ? "border-primary bg-primary/5"
-                    : "border-input/60 hover:border-primary hover:bg-muted/30"
+                      ? "border-primary bg-primary/5"
+                      : "border-input/60 hover:border-primary hover:bg-muted/30"
                 )}
                 onDragOver={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setIsDragging(true);
+                  e.preventDefault()
+                  e.stopPropagation()
+                  setIsDragging(true)
                 }}
                 onDragLeave={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setIsDragging(false);
+                  e.preventDefault()
+                  e.stopPropagation()
+                  setIsDragging(false)
                 }}
                 onDrop={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setIsDragging(false);
-                  const file = e.dataTransfer.files?.[0];
+                  e.preventDefault()
+                  e.stopPropagation()
+                  setIsDragging(false)
+                  const file = e.dataTransfer.files?.[0]
                   if (file && file.type.startsWith("image/")) {
-                    setSelectedFile(file);
+                    setSelectedFile(file)
                   }
                 }}
                 onClick={() => {
-                  fileInputRef.current?.click();
+                  fileInputRef.current?.click()
                 }}
               >
                 {selectedFile ? (
                   <>
-                    <Check className="w-6 h-6 text-primary" />
-                    <span className="text-xs text-primary dark:text-primary/80 font-medium text-left px-1 break-all">
+                    <Check className="h-6 w-6 text-primary" />
+                    <span className="px-1 text-left text-xs font-medium break-all text-primary dark:text-primary/80">
                       {truncateFilename(selectedFile.name)}
                     </span>
                     <button
                       type="button"
                       onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setSelectedFile(null);
+                        e.preventDefault()
+                        e.stopPropagation()
+                        setSelectedFile(null)
                       }}
-                      className="absolute top-1 right-1 p-1 bg-primary hover:bg-primary/80 rounded-full transition-colors"
+                      className="absolute top-1 right-1 rounded-full bg-primary p-1 transition-colors hover:bg-primary/80"
                     >
-                      <X className="w-3 h-3 text-white" />
+                      <X className="h-3 w-3 text-white" />
                     </button>
                   </>
                 ) : (
                   <>
-                    <Upload className="w-6 h-6 text-muted-foreground mb-2" />
+                    <Upload className="mb-2 h-6 w-6 text-muted-foreground" />
                     <span className="text-xs text-muted-foreground">
                       {t("editor.uploadDialog.uploadHint")}
                     </span>
@@ -607,9 +677,9 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
                   className="hidden"
                   accept="image/*"
                   onChange={(e) => {
-                    const file = e.target.files?.[0];
+                    const file = e.target.files?.[0]
                     if (file) {
-                      setSelectedFile(file);
+                      setSelectedFile(file)
                     }
                   }}
                 />
@@ -619,11 +689,13 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
             <Separator className="shrink-0" />
 
             <div className="space-y-4">
-              <h3 className="text-sm font-semibold">{t("editor.uploadDialog.extraction")}</h3>
+              <h3 className="text-sm font-semibold">
+                {t("editor.uploadDialog.extraction")}
+              </h3>
 
               <ButtonGroup className="grid h-auto w-full grid-cols-3 gap-1 border bg-background/95 p-0.5 backdrop-blur-sm">
                 {extractionQualityOptions.map((option) => {
-                  const isActive = extractionQuality === option.value;
+                  const isActive = extractionQuality === option.value
 
                   return (
                     <ButtonGroupButton
@@ -633,99 +705,120 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
                       onClick={() => setExtractionQuality(option.value)}
                       className={extractionButtonClass}
                     >
-                      <span className="min-w-0 truncate">{t(option.labelKey)}</span>
+                      <span className="min-w-0 truncate">
+                        {t(option.labelKey)}
+                      </span>
                     </ButtonGroupButton>
-                  );
+                  )
                 })}
               </ButtonGroup>
 
               <div className="space-y-2">
-                <Label className="text-[11px] font-semibold">{t("editor.uploadDialog.colorManagement")}</Label>
+                <Label className="text-[11px] font-semibold">
+                  {t("editor.uploadDialog.colorManagement")}
+                </Label>
                 <div>
-                  <Popover open={palettePopoverOpen} onOpenChange={setPalettePopoverOpen}>
+                  <Popover
+                    open={palettePopoverOpen}
+                    onOpenChange={setPalettePopoverOpen}
+                  >
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
-                        className="w-full rounded-md bg-transparent border-input/60 hover:bg-muted/10 h-9 justify-between px-3 font-normal"
+                        className="h-9 w-full justify-between rounded-md border-input/60 bg-transparent px-3 font-normal hover:bg-muted/10"
                       >
-                        <div className="flex items-center gap-2 min-w-0">
+                        <div className="flex min-w-0 items-center gap-2">
                           <div className="flex -space-x-1">
-                            {selectedPalette.swatches.slice(0, 10).map((swatch, i) => (
-                              <div
-                                key={i}
-                                className="w-4 h-4 rounded-full border border-background shadow-sm"
-                                style={{ backgroundColor: swatch.color }}
-                              />
-                            ))}
+                            {selectedPalette.swatches
+                              .slice(0, 10)
+                              .map((swatch, i) => (
+                                <div
+                                  key={i}
+                                  className="h-4 w-4 rounded-full border border-background shadow-sm"
+                                  style={{ backgroundColor: swatch.color }}
+                                />
+                              ))}
                           </div>
-                          <span className="text-sm truncate">
-                            {selectedPalette.i18nKey ? t(selectedPalette.i18nKey) : selectedPalette.name}
+                          <span className="truncate text-sm">
+                            {selectedPalette.i18nKey
+                              ? t(selectedPalette.i18nKey)
+                              : selectedPalette.name}
                           </span>
                         </div>
-                        <ChevronsUpDown className="size-4 text-muted-foreground shrink-0" />
+                        <ChevronsUpDown className="size-4 shrink-0 text-muted-foreground" />
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent
                       portalled={false}
-                      className="w-[340px] max-h-[340px] p-0 !gap-0 flex flex-col"
+                      className="flex max-h-[340px] w-[340px] flex-col !gap-0 p-0"
                       align="start"
                     >
                       <div
                         ref={scrollRef}
-                        className="w-[340px] max-h-[340px] overflow-y-auto overscroll-contain touch-pan-y"
+                        className="max-h-[340px] w-[340px] touch-pan-y overflow-y-auto overscroll-contain"
                       >
-                        <div className="p-3 space-y-2">
+                        <div className="space-y-2 p-3">
                           {SYSTEM_PALETTES.map((palette) => {
-                            const isSelected = palette.id === colorPaletteId;
+                            const isSelected = palette.id === colorPaletteId
                             return (
                               <button
                                 key={palette.id}
                                 type="button"
                                 onClick={() => {
-                                  setColorPaletteId(palette.id);
-                                  setPalettePopoverOpen(false);
+                                  setColorPaletteId(palette.id)
+                                  setPalettePopoverOpen(false)
                                 }}
                                 className={cn(
-                                  "w-full flex items-center gap-3 p-2 rounded-lg transition-colors text-left",
-                                  isSelected ? "bg-primary/10" : "hover:bg-muted/50"
+                                  "flex w-full items-center gap-3 rounded-lg p-2 text-left transition-colors",
+                                  isSelected
+                                    ? "bg-primary/10"
+                                    : "hover:bg-muted/50"
                                 )}
                               >
                                 <div className="shrink-0">
                                   <div
                                     className={cn(
-                                      "w-5 h-5 rounded-full border flex items-center justify-center",
+                                      "flex h-5 w-5 items-center justify-center rounded-full border",
                                       isSelected
-                                        ? "bg-primary border-primary"
+                                        ? "border-primary bg-primary"
                                         : "border-input"
                                     )}
                                   >
-                                    {isSelected && <Check className="size-3 text-white" />}
+                                    {isSelected && (
+                                      <Check className="size-3 text-white" />
+                                    )}
                                   </div>
                                 </div>
-                                <div className="flex-1 min-w-0">
+                                <div className="min-w-0 flex-1">
                                   <div className="text-sm font-medium">
-                                    {palette.i18nKey ? t(palette.i18nKey) : palette.name}
+                                    {palette.i18nKey
+                                      ? t(palette.i18nKey)
+                                      : palette.name}
                                   </div>
-                                  <div className="flex gap-1 mt-1 flex-wrap">
-                                    {palette.swatches.slice(0, 12).map((swatch, i) => (
-                                      <div
-                                        key={i}
-                                        className="w-3 h-3 rounded-sm border border-foreground/5 shrink-0"
-                                        style={{ backgroundColor: swatch.color }}
-                                      />
-                                    ))}
+                                  <div className="mt-1 flex flex-wrap gap-1">
+                                    {palette.swatches
+                                      .slice(0, 12)
+                                      .map((swatch, i) => (
+                                        <div
+                                          key={i}
+                                          className="h-3 w-3 shrink-0 rounded-sm border border-foreground/5"
+                                          style={{
+                                            backgroundColor: swatch.color,
+                                          }}
+                                        />
+                                      ))}
                                     {palette.swatches.length > 12 && (
-                                      <span className="text-[10px] text-muted-foreground shrink-0">
+                                      <span className="shrink-0 text-[10px] text-muted-foreground">
                                         +{palette.swatches.length - 12}
                                       </span>
                                     )}
                                   </div>
                                 </div>
-                                <div className="text-xs text-muted-foreground shrink-0">
+                                <div className="shrink-0 text-xs text-muted-foreground">
                                   {palette.swatches.length}
                                 </div>
                               </button>
-                            );
+                            )
                           })}
                         </div>
                       </div>
@@ -736,20 +829,32 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
 
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <Label className="text-[11px] font-semibold">{t("editor.uploadDialog.colorMerging")}</Label>
+                  <Label className="text-[11px] font-semibold">
+                    {t("editor.uploadDialog.colorMerging")}
+                  </Label>
                   <Switch
                     checked={colorMerging}
                     onCheckedChange={setColorMerging}
-                    className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                    className="data-[state=checked]:border-primary data-[state=checked]:bg-primary"
                   />
                 </div>
 
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <Label className={cn("text-[10px] font-medium", !colorMerging && "text-muted-foreground")}>
+                    <Label
+                      className={cn(
+                        "text-[10px] font-medium",
+                        !colorMerging && "text-muted-foreground"
+                      )}
+                    >
                       {t("editor.uploadDialog.colorMergeThreshold")}
                     </Label>
-                    <span className={cn("text-[11px] font-medium", !colorMerging && "text-muted-foreground")}>
+                    <span
+                      className={cn(
+                        "text-[11px] font-medium",
+                        !colorMerging && "text-muted-foreground"
+                      )}
+                    >
                       {colorMergeThresholdDraft[0]}
                     </span>
                   </div>
@@ -772,7 +877,9 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
             <Separator className="shrink-0" />
 
             <div className="space-y-4">
-              <h3 className="text-sm font-semibold">{t("editor.uploadDialog.gridSettings")}</h3>
+              <h3 className="text-sm font-semibold">
+                {t("editor.uploadDialog.gridSettings")}
+              </h3>
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
@@ -784,12 +891,14 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
                       <Button
                         variant={aspectRatioLocked ? "secondary" : "ghost"}
                         size="icon-xs"
-                        className={aspectRatioLocked ? "" : "text-muted-foreground"}
+                        className={
+                          aspectRatioLocked ? "" : "text-muted-foreground"
+                        }
                         onClick={() => {
                           if (!aspectRatioLocked) {
-                            updateAspectRatioFromDimensions();
+                            updateAspectRatioFromDimensions()
                           }
-                          setAspectRatioLocked(!aspectRatioLocked);
+                          setAspectRatioLocked(!aspectRatioLocked)
                         }}
                       >
                         {aspectRatioLocked ? (
@@ -837,8 +946,12 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
                     </Label>
                     <Slider
                       value={[Number(widthBeads) || 1]}
-                      onValueChange={([val]) => handleWidthBeadsDraftChange(String(val))}
-                      onValueCommit={([val]) => handleWidthBeadsChange(String(val))}
+                      onValueChange={([val]) =>
+                        handleWidthBeadsDraftChange(String(val))
+                      }
+                      onValueCommit={([val]) =>
+                        handleWidthBeadsChange(String(val))
+                      }
                       min={1}
                       max={200}
                       className="[&_[data-slot=slider-range]]:bg-primary"
@@ -850,8 +963,12 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
                     </Label>
                     <Slider
                       value={[Number(heightBeads) || 1]}
-                      onValueChange={([val]) => handleHeightBeadsDraftChange(String(val))}
-                      onValueCommit={([val]) => handleHeightBeadsChange(String(val))}
+                      onValueChange={([val]) =>
+                        handleHeightBeadsDraftChange(String(val))
+                      }
+                      onValueCommit={([val]) =>
+                        handleHeightBeadsChange(String(val))
+                      }
                       min={1}
                       max={200}
                       className="[&_[data-slot=slider-range]]:bg-primary"
@@ -861,23 +978,29 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
               </div>
 
               <div className="hidden space-y-2">
-                <Label className="text-[11px] font-semibold">{t("editor.uploadDialog.offsetPx")}</Label>
+                <Label className="text-[11px] font-semibold">
+                  {t("editor.uploadDialog.offsetPx")}
+                </Label>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="space-y-1">
-                    <Label className="text-[10px] text-muted-foreground">X</Label>
-                      <Input
-                        value={offsetX}
-                        onChange={(e) => setOffsetX(clampOffset(e.target.value))}
-                        inputMode="numeric"
-                      />
+                    <Label className="text-[10px] text-muted-foreground">
+                      X
+                    </Label>
+                    <Input
+                      value={offsetX}
+                      onChange={(e) => setOffsetX(clampOffset(e.target.value))}
+                      inputMode="numeric"
+                    />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-[10px] text-muted-foreground">Y</Label>
-                      <Input
-                        value={offsetY}
-                        onChange={(e) => setOffsetY(clampOffset(e.target.value))}
-                        inputMode="numeric"
-                      />
+                    <Label className="text-[10px] text-muted-foreground">
+                      Y
+                    </Label>
+                    <Input
+                      value={offsetY}
+                      onChange={(e) => setOffsetY(clampOffset(e.target.value))}
+                      inputMode="numeric"
+                    />
                   </div>
                 </div>
                 <div className="space-y-2 pt-1">
@@ -910,24 +1033,29 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
             </div>
           </div>
 
-          <div className="flex-1 min-w-0 space-y-3 md:space-y-4 pb-3 md:pb-4">
+          <div className="min-w-0 flex-1 space-y-3 pb-3 md:space-y-4 md:pb-4">
             <div className="flex items-center justify-between pt-3">
-              <h3 className="text-sm font-semibold">{t("editor.uploadDialog.patternPreview")}</h3>
-              <div className="inline-flex items-center rounded-lg border bg-muted/30 p-0.5 gap-1">
+              <h3 className="text-sm font-semibold">
+                {t("editor.uploadDialog.patternPreview")}
+              </h3>
+              <div className="inline-flex items-center gap-1 rounded-lg border bg-muted/30 p-0.5">
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
                       variant="ghost"
                       className={cn(
-                        "size-7 rounded-md min-w-[2.5rem] px-1.5",
-                        rotation !== 0 && "bg-primary text-white hover:bg-primary/80 hover:text-white"
+                        "size-7 min-w-[2.5rem] rounded-md px-1.5",
+                        rotation !== 0 &&
+                          "bg-primary text-white hover:bg-primary/80 hover:text-white"
                       )}
                       onClick={() => setRotation((r) => (r + 90) % 360)}
                     >
                       <span className="text-xs font-medium">R{rotation}°</span>
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>{t("editor.uploadDialog.rotate")}</TooltipContent>
+                  <TooltipContent>
+                    {t("editor.uploadDialog.rotate")}
+                  </TooltipContent>
                 </Tooltip>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -935,14 +1063,17 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
                       variant="ghost"
                       className={cn(
                         "size-7 rounded-md",
-                        trimEdges && "bg-primary text-white hover:bg-primary/80 hover:text-white"
+                        trimEdges &&
+                          "bg-primary text-white hover:bg-primary/80 hover:text-white"
                       )}
                       onClick={() => setTrimEdges((prev) => !prev)}
                     >
                       <Crop className="size-3.5" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>{t("editor.uploadDialog.trimEdges")}</TooltipContent>
+                  <TooltipContent>
+                    {t("editor.uploadDialog.trimEdges")}
+                  </TooltipContent>
                 </Tooltip>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -950,14 +1081,17 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
                       variant="ghost"
                       className={cn(
                         "size-7 rounded-md",
-                        flipHorizontal && "bg-primary text-white hover:bg-primary/80 hover:text-white"
+                        flipHorizontal &&
+                          "bg-primary text-white hover:bg-primary/80 hover:text-white"
                       )}
                       onClick={() => setFlipHorizontal(!flipHorizontal)}
                     >
                       <FlipHorizontal className="size-3.5" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>{t("editor.uploadDialog.flipHorizontal")}</TooltipContent>
+                  <TooltipContent>
+                    {t("editor.uploadDialog.flipHorizontal")}
+                  </TooltipContent>
                 </Tooltip>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -965,22 +1099,25 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
                       variant="ghost"
                       className={cn(
                         "size-7 rounded-md",
-                        flipVertical && "bg-primary text-white hover:bg-primary/80 hover:text-white"
+                        flipVertical &&
+                          "bg-primary text-white hover:bg-primary/80 hover:text-white"
                       )}
                       onClick={() => setFlipVertical(!flipVertical)}
                     >
                       <FlipVertical className="size-3.5" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>{t("editor.uploadDialog.flipVertical")}</TooltipContent>
+                  <TooltipContent>
+                    {t("editor.uploadDialog.flipVertical")}
+                  </TooltipContent>
                 </Tooltip>
               </div>
             </div>
 
-            <div className="rounded-xl border bg-[linear-gradient(45deg,#f5f5f5_25%,transparent_25%,transparent_75%,#f5f5f5_75%,#f5f5f5),linear-gradient(45deg,#f5f5f5_25%,transparent_25%,transparent_75%,#f5f5f5_75%,#f5f5f5)] bg-[length:10px_10px] bg-[position:0_0,5px_5px] bg-repeat aspect-video overflow-hidden relative flex items-center justify-center">
+            <div className="relative flex aspect-video items-center justify-center overflow-hidden rounded-xl border bg-[linear-gradient(45deg,#f5f5f5_25%,transparent_25%,transparent_75%,#f5f5f5_75%,#f5f5f5),linear-gradient(45deg,#f5f5f5_25%,transparent_25%,transparent_75%,#f5f5f5_75%,#f5f5f5)] bg-[length:10px_10px] bg-[position:0_0,5px_5px] bg-repeat">
               {isProcessing ? (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                   {t("editor.uploadDialog.processing")}
                 </div>
               ) : effectiveResult ? (
@@ -997,7 +1134,7 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
                 </span>
               )}
               {!isProcessing && effectiveResult && (
-                <div className="pointer-events-none absolute bottom-2 right-2 rounded-md border bg-background/90 px-2 py-1 text-[11px] font-medium text-foreground shadow-sm backdrop-blur-sm">
+                <div className="pointer-events-none absolute right-2 bottom-2 rounded-md border bg-background/90 px-2 py-1 text-[11px] font-medium text-foreground shadow-sm backdrop-blur-sm">
                   {t("editor.uploadDialog.actualPatternSize", {
                     width: effectiveResult.width,
                     height: effectiveResult.height,
@@ -1007,23 +1144,23 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
             </div>
 
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold">{t("editor.uploadDialog.originalImage")}</h3>
+              <h3 className="text-sm font-semibold">
+                {t("editor.uploadDialog.originalImage")}
+              </h3>
             </div>
 
-            <div className="rounded-xl border bg-[linear-gradient(45deg,#f5f5f5_25%,transparent_25%,transparent_75%,#f5f5f5_75%,#f5f5f5),linear-gradient(45deg,#f5f5f5_25%,transparent_25%,transparent_75%,#f5f5f5_75%,#f5f5f5)] bg-[length:10px_10px] bg-[position:0_0,5px_5px] bg-repeat aspect-video overflow-hidden relative select-none">
+            <div className="relative aspect-video overflow-hidden rounded-xl border bg-[linear-gradient(45deg,#f5f5f5_25%,transparent_25%,transparent_75%,#f5f5f5_75%,#f5f5f5),linear-gradient(45deg,#f5f5f5_25%,transparent_25%,transparent_75%,#f5f5f5_75%,#f5f5f5)] bg-[length:10px_10px] bg-[position:0_0,5px_5px] bg-repeat select-none">
               {imagePreviewUrl ? (
-                <div
-                  className="absolute inset-0"
-                >
+                <div className="absolute inset-0">
                   <img
                     src={imagePreviewUrl}
                     alt="Original"
-                    className="w-full h-full object-contain pointer-events-none"
+                    className="pointer-events-none h-full w-full object-contain"
                     draggable={false}
                   />
                 </div>
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-sm text-muted-foreground">
+                <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
                   {t("editor.uploadDialog.uploadPhoto")}
                 </div>
               )}
@@ -1033,18 +1170,26 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
 
         <Separator className="shrink-0" />
 
-        <div className="px-3 py-2.5 md:px-6 md:py-4 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 shrink-0">
+        <div className="flex shrink-0 flex-col-reverse items-stretch justify-end gap-2 px-3 py-2.5 sm:flex-row sm:items-center md:px-6 md:py-4">
           <DialogClose asChild>
-            <Button variant="outline" className="w-full sm:w-auto">{t("editor.uploadDialog.cancel")}</Button>
+            <Button variant="outline" className="w-full sm:w-auto">
+              {t("editor.uploadDialog.cancel")}
+            </Button>
           </DialogClose>
-          <span className={cn("w-full sm:w-auto", (!selectedFile || !effectiveResult || isProcessing) && "cursor-not-allowed")}>
+          <span
+            className={cn(
+              "w-full sm:w-auto",
+              (!selectedFile || !effectiveResult || isProcessing) &&
+                "cursor-not-allowed"
+            )}
+          >
             <Button
-              className="w-full sm:w-auto gap-2 bg-gradient-to-r from-primary to-primary/80 hover:opacity-90 border-none text-white font-medium disabled:cursor-not-allowed"
+              className="w-full gap-2 border-none bg-gradient-to-r from-primary to-primary/80 font-medium text-white hover:opacity-90 disabled:cursor-not-allowed sm:w-auto"
               disabled={!selectedFile || !effectiveResult || isProcessing}
               onClick={() => {
                 if (effectiveResult) {
-                  onGenerate(effectiveResult, colorPaletteId);
-                  onOpenChange(false);
+                  onGenerate(effectiveResult, colorPaletteId)
+                  onOpenChange(false)
                 }
               }}
             >
@@ -1055,5 +1200,5 @@ export default function UploadPhotoDialog({ open, onOpenChange, onGenerate }: Pr
         </div>
       </DialogContent>
     </Dialog>
-  );
+  )
 }

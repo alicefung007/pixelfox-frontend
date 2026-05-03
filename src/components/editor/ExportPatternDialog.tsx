@@ -1,7 +1,14 @@
-import { type PointerEvent, type TouchEvent, useEffect, useMemo, useRef, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Check, Download, Minus, X, Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import {
+  type PointerEvent,
+  type TouchEvent,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react"
+import { useTranslation } from "react-i18next"
+import { Check, Download, Minus, X, Plus } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogClose,
@@ -9,152 +16,158 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { Slider } from "@/components/ui/slider";
-import { Switch } from "@/components/ui/switch";
+} from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import { Separator } from "@/components/ui/separator"
+import { Slider } from "@/components/ui/slider"
+import { Switch } from "@/components/ui/switch"
 import {
   clampPatternGridInterval,
   getNearWhiteSwatches,
   PATTERN_GRID_COLORS,
   sanitizePatternGridColor,
-} from "@/components/editor/pattern-dialog-shared";
-import { getSystemPalette, type PaletteSwatch } from "@/lib/palettes";
-import { createColorMatcher } from "@/lib/image-processor";
-import { cn, hexToRgb, isDarkColor, isLikelyMouseWheel, normalizeHex } from "@/lib/utils";
-import { useEditorStore } from "@/store/useEditorStore";
-import { usePaletteStore } from "@/store/usePaletteStore";
+} from "@/components/editor/pattern-dialog-shared"
+import { getSystemPalette, type PaletteSwatch } from "@/lib/palettes"
+import { createColorMatcher } from "@/lib/image-processor"
+import {
+  cn,
+  hexToRgb,
+  isDarkColor,
+  isLikelyMouseWheel,
+  normalizeHex,
+} from "@/lib/utils"
+import { useEditorStore } from "@/store/useEditorStore"
+import { usePaletteStore } from "@/store/usePaletteStore"
 
 type Props = {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-};
+  open: boolean
+  onOpenChange: (open: boolean) => void
+}
 
 type Bounds = {
-  minX: number;
-  minY: number;
-  maxX: number;
-  maxY: number;
-};
+  minX: number
+  minY: number
+  maxX: number
+  maxY: number
+}
 
 type RenderResult = {
-  dataUrl: string;
-  width: number;
-  height: number;
-};
+  dataUrl: string
+  width: number
+  height: number
+}
 
 type ColorUsageItem = {
-  color: string;
-  label: string;
-  count: number;
-};
+  color: string
+  label: string
+  count: number
+}
 
 type SummaryInfo = {
-  paletteName: string;
-  sizeText: string;
-  beadCount: number;
-  colorCountExcludingWhite: number;
-};
+  paletteName: string
+  sizeText: string
+  beadCount: number
+  colorCountExcludingWhite: number
+}
 
 type HeaderStat = {
-  label: string;
-  value: string;
-};
+  label: string
+  value: string
+}
 
 type HeaderSummaryMetrics = {
-  headerHeight: number;
-  headerPaddingX: number;
-  logoHeight: number;
-  statLabelFont: string;
-  statLabelFontSize: number;
-  statValueFont: string;
-  statValueFontSize: number;
-  statLabelLineHeight: number;
-  statValueLineHeight: number;
-  statGapY: number;
-  statColumnGap: number;
-  statSeparatorHeight: number;
-};
+  headerHeight: number
+  headerPaddingX: number
+  logoHeight: number
+  statLabelFont: string
+  statLabelFontSize: number
+  statValueFont: string
+  statValueFontSize: number
+  statLabelLineHeight: number
+  statValueLineHeight: number
+  statGapY: number
+  statColumnGap: number
+  statSeparatorHeight: number
+}
 
 type ColorStatsMetrics = {
-  paddingX: number;
-  paddingY: number;
-  gapX: number;
-  gapY: number;
-  badgeHeight: number;
-  badgeRadius: number;
-  dotSize: number;
-  badgePaddingX: number;
-  badgeMaxLabelWidth: number;
-  labelFont: string;
-  countFont: string;
-  labelFontSize: number;
-  countFontSize: number;
-  countMinWidth: number;
-  countPaddingX: number;
-  countHeight: number;
-  countRadius: number;
-  labelGap: number;
-};
+  paddingX: number
+  paddingY: number
+  gapX: number
+  gapY: number
+  badgeHeight: number
+  badgeRadius: number
+  dotSize: number
+  badgePaddingX: number
+  badgeMaxLabelWidth: number
+  labelFont: string
+  countFont: string
+  labelFontSize: number
+  countFontSize: number
+  countMinWidth: number
+  countPaddingX: number
+  countHeight: number
+  countRadius: number
+  labelGap: number
+}
 
 type ExportDialogSettings = {
-  autoCrop: boolean;
-  whiteBackground: boolean;
-  showGrid: boolean;
-  showMinorGrid: boolean;
-  gridInterval: number;
-  gridColor: string;
-  showAxis: boolean;
-  showColorCode: boolean;
-  mirrorFlip: boolean;
-};
+  autoCrop: boolean
+  whiteBackground: boolean
+  showGrid: boolean
+  showMinorGrid: boolean
+  gridInterval: number
+  gridColor: string
+  showAxis: boolean
+  showColorCode: boolean
+  mirrorFlip: boolean
+}
 
-type ReactTouchList = TouchEvent<HTMLDivElement>["touches"];
+type ReactTouchList = TouchEvent<HTMLDivElement>["touches"]
 
-const CELL_SIZE = 40;
-const AXIS_SIZE = 40;
-const BASE_BRAND_HEADER_PADDING_Y = 32;
-const BASE_BRAND_HEADER_PADDING_X = 40;
-const BASE_BRAND_LOGO_HEIGHT = 76;
-const BASE_BRAND_STATS_LABEL_FONT_SIZE = 14;
-const BASE_BRAND_STATS_VALUE_FONT_SIZE = 26;
-const BASE_BRAND_STATS_SEPARATOR_HEIGHT = 60;
-const MAX_EXPORT_EDGE = 122880;
-const MAJOR_GRID_WIDTH = 2;
-const MINOR_GRID_WIDTH = 2;
-const BASE_COLOR_STATS_PADDING_X = 18;
-const BASE_COLOR_STATS_PADDING_Y = 18;
-const BASE_COLOR_STATS_GAP_X = 16;
-const BASE_COLOR_STATS_GAP_Y = 16;
-const BASE_COLOR_STATS_SUMMARY_GAP_Y = 8;
-const BASE_COLOR_STATS_SUMMARY_LINE_HEIGHT = 28;
-const BASE_COLOR_STATS_SUMMARY_ITEM_GAP = 24;
-const BASE_COLOR_STATS_BADGE_HEIGHT = 28;
-const BASE_COLOR_STATS_BADGE_RADIUS = 8;
-const BASE_COLOR_STATS_BADGE_DOT_SIZE = 12;
-const BASE_COLOR_STATS_BADGE_PADDING_X = 12;
-const BASE_COLOR_STATS_BADGE_MAX_LABEL_WIDTH = 120;
-const BASE_COLOR_STATS_LABEL_FONT_SIZE = 12;
-const BASE_COLOR_STATS_COUNT_FONT_SIZE = 11;
-const BASE_COLOR_STATS_COUNT_MIN_WIDTH = 24;
-const BASE_COLOR_STATS_COUNT_PADDING_X = 7;
-const BASE_COLOR_STATS_COUNT_HEIGHT = 20;
-const BASE_COLOR_STATS_COUNT_RADIUS = 10;
-const BASE_COLOR_STATS_LABEL_GAP = 8;
-const PREVIEW_MIN_SCALE = 0.5;
-const PREVIEW_MAX_SCALE = 10;
-const PREVIEW_SCALE_STEP = 0.12;
-const PREVIEW_PAN_SPEED = 1;
-const EXPORT_DIALOG_SETTINGS_STORAGE_KEY = "pixelfox-export-dialog-settings";
-const BRAND_LOGO_SRC = "/logo_with_name.png";
-const BRAND_COMPACT_LOGO_SRC = "/logo.png";
-const BRAND_BUILDER_LABEL = "BUILDER";
-const BRAND_DOMAIN_TEXT = "pixelfox.art";
-const HEADER_SCALE_BASE_WIDTH = 30;
-const EXPORT_CORNER_RADIUS = 20;
-const EXPORT_BORDER_WIDTH = 1;
-const EXPORT_BORDER_COLOR = "rgba(0, 0, 0, 0.1)";
+const CELL_SIZE = 40
+const AXIS_SIZE = 40
+const BASE_BRAND_HEADER_PADDING_Y = 32
+const BASE_BRAND_HEADER_PADDING_X = 40
+const BASE_BRAND_LOGO_HEIGHT = 76
+const BASE_BRAND_STATS_LABEL_FONT_SIZE = 14
+const BASE_BRAND_STATS_VALUE_FONT_SIZE = 26
+const BASE_BRAND_STATS_SEPARATOR_HEIGHT = 60
+const MAX_EXPORT_EDGE = 122880
+const MAJOR_GRID_WIDTH = 2
+const MINOR_GRID_WIDTH = 2
+const BASE_COLOR_STATS_PADDING_X = 18
+const BASE_COLOR_STATS_PADDING_Y = 18
+const BASE_COLOR_STATS_GAP_X = 16
+const BASE_COLOR_STATS_GAP_Y = 16
+const BASE_COLOR_STATS_SUMMARY_GAP_Y = 8
+const BASE_COLOR_STATS_SUMMARY_LINE_HEIGHT = 28
+const BASE_COLOR_STATS_SUMMARY_ITEM_GAP = 24
+const BASE_COLOR_STATS_BADGE_HEIGHT = 28
+const BASE_COLOR_STATS_BADGE_RADIUS = 8
+const BASE_COLOR_STATS_BADGE_DOT_SIZE = 12
+const BASE_COLOR_STATS_BADGE_PADDING_X = 12
+const BASE_COLOR_STATS_BADGE_MAX_LABEL_WIDTH = 120
+const BASE_COLOR_STATS_LABEL_FONT_SIZE = 12
+const BASE_COLOR_STATS_COUNT_FONT_SIZE = 11
+const BASE_COLOR_STATS_COUNT_MIN_WIDTH = 24
+const BASE_COLOR_STATS_COUNT_PADDING_X = 7
+const BASE_COLOR_STATS_COUNT_HEIGHT = 20
+const BASE_COLOR_STATS_COUNT_RADIUS = 10
+const BASE_COLOR_STATS_LABEL_GAP = 8
+const PREVIEW_MIN_SCALE = 0.5
+const PREVIEW_MAX_SCALE = 10
+const PREVIEW_SCALE_STEP = 0.12
+const PREVIEW_PAN_SPEED = 1
+const EXPORT_DIALOG_SETTINGS_STORAGE_KEY = "pixelfox-export-dialog-settings"
+const BRAND_LOGO_SRC = "/logo_with_name.png"
+const BRAND_COMPACT_LOGO_SRC = "/logo.png"
+const BRAND_BUILDER_LABEL = "BUILDER"
+const BRAND_DOMAIN_TEXT = "pixelfox.art"
+const HEADER_SCALE_BASE_WIDTH = 30
+const EXPORT_CORNER_RADIUS = 20
+const EXPORT_BORDER_WIDTH = 1
+const EXPORT_BORDER_COLOR = "rgba(0, 0, 0, 0.1)"
 const DEFAULT_EXPORT_DIALOG_SETTINGS: ExportDialogSettings = {
   autoCrop: true,
   whiteBackground: true,
@@ -165,80 +178,104 @@ const DEFAULT_EXPORT_DIALOG_SETTINGS: ExportDialogSettings = {
   showAxis: false,
   showColorCode: true,
   mirrorFlip: false,
-};
+}
 
 function loadExportDialogSettings(): ExportDialogSettings {
   if (typeof window === "undefined") {
-    return DEFAULT_EXPORT_DIALOG_SETTINGS;
+    return DEFAULT_EXPORT_DIALOG_SETTINGS
   }
 
   try {
-    const raw = window.localStorage.getItem(EXPORT_DIALOG_SETTINGS_STORAGE_KEY);
-    if (!raw) return DEFAULT_EXPORT_DIALOG_SETTINGS;
-    const parsed = JSON.parse(raw) as Partial<ExportDialogSettings>;
+    const raw = window.localStorage.getItem(EXPORT_DIALOG_SETTINGS_STORAGE_KEY)
+    if (!raw) return DEFAULT_EXPORT_DIALOG_SETTINGS
+    const parsed = JSON.parse(raw) as Partial<ExportDialogSettings>
 
     return {
       autoCrop: parsed.autoCrop ?? DEFAULT_EXPORT_DIALOG_SETTINGS.autoCrop,
-      whiteBackground: parsed.whiteBackground ?? DEFAULT_EXPORT_DIALOG_SETTINGS.whiteBackground,
+      whiteBackground:
+        parsed.whiteBackground ??
+        DEFAULT_EXPORT_DIALOG_SETTINGS.whiteBackground,
       showGrid: parsed.showGrid ?? DEFAULT_EXPORT_DIALOG_SETTINGS.showGrid,
-      showMinorGrid: parsed.showMinorGrid ?? DEFAULT_EXPORT_DIALOG_SETTINGS.showMinorGrid,
+      showMinorGrid:
+        parsed.showMinorGrid ?? DEFAULT_EXPORT_DIALOG_SETTINGS.showMinorGrid,
       gridInterval: clampPatternGridInterval(
-        typeof parsed.gridInterval === "number" ? parsed.gridInterval : Number.NaN,
+        typeof parsed.gridInterval === "number"
+          ? parsed.gridInterval
+          : Number.NaN,
         DEFAULT_EXPORT_DIALOG_SETTINGS.gridInterval
       ),
-      gridColor: sanitizePatternGridColor(parsed.gridColor, DEFAULT_EXPORT_DIALOG_SETTINGS.gridColor),
+      gridColor: sanitizePatternGridColor(
+        parsed.gridColor,
+        DEFAULT_EXPORT_DIALOG_SETTINGS.gridColor
+      ),
       showAxis: parsed.showAxis ?? DEFAULT_EXPORT_DIALOG_SETTINGS.showAxis,
-      showColorCode: parsed.showColorCode ?? DEFAULT_EXPORT_DIALOG_SETTINGS.showColorCode,
-      mirrorFlip: parsed.mirrorFlip ?? DEFAULT_EXPORT_DIALOG_SETTINGS.mirrorFlip,
-    };
+      showColorCode:
+        parsed.showColorCode ?? DEFAULT_EXPORT_DIALOG_SETTINGS.showColorCode,
+      mirrorFlip:
+        parsed.mirrorFlip ?? DEFAULT_EXPORT_DIALOG_SETTINGS.mirrorFlip,
+    }
   } catch {
-    return DEFAULT_EXPORT_DIALOG_SETTINGS;
+    return DEFAULT_EXPORT_DIALOG_SETTINGS
   }
 }
 
 function clampPreviewScale(scale: number) {
-  return Math.min(PREVIEW_MAX_SCALE, Math.max(PREVIEW_MIN_SCALE, Number(scale.toFixed(2))));
+  return Math.min(
+    PREVIEW_MAX_SCALE,
+    Math.max(PREVIEW_MIN_SCALE, Number(scale.toFixed(2)))
+  )
 }
 
 function getTouchDistance(touches: ReactTouchList) {
-  if (touches.length < 2) return 0;
-  const dx = touches[0].clientX - touches[1].clientX;
-  const dy = touches[0].clientY - touches[1].clientY;
-  return Math.sqrt(dx * dx + dy * dy);
+  if (touches.length < 2) return 0
+  const dx = touches[0].clientX - touches[1].clientX
+  const dy = touches[0].clientY - touches[1].clientY
+  return Math.sqrt(dx * dx + dy * dy)
 }
 
 function getTouchMidpoint(touches: ReactTouchList) {
-  if (touches.length < 2) return { x: 0, y: 0 };
+  if (touches.length < 2) return { x: 0, y: 0 }
   return {
     x: (touches[0].clientX + touches[1].clientX) / 2,
     y: (touches[0].clientY + touches[1].clientY) / 2,
-  };
+  }
 }
 
-function getPixelBounds(pixels: Record<string, string>, width: number, height: number): Bounds | null {
-  let minX = width;
-  let minY = height;
-  let maxX = -1;
-  let maxY = -1;
+function getPixelBounds(
+  pixels: Record<string, string>,
+  width: number,
+  height: number
+): Bounds | null {
+  let minX = width
+  let minY = height
+  let maxX = -1
+  let maxY = -1
 
   for (const key of Object.keys(pixels)) {
-    const [x, y] = key.split(",").map(Number);
-    if (Number.isNaN(x) || Number.isNaN(y)) continue;
-    if (x < minX) minX = x;
-    if (y < minY) minY = y;
-    if (x > maxX) maxX = x;
-    if (y > maxY) maxY = y;
+    const [x, y] = key.split(",").map(Number)
+    if (Number.isNaN(x) || Number.isNaN(y)) continue
+    if (x < minX) minX = x
+    if (y < minY) minY = y
+    if (x > maxX) maxX = x
+    if (y > maxY) maxY = y
   }
 
-  if (maxX < 0 || maxY < 0) return null;
-  return { minX, minY, maxX, maxY };
+  if (maxX < 0 || maxY < 0) return null
+  return { minX, minY, maxX, maxY }
 }
 
-function clampCellSize(cellSize: number, cols: number, rows: number, axisSize: number) {
-  const maxAxis = axisSize * 2;
-  const maxByWidth = Math.floor((MAX_EXPORT_EDGE - maxAxis) / Math.max(cols, 1));
-  const maxByHeight = Math.floor((MAX_EXPORT_EDGE - maxAxis) / Math.max(rows, 1));
-  return Math.max(8, Math.min(cellSize, maxByWidth, maxByHeight));
+function clampCellSize(
+  cellSize: number,
+  cols: number,
+  rows: number,
+  axisSize: number
+) {
+  const maxAxis = axisSize * 2
+  const maxByWidth = Math.floor((MAX_EXPORT_EDGE - maxAxis) / Math.max(cols, 1))
+  const maxByHeight = Math.floor(
+    (MAX_EXPORT_EDGE - maxAxis) / Math.max(rows, 1)
+  )
+  return Math.max(8, Math.min(cellSize, maxByWidth, maxByHeight))
 }
 
 function clipRoundedCanvas(
@@ -247,15 +284,15 @@ function clipRoundedCanvas(
   height: number,
   radius: number
 ) {
-  const roundedRadius = Math.max(0, Math.min(radius, width / 2, height / 2));
-  ctx.save();
-  ctx.beginPath();
-  ctx.roundRect(0, 0, width, height, roundedRadius);
-  ctx.clip();
+  const roundedRadius = Math.max(0, Math.min(radius, width / 2, height / 2))
+  ctx.save()
+  ctx.beginPath()
+  ctx.roundRect(0, 0, width, height, roundedRadius)
+  ctx.clip()
 }
 
 function getContrastText(color: string) {
-  return isDarkColor(color) ? "#FFFFFF" : "rgba(17,24,39,0.78)";
+  return isDarkColor(color) ? "#FFFFFF" : "rgba(17,24,39,0.78)"
 }
 
 function drawVerticalGridLine(
@@ -265,9 +302,9 @@ function drawVerticalGridLine(
   height: number,
   width: number
 ) {
-  const alignedWidth = Math.max(1, Math.round(width));
-  const startX = Math.round(x - alignedWidth / 2);
-  ctx.fillRect(startX, Math.round(y), alignedWidth, Math.round(height));
+  const alignedWidth = Math.max(1, Math.round(width))
+  const startX = Math.round(x - alignedWidth / 2)
+  ctx.fillRect(startX, Math.round(y), alignedWidth, Math.round(height))
 }
 
 function drawHorizontalGridLine(
@@ -277,9 +314,9 @@ function drawHorizontalGridLine(
   width: number,
   height: number
 ) {
-  const alignedHeight = Math.max(1, Math.round(height));
-  const startY = Math.round(y - alignedHeight / 2);
-  ctx.fillRect(Math.round(x), startY, Math.round(width), alignedHeight);
+  const alignedHeight = Math.max(1, Math.round(height))
+  const startY = Math.round(y - alignedHeight / 2)
+  ctx.fillRect(Math.round(x), startY, Math.round(width), alignedHeight)
 }
 
 function getColorUsage(
@@ -287,14 +324,14 @@ function getColorUsage(
   paletteLabels: Map<string, string>,
   excludedColorCodes: Set<string>
 ): ColorUsageItem[] {
-  const usageMap = new Map<string, number>();
+  const usageMap = new Map<string, number>()
 
   Object.values(pixels).forEach((color) => {
-    const normalized = normalizeHex(color);
-    if (!normalized) return;
-    if (excludedColorCodes.has(normalized)) return;
-    usageMap.set(normalized, (usageMap.get(normalized) ?? 0) + 1);
-  });
+    const normalized = normalizeHex(color)
+    if (!normalized) return
+    if (excludedColorCodes.has(normalized)) return
+    usageMap.set(normalized, (usageMap.get(normalized) ?? 0) + 1)
+  })
 
   return Array.from(usageMap.entries())
     .map(([color, count]) => ({
@@ -303,41 +340,79 @@ function getColorUsage(
       count,
     }))
     .sort((a, b) => {
-      if (b.count !== a.count) return b.count - a.count;
-      return a.label.localeCompare(b.label);
-    });
+      if (b.count !== a.count) return b.count - a.count
+      return a.label.localeCompare(b.label)
+    })
 }
 
-function fitTextToWidth(ctx: CanvasRenderingContext2D, text: string, maxWidth: number) {
-  if (ctx.measureText(text).width <= maxWidth) return text;
+function fitTextToWidth(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  maxWidth: number
+) {
+  if (ctx.measureText(text).width <= maxWidth) return text
 
-  const ellipsis = "…";
-  let result = text;
-  while (result.length > 1 && ctx.measureText(`${result}${ellipsis}`).width > maxWidth) {
-    result = result.slice(0, -1);
+  const ellipsis = "…"
+  let result = text
+  while (
+    result.length > 1 &&
+    ctx.measureText(`${result}${ellipsis}`).width > maxWidth
+  ) {
+    result = result.slice(0, -1)
   }
-  return `${result}${ellipsis}`;
+  return `${result}${ellipsis}`
 }
 
 function isWhiteLikeColor(hex: string) {
-  const rgb = hexToRgb(hex);
-  if (!rgb) return false;
-  return rgb.r >= 245 && rgb.g >= 245 && rgb.b >= 245;
+  const rgb = hexToRgb(hex)
+  if (!rgb) return false
+  return rgb.r >= 245 && rgb.g >= 245 && rgb.b >= 245
 }
 
 function getHeaderSummaryMetrics(downloadWidth: number): HeaderSummaryMetrics {
-  const scale = Math.max(downloadWidth, 1) / HEADER_SCALE_BASE_WIDTH;
-  const statLabelFontSize = Math.max(9, Math.round(BASE_BRAND_STATS_LABEL_FONT_SIZE * scale));
-  const statValueFontSize = Math.max(15, Math.round(BASE_BRAND_STATS_VALUE_FONT_SIZE * scale));
-  const logoHeight = Math.max(24, Math.round(BASE_BRAND_LOGO_HEIGHT * scale));
-  const statLabelLineHeight = Math.max(18, Math.round(BASE_COLOR_STATS_SUMMARY_LINE_HEIGHT * scale));
-  const statValueLineHeight = Math.max(24, Math.round(statValueFontSize * 1.12));
-  const statGapY = Math.max(4, Math.round(BASE_COLOR_STATS_SUMMARY_GAP_Y * scale));
-  const headerContentHeight = Math.max(logoHeight, statLabelLineHeight + statGapY + statValueLineHeight);
-  const verticalPaddingScale = 0.72 + Math.min(0.42, Math.sqrt(Math.max(downloadWidth, 1) / HEADER_SCALE_BASE_WIDTH) * 0.28);
-  const horizontalPaddingScale = 0.78 + Math.min(0.34, Math.sqrt(Math.max(downloadWidth, 1) / HEADER_SCALE_BASE_WIDTH) * 0.22);
-  const headerPaddingY = Math.max(14, Math.round(BASE_BRAND_HEADER_PADDING_Y * scale * verticalPaddingScale));
-  const headerPaddingX = Math.max(18, Math.round(BASE_BRAND_HEADER_PADDING_X * scale * horizontalPaddingScale));
+  const scale = Math.max(downloadWidth, 1) / HEADER_SCALE_BASE_WIDTH
+  const statLabelFontSize = Math.max(
+    9,
+    Math.round(BASE_BRAND_STATS_LABEL_FONT_SIZE * scale)
+  )
+  const statValueFontSize = Math.max(
+    15,
+    Math.round(BASE_BRAND_STATS_VALUE_FONT_SIZE * scale)
+  )
+  const logoHeight = Math.max(24, Math.round(BASE_BRAND_LOGO_HEIGHT * scale))
+  const statLabelLineHeight = Math.max(
+    18,
+    Math.round(BASE_COLOR_STATS_SUMMARY_LINE_HEIGHT * scale)
+  )
+  const statValueLineHeight = Math.max(24, Math.round(statValueFontSize * 1.12))
+  const statGapY = Math.max(
+    4,
+    Math.round(BASE_COLOR_STATS_SUMMARY_GAP_Y * scale)
+  )
+  const headerContentHeight = Math.max(
+    logoHeight,
+    statLabelLineHeight + statGapY + statValueLineHeight
+  )
+  const verticalPaddingScale =
+    0.72 +
+    Math.min(
+      0.42,
+      Math.sqrt(Math.max(downloadWidth, 1) / HEADER_SCALE_BASE_WIDTH) * 0.28
+    )
+  const horizontalPaddingScale =
+    0.78 +
+    Math.min(
+      0.34,
+      Math.sqrt(Math.max(downloadWidth, 1) / HEADER_SCALE_BASE_WIDTH) * 0.22
+    )
+  const headerPaddingY = Math.max(
+    14,
+    Math.round(BASE_BRAND_HEADER_PADDING_Y * scale * verticalPaddingScale)
+  )
+  const headerPaddingX = Math.max(
+    18,
+    Math.round(BASE_BRAND_HEADER_PADDING_X * scale * horizontalPaddingScale)
+  )
 
   return {
     headerHeight: Math.max(72, headerContentHeight + headerPaddingY * 2),
@@ -350,36 +425,66 @@ function getHeaderSummaryMetrics(downloadWidth: number): HeaderSummaryMetrics {
     statLabelLineHeight,
     statValueLineHeight,
     statGapY,
-    statColumnGap: Math.max(12, Math.round(BASE_COLOR_STATS_SUMMARY_ITEM_GAP * scale)),
-    statSeparatorHeight: Math.max(28, Math.round(BASE_BRAND_STATS_SEPARATOR_HEIGHT * scale)),
-  };
+    statColumnGap: Math.max(
+      12,
+      Math.round(BASE_COLOR_STATS_SUMMARY_ITEM_GAP * scale)
+    ),
+    statSeparatorHeight: Math.max(
+      28,
+      Math.round(BASE_BRAND_STATS_SEPARATOR_HEIGHT * scale)
+    ),
+  }
 }
 
 function getColorStatsMetrics(downloadWidth: number): ColorStatsMetrics {
-  const scale = Math.max(downloadWidth, 1) / HEADER_SCALE_BASE_WIDTH;
-  const labelFontSize = Math.max(10, Math.round(BASE_COLOR_STATS_LABEL_FONT_SIZE * scale));
-  const countFontSize = Math.max(9, Math.round(BASE_COLOR_STATS_COUNT_FONT_SIZE * scale));
+  const scale = Math.max(downloadWidth, 1) / HEADER_SCALE_BASE_WIDTH
+  const labelFontSize = Math.max(
+    10,
+    Math.round(BASE_COLOR_STATS_LABEL_FONT_SIZE * scale)
+  )
+  const countFontSize = Math.max(
+    9,
+    Math.round(BASE_COLOR_STATS_COUNT_FONT_SIZE * scale)
+  )
 
   return {
     paddingX: Math.max(8, Math.round(BASE_COLOR_STATS_PADDING_X * scale)),
     paddingY: Math.max(8, Math.round(BASE_COLOR_STATS_PADDING_Y * scale)),
     gapX: Math.max(8, Math.round(BASE_COLOR_STATS_GAP_X * scale)),
     gapY: Math.max(8, Math.round(BASE_COLOR_STATS_GAP_Y * scale)),
-    badgeHeight: Math.max(22, Math.round(BASE_COLOR_STATS_BADGE_HEIGHT * scale)),
+    badgeHeight: Math.max(
+      22,
+      Math.round(BASE_COLOR_STATS_BADGE_HEIGHT * scale)
+    ),
     badgeRadius: Math.max(6, Math.round(BASE_COLOR_STATS_BADGE_RADIUS * scale)),
     dotSize: Math.max(8, Math.round(BASE_COLOR_STATS_BADGE_DOT_SIZE * scale)),
-    badgePaddingX: Math.max(8, Math.round(BASE_COLOR_STATS_BADGE_PADDING_X * scale)),
-    badgeMaxLabelWidth: Math.max(48, Math.round(BASE_COLOR_STATS_BADGE_MAX_LABEL_WIDTH * scale)),
+    badgePaddingX: Math.max(
+      8,
+      Math.round(BASE_COLOR_STATS_BADGE_PADDING_X * scale)
+    ),
+    badgeMaxLabelWidth: Math.max(
+      48,
+      Math.round(BASE_COLOR_STATS_BADGE_MAX_LABEL_WIDTH * scale)
+    ),
     labelFont: `600 ${labelFontSize}px Geist, sans-serif`,
     countFont: `700 ${countFontSize}px Geist, sans-serif`,
     labelFontSize,
     countFontSize,
-    countMinWidth: Math.max(18, Math.round(BASE_COLOR_STATS_COUNT_MIN_WIDTH * scale)),
-    countPaddingX: Math.max(4, Math.round(BASE_COLOR_STATS_COUNT_PADDING_X * scale)),
-    countHeight: Math.max(16, Math.round(BASE_COLOR_STATS_COUNT_HEIGHT * scale)),
+    countMinWidth: Math.max(
+      18,
+      Math.round(BASE_COLOR_STATS_COUNT_MIN_WIDTH * scale)
+    ),
+    countPaddingX: Math.max(
+      4,
+      Math.round(BASE_COLOR_STATS_COUNT_PADDING_X * scale)
+    ),
+    countHeight: Math.max(
+      16,
+      Math.round(BASE_COLOR_STATS_COUNT_HEIGHT * scale)
+    ),
     countRadius: Math.max(8, Math.round(BASE_COLOR_STATS_COUNT_RADIUS * scale)),
     labelGap: Math.max(4, Math.round(BASE_COLOR_STATS_LABEL_GAP * scale)),
-  };
+  }
 }
 
 function drawBrandIcon(
@@ -391,25 +496,32 @@ function drawBrandIcon(
   metrics: HeaderSummaryMetrics
 ) {
   if (logoImage) {
-    const aspectRatio = logoImage.naturalWidth / Math.max(logoImage.naturalHeight, 1);
-    const width = metrics.logoHeight * aspectRatio;
-    const previousImageSmoothingEnabled = ctx.imageSmoothingEnabled;
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = "high";
-    ctx.drawImage(logoImage, x, y, width, metrics.logoHeight);
-    ctx.imageSmoothingEnabled = previousImageSmoothingEnabled;
-    return;
+    const aspectRatio =
+      logoImage.naturalWidth / Math.max(logoImage.naturalHeight, 1)
+    const width = metrics.logoHeight * aspectRatio
+    const previousImageSmoothingEnabled = ctx.imageSmoothingEnabled
+    ctx.imageSmoothingEnabled = true
+    ctx.imageSmoothingQuality = "high"
+    ctx.drawImage(logoImage, x, y, width, metrics.logoHeight)
+    ctx.imageSmoothingEnabled = previousImageSmoothingEnabled
+    return
   }
 
-  ctx.save();
-  ctx.fillStyle = color;
-  ctx.fillRect(x, y, metrics.logoHeight, metrics.logoHeight);
-  ctx.restore();
+  ctx.save()
+  ctx.fillStyle = color
+  ctx.fillRect(x, y, metrics.logoHeight, metrics.logoHeight)
+  ctx.restore()
 }
 
-function getBrandLogoWidth(logoImage: HTMLImageElement | null, metrics: HeaderSummaryMetrics) {
-  if (!logoImage) return metrics.logoHeight;
-  return metrics.logoHeight * (logoImage.naturalWidth / Math.max(logoImage.naturalHeight, 1));
+function getBrandLogoWidth(
+  logoImage: HTMLImageElement | null,
+  metrics: HeaderSummaryMetrics
+) {
+  if (!logoImage) return metrics.logoHeight
+  return (
+    metrics.logoHeight *
+    (logoImage.naturalWidth / Math.max(logoImage.naturalHeight, 1))
+  )
 }
 
 function getHeaderStats(
@@ -421,16 +533,16 @@ function getHeaderStats(
     { label: labels.size, value: summary.sizeText },
     { label: labels.beadCount, value: String(summary.beadCount) },
     { label: BRAND_BUILDER_LABEL, value: BRAND_DOMAIN_TEXT },
-  ];
+  ]
 }
 
 function getDisplayHeaderLabel(label: string) {
-  const upperLabel = label.toLocaleUpperCase();
-  if (!/^[A-Z ]+$/.test(upperLabel)) return upperLabel;
+  const upperLabel = label.toLocaleUpperCase()
+  if (!/^[A-Z ]+$/.test(upperLabel)) return upperLabel
   return upperLabel
     .split(" ")
     .map((word) => word.split("").join(" "))
-    .join("   ");
+    .join("   ")
 }
 
 function drawHeaderStats(
@@ -441,47 +553,66 @@ function drawHeaderStats(
   width: number,
   metrics: HeaderSummaryMetrics
 ) {
-  if (stats.length === 0 || width <= 0) return;
+  if (stats.length === 0 || width <= 0) return
 
-  const gap = metrics.statColumnGap;
-  const columnWidth = Math.max(1, (width - gap * (stats.length - 1)) / stats.length);
-  const labelY = y + Math.max(0, (metrics.statLabelLineHeight - metrics.statLabelFontSize) / 2);
+  const gap = metrics.statColumnGap
+  const columnWidth = Math.max(
+    1,
+    (width - gap * (stats.length - 1)) / stats.length
+  )
+  const labelY =
+    y +
+    Math.max(0, (metrics.statLabelLineHeight - metrics.statLabelFontSize) / 2)
   const valueY =
     y +
     metrics.statLabelLineHeight +
     metrics.statGapY +
-    Math.max(0, (metrics.statValueLineHeight - metrics.statValueFontSize) / 2);
+    Math.max(0, (metrics.statValueLineHeight - metrics.statValueFontSize) / 2)
 
-  ctx.save();
-  ctx.textAlign = "center";
-  ctx.textBaseline = "top";
+  ctx.save()
+  ctx.textAlign = "center"
+  ctx.textBaseline = "top"
 
   stats.forEach((stat, index) => {
-    const columnX = x + index * (columnWidth + gap);
-    const centerX = columnX + columnWidth / 2;
-    const textMaxWidth = Math.max(8, columnWidth * 0.92);
+    const columnX = x + index * (columnWidth + gap)
+    const centerX = columnX + columnWidth / 2
+    const textMaxWidth = Math.max(8, columnWidth * 0.92)
 
-    ctx.font = metrics.statLabelFont;
-    ctx.fillStyle = "#746D68";
-    ctx.fillText(fitTextToWidth(ctx, getDisplayHeaderLabel(stat.label), textMaxWidth), centerX, labelY);
+    ctx.font = metrics.statLabelFont
+    ctx.fillStyle = "#746D68"
+    ctx.fillText(
+      fitTextToWidth(ctx, getDisplayHeaderLabel(stat.label), textMaxWidth),
+      centerX,
+      labelY
+    )
 
-    ctx.font = metrics.statValueFont;
-    ctx.fillStyle = "#403C3B";
-    ctx.fillText(fitTextToWidth(ctx, stat.value, textMaxWidth), centerX, valueY);
+    ctx.font = metrics.statValueFont
+    ctx.fillStyle = "#403C3B"
+    ctx.fillText(fitTextToWidth(ctx, stat.value, textMaxWidth), centerX, valueY)
 
     if (index < stats.length - 1) {
-      const separatorX = Math.round(columnX + columnWidth + gap / 2);
-      const separatorY = Math.round(y + (metrics.statLabelLineHeight + metrics.statGapY) * 0.55);
+      const separatorX = Math.round(columnX + columnWidth + gap / 2)
+      const separatorY = Math.round(
+        y + (metrics.statLabelLineHeight + metrics.statGapY) * 0.55
+      )
       const separatorHeight = Math.min(
         metrics.statSeparatorHeight,
-        metrics.statLabelLineHeight + metrics.statGapY + metrics.statValueLineHeight - (separatorY - y)
-      );
-      ctx.fillStyle = "rgba(116,109,104,0.24)";
-      ctx.fillRect(separatorX, separatorY, 1, Math.max(1, Math.round(separatorHeight)));
+        metrics.statLabelLineHeight +
+          metrics.statGapY +
+          metrics.statValueLineHeight -
+          (separatorY - y)
+      )
+      ctx.fillStyle = "rgba(116,109,104,0.24)"
+      ctx.fillRect(
+        separatorX,
+        separatorY,
+        1,
+        Math.max(1, Math.round(separatorHeight))
+      )
     }
-  });
+  })
 
-  ctx.restore();
+  ctx.restore()
 }
 
 function createColorBadgeLayout(
@@ -492,11 +623,15 @@ function createColorBadgeLayout(
   offsetY = 0
 ) {
   if (items.length === 0) {
-    return { badges: [], height: offsetY > 0 ? metrics.paddingY * 2 + offsetY : 0 };
+    return {
+      badges: [],
+      height: offsetY > 0 ? metrics.paddingY * 2 + offsetY : 0,
+    }
   }
 
-  const contentWidth = Math.max(0, totalWidth - metrics.paddingX * 2);
-  const minBadgeWidth = metrics.badgePaddingX * 2 + metrics.dotSize + metrics.countMinWidth;
+  const contentWidth = Math.max(0, totalWidth - metrics.paddingX * 2)
+  const minBadgeWidth =
+    metrics.badgePaddingX * 2 + metrics.dotSize + metrics.countMinWidth
   const preferredColumnWidth = Math.max(
     minBadgeWidth,
     metrics.badgePaddingX * 2 +
@@ -505,50 +640,59 @@ function createColorBadgeLayout(
       Math.round(metrics.badgeMaxLabelWidth * 0.36) +
       metrics.labelGap +
       metrics.countMinWidth
-  );
+  )
   const maxColumns = Math.max(
     1,
-    Math.floor((contentWidth + metrics.gapX) / (preferredColumnWidth + metrics.gapX))
-  );
+    Math.floor(
+      (contentWidth + metrics.gapX) / (preferredColumnWidth + metrics.gapX)
+    )
+  )
   const columnWidth = Math.max(
     minBadgeWidth,
     Math.floor((contentWidth - metrics.gapX * (maxColumns - 1)) / maxColumns)
-  );
+  )
   const badges: Array<{
-    x: number;
-    y: number;
-    width: number;
-    label: string;
-    item: ColorUsageItem;
-  }> = [];
+    x: number
+    y: number
+    width: number
+    label: string
+    item: ColorUsageItem
+  }> = []
 
-  ctx.font = metrics.labelFont;
+  ctx.font = metrics.labelFont
   items.forEach((item, index) => {
-    const countText = String(item.count);
-    ctx.font = metrics.countFont;
+    const countText = String(item.count)
+    ctx.font = metrics.countFont
     const countWidth = Math.max(
       metrics.countMinWidth,
       Math.ceil(ctx.measureText(countText).width) + metrics.countPaddingX * 2
-    );
+    )
 
-    ctx.font = metrics.labelFont;
+    ctx.font = metrics.labelFont
     const maxLabelWidth = Math.min(
       metrics.badgeMaxLabelWidth,
       Math.max(
         20,
-        columnWidth - metrics.badgePaddingX * 2 - metrics.dotSize - countWidth - metrics.labelGap * 2
+        columnWidth -
+          metrics.badgePaddingX * 2 -
+          metrics.dotSize -
+          countWidth -
+          metrics.labelGap * 2
       )
-    );
-    const label = fitTextToWidth(ctx, item.label, maxLabelWidth);
-    const columnIndex = index % maxColumns;
-    const rowIndex = Math.floor(index / maxColumns);
-    const x = metrics.paddingX + columnIndex * (columnWidth + metrics.gapX);
-    const y = metrics.paddingY + offsetY + rowIndex * (metrics.badgeHeight + metrics.gapY);
+    )
+    const label = fitTextToWidth(ctx, item.label, maxLabelWidth)
+    const columnIndex = index % maxColumns
+    const rowIndex = Math.floor(index / maxColumns)
+    const x = metrics.paddingX + columnIndex * (columnWidth + metrics.gapX)
+    const y =
+      metrics.paddingY +
+      offsetY +
+      rowIndex * (metrics.badgeHeight + metrics.gapY)
 
-    badges.push({ x, y, width: columnWidth, label, item });
-  });
+    badges.push({ x, y, width: columnWidth, label, item })
+  })
 
-  const rowCount = Math.ceil(items.length / maxColumns);
+  const rowCount = Math.ceil(items.length / maxColumns)
 
   return {
     badges,
@@ -557,33 +701,41 @@ function createColorBadgeLayout(
       offsetY +
       rowCount * metrics.badgeHeight +
       Math.max(0, rowCount - 1) * metrics.gapY,
-  };
+  }
 }
 
-function renderPatternImage(options: {
-  pixels: Record<string, string>;
-  width: number;
-  height: number;
-  paletteName: string;
-  paletteLabels: Map<string, string>;
-  autoCrop: boolean;
-  whiteBackground: boolean;
-  showGrid: boolean;
-  showMinorGrid: boolean;
-  gridInterval: number;
-  gridColor: string;
-  showAxis: boolean;
-  showColorCode: boolean;
-  excludedColorCodes: string[];
-  mirrorFlip: boolean;
-  summaryLabels: { palette: string; size: string; beadCount: string };
-  logoImage: HTMLImageElement | null;
-  compactLogoImage: HTMLImageElement | null;
-}, renderOptions: { canvas?: HTMLCanvasElement | null; includeDataUrl?: boolean } = {}): RenderResult | null {
-  if (typeof document === "undefined") return null;
+function renderPatternImage(
+  options: {
+    pixels: Record<string, string>
+    width: number
+    height: number
+    paletteName: string
+    paletteLabels: Map<string, string>
+    autoCrop: boolean
+    whiteBackground: boolean
+    showGrid: boolean
+    showMinorGrid: boolean
+    gridInterval: number
+    gridColor: string
+    showAxis: boolean
+    showColorCode: boolean
+    excludedColorCodes: string[]
+    mirrorFlip: boolean
+    summaryLabels: { palette: string; size: string; beadCount: string }
+    logoImage: HTMLImageElement | null
+    compactLogoImage: HTMLImageElement | null
+  },
+  renderOptions: {
+    canvas?: HTMLCanvasElement | null
+    includeDataUrl?: boolean
+  } = {}
+): RenderResult | null {
+  if (typeof document === "undefined") return null
 
   const themePrimaryColor =
-    getComputedStyle(document.documentElement).getPropertyValue("--primary").trim() || "#F77C31";
+    getComputedStyle(document.documentElement)
+      .getPropertyValue("--primary")
+      .trim() || "#F77C31"
 
   const {
     pixels,
@@ -604,105 +756,138 @@ function renderPatternImage(options: {
     summaryLabels,
     logoImage,
     compactLogoImage,
-  } = options;
-  const excludedColorCodeSet = new Set(excludedColorCodes.map(normalizeHex));
+  } = options
+  const excludedColorCodeSet = new Set(excludedColorCodes.map(normalizeHex))
 
-  const sourceBounds = autoCrop ? getPixelBounds(pixels, width, height) : null;
-  if (autoCrop && !sourceBounds) return null;
+  const sourceBounds = autoCrop ? getPixelBounds(pixels, width, height) : null
+  if (autoCrop && !sourceBounds) return null
 
   const bounds = sourceBounds ?? {
     minX: 0,
     minY: 0,
     maxX: width - 1,
     maxY: height - 1,
-  };
+  }
 
-  const cols = bounds.maxX - bounds.minX + 1;
-  const rows = bounds.maxY - bounds.minY + 1;
-  if (cols <= 0 || rows <= 0) return null;
+  const cols = bounds.maxX - bounds.minX + 1
+  const rows = bounds.maxY - bounds.minY + 1
+  if (cols <= 0 || rows <= 0) return null
 
-  const axisSize = showAxis ? AXIS_SIZE : 0;
-  const colorUsage = getColorUsage(pixels, paletteLabels, excludedColorCodeSet);
-  const headerMetrics = getHeaderSummaryMetrics(cols);
-  const colorStatsMetrics = getColorStatsMetrics(cols);
-  const beadCount = colorUsage.reduce((sum, item) => sum + item.count, 0);
+  const axisSize = showAxis ? AXIS_SIZE : 0
+  const colorUsage = getColorUsage(pixels, paletteLabels, excludedColorCodeSet)
+  const headerMetrics = getHeaderSummaryMetrics(cols)
+  const colorStatsMetrics = getColorStatsMetrics(cols)
+  const beadCount = colorUsage.reduce((sum, item) => sum + item.count, 0)
   const summaryInfo: SummaryInfo = {
     paletteName,
     sizeText: `${cols} × ${rows}`,
     beadCount,
-    colorCountExcludingWhite: colorUsage.filter((item) => !isWhiteLikeColor(item.color)).length,
-  };
-  const measureCanvas = document.createElement("canvas");
-  const measureCtx = measureCanvas.getContext("2d");
-  if (!measureCtx) return null;
-  const brandImage = cols <= 10 ? compactLogoImage : logoImage;
-  const brandLogoWidth = getBrandLogoWidth(brandImage, headerMetrics);
-  const headerStats = getHeaderStats(summaryInfo, summaryLabels);
-  const headerStatsGap = Math.max(20, Math.round(headerMetrics.headerPaddingX * 0.8));
+    colorCountExcludingWhite: colorUsage.filter(
+      (item) => !isWhiteLikeColor(item.color)
+    ).length,
+  }
+  const measureCanvas = document.createElement("canvas")
+  const measureCtx = measureCanvas.getContext("2d")
+  if (!measureCtx) return null
+  const brandImage = cols <= 10 ? compactLogoImage : logoImage
+  const brandLogoWidth = getBrandLogoWidth(brandImage, headerMetrics)
+  const headerStats = getHeaderStats(summaryInfo, summaryLabels)
+  const headerStatsGap = Math.max(
+    20,
+    Math.round(headerMetrics.headerPaddingX * 0.8)
+  )
   const getHeaderStatsBounds = (renderWidth: number) => ({
     x: headerMetrics.headerPaddingX + brandLogoWidth + headerStatsGap,
     width: Math.max(
       0,
-      renderWidth - headerMetrics.headerPaddingX * 2 - brandLogoWidth - headerStatsGap
+      renderWidth -
+        headerMetrics.headerPaddingX * 2 -
+        brandLogoWidth -
+        headerStatsGap
     ),
-  });
+  })
 
-  let cellSize = clampCellSize(CELL_SIZE, cols, rows, axisSize);
-  let exportWidth = cols * cellSize + axisSize * 2;
-  let colorStatsLayout = createColorBadgeLayout(measureCtx, colorUsage, exportWidth, colorStatsMetrics);
+  let cellSize = clampCellSize(CELL_SIZE, cols, rows, axisSize)
+  let exportWidth = cols * cellSize + axisSize * 2
+  let colorStatsLayout = createColorBadgeLayout(
+    measureCtx,
+    colorUsage,
+    exportWidth,
+    colorStatsMetrics
+  )
 
   for (let iteration = 0; iteration < 4; iteration += 1) {
     const maxByHeight = Math.floor(
-      (MAX_EXPORT_EDGE - headerMetrics.headerHeight - axisSize * 2 - colorStatsLayout.height) / Math.max(rows, 1)
-    );
-    const nextCellSize = Math.max(8, Math.min(cellSize, maxByHeight));
-    if (nextCellSize === cellSize) break;
+      (MAX_EXPORT_EDGE -
+        headerMetrics.headerHeight -
+        axisSize * 2 -
+        colorStatsLayout.height) /
+        Math.max(rows, 1)
+    )
+    const nextCellSize = Math.max(8, Math.min(cellSize, maxByHeight))
+    if (nextCellSize === cellSize) break
 
-    cellSize = nextCellSize;
-    exportWidth = cols * cellSize + axisSize * 2;
-    colorStatsLayout = createColorBadgeLayout(measureCtx, colorUsage, exportWidth, colorStatsMetrics);
+    cellSize = nextCellSize
+    exportWidth = cols * cellSize + axisSize * 2
+    colorStatsLayout = createColorBadgeLayout(
+      measureCtx,
+      colorUsage,
+      exportWidth,
+      colorStatsMetrics
+    )
   }
 
-  exportWidth = cols * cellSize + axisSize * 2;
-  const gridHeight = rows * cellSize + axisSize * 2;
-  const exportHeight = headerMetrics.headerHeight + gridHeight + colorStatsLayout.height;
+  exportWidth = cols * cellSize + axisSize * 2
+  const gridHeight = rows * cellSize + axisSize * 2
+  const exportHeight =
+    headerMetrics.headerHeight + gridHeight + colorStatsLayout.height
 
-  const canvas = renderOptions.canvas ?? document.createElement("canvas");
-  if (canvas.width !== exportWidth) canvas.width = exportWidth;
-  if (canvas.height !== exportHeight) canvas.height = exportHeight;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return null;
-  ctx.imageSmoothingEnabled = false;
-  clipRoundedCanvas(ctx, exportWidth, exportHeight, EXPORT_CORNER_RADIUS);
+  const canvas = renderOptions.canvas ?? document.createElement("canvas")
+  if (canvas.width !== exportWidth) canvas.width = exportWidth
+  if (canvas.height !== exportHeight) canvas.height = exportHeight
+  const ctx = canvas.getContext("2d")
+  if (!ctx) return null
+  ctx.imageSmoothingEnabled = false
+  clipRoundedCanvas(ctx, exportWidth, exportHeight, EXPORT_CORNER_RADIUS)
 
-  const gridOriginX = axisSize;
-  const gridOriginY = headerMetrics.headerHeight + axisSize;
-  const contentWidth = cols * cellSize;
-  const contentHeight = rows * cellSize;
-  const colorStatsTop = headerMetrics.headerHeight + gridHeight;
+  const gridOriginX = axisSize
+  const gridOriginY = headerMetrics.headerHeight + axisSize
+  const contentWidth = cols * cellSize
+  const contentHeight = rows * cellSize
+  const colorStatsTop = headerMetrics.headerHeight + gridHeight
 
   if (whiteBackground) {
-    ctx.fillStyle = "#FFFFFF";
-    ctx.fillRect(0, 0, exportWidth, exportHeight);
+    ctx.fillStyle = "#FFFFFF"
+    ctx.fillRect(0, 0, exportWidth, exportHeight)
   } else {
-    ctx.clearRect(0, 0, exportWidth, exportHeight);
+    ctx.clearRect(0, 0, exportWidth, exportHeight)
   }
 
   // Brand header
-  ctx.fillStyle = whiteBackground ? "#F8FAFC" : "rgba(248,250,252,0.96)";
-  ctx.fillRect(0, 0, exportWidth, headerMetrics.headerHeight);
-  ctx.fillStyle = "rgba(148,163,184,0.2)";
-  ctx.fillRect(0, headerMetrics.headerHeight - 1, exportWidth, 1);
+  ctx.fillStyle = whiteBackground ? "#F8FAFC" : "rgba(248,250,252,0.96)"
+  ctx.fillRect(0, 0, exportWidth, headerMetrics.headerHeight)
+  ctx.fillStyle = "rgba(148,163,184,0.2)"
+  ctx.fillRect(0, headerMetrics.headerHeight - 1, exportWidth, 1)
 
-  const brandIconY = (headerMetrics.headerHeight - headerMetrics.logoHeight) / 2;
-  drawBrandIcon(ctx, headerMetrics.headerPaddingX, brandIconY, themePrimaryColor, brandImage, headerMetrics);
+  const brandIconY = (headerMetrics.headerHeight - headerMetrics.logoHeight) / 2
+  drawBrandIcon(
+    ctx,
+    headerMetrics.headerPaddingX,
+    brandIconY,
+    themePrimaryColor,
+    brandImage,
+    headerMetrics
+  )
 
-  const headerStatsBounds = getHeaderStatsBounds(exportWidth);
+  const headerStatsBounds = getHeaderStatsBounds(exportWidth)
   const headerStatsHeight =
     headerMetrics.statLabelLineHeight +
     headerMetrics.statGapY +
-    headerMetrics.statValueLineHeight;
-  const headerStatsY = Math.max(0, Math.round((headerMetrics.headerHeight - headerStatsHeight) / 2));
+    headerMetrics.statValueLineHeight
+  const headerStatsY = Math.max(
+    0,
+    Math.round((headerMetrics.headerHeight - headerStatsHeight) / 2)
+  )
   drawHeaderStats(
     ctx,
     headerStats,
@@ -710,306 +895,412 @@ function renderPatternImage(options: {
     headerStatsY,
     headerStatsBounds.width,
     headerMetrics
-  );
+  )
 
   if (colorStatsLayout.height > 0) {
-    ctx.fillStyle = whiteBackground ? "#F8FAFC" : "rgba(248,250,252,0.96)";
-    ctx.fillRect(0, colorStatsTop, exportWidth, colorStatsLayout.height);
-    ctx.fillStyle = "rgba(148,163,184,0.32)";
-    ctx.fillRect(0, colorStatsTop, exportWidth, 1);
+    ctx.fillStyle = whiteBackground ? "#F8FAFC" : "rgba(248,250,252,0.96)"
+    ctx.fillRect(0, colorStatsTop, exportWidth, colorStatsLayout.height)
+    ctx.fillStyle = "rgba(148,163,184,0.32)"
+    ctx.fillRect(0, colorStatsTop, exportWidth, 1)
   }
 
   if (showAxis) {
-    ctx.fillStyle = whiteBackground ? "#F8FAFC" : "rgba(248,250,252,0.96)";
-    ctx.fillRect(0, headerMetrics.headerHeight, exportWidth, axisSize);
-    ctx.fillRect(0, headerMetrics.headerHeight + gridHeight - axisSize, exportWidth, axisSize);
-    ctx.fillRect(0, headerMetrics.headerHeight, axisSize, gridHeight);
-    ctx.fillRect(exportWidth - axisSize, headerMetrics.headerHeight, axisSize, gridHeight);
+    ctx.fillStyle = whiteBackground ? "#F8FAFC" : "rgba(248,250,252,0.96)"
+    ctx.fillRect(0, headerMetrics.headerHeight, exportWidth, axisSize)
+    ctx.fillRect(
+      0,
+      headerMetrics.headerHeight + gridHeight - axisSize,
+      exportWidth,
+      axisSize
+    )
+    ctx.fillRect(0, headerMetrics.headerHeight, axisSize, gridHeight)
+    ctx.fillRect(
+      exportWidth - axisSize,
+      headerMetrics.headerHeight,
+      axisSize,
+      gridHeight
+    )
   }
 
   for (let row = 0; row < rows; row += 1) {
     for (let col = 0; col < cols; col += 1) {
-      const sourceX = mirrorFlip ? bounds.maxX - col : bounds.minX + col;
-      const sourceY = bounds.minY + row;
-      const color = pixels[`${sourceX},${sourceY}`];
-      if (!color) continue;
-      ctx.fillStyle = color;
+      const sourceX = mirrorFlip ? bounds.maxX - col : bounds.minX + col
+      const sourceY = bounds.minY + row
+      const color = pixels[`${sourceX},${sourceY}`]
+      if (!color) continue
+      ctx.fillStyle = color
       ctx.fillRect(
         gridOriginX + col * cellSize,
         gridOriginY + row * cellSize,
         cellSize,
         cellSize
-      );
+      )
     }
   }
 
   if (showColorCode) {
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
+    ctx.textAlign = "center"
+    ctx.textBaseline = "middle"
 
     for (let row = 0; row < rows; row += 1) {
       for (let col = 0; col < cols; col += 1) {
-        const sourceX = mirrorFlip ? bounds.maxX - col : bounds.minX + col;
-        const sourceY = bounds.minY + row;
-        const color = pixels[`${sourceX},${sourceY}`];
-        if (!color) continue;
+        const sourceX = mirrorFlip ? bounds.maxX - col : bounds.minX + col
+        const sourceY = bounds.minY + row
+        const color = pixels[`${sourceX},${sourceY}`]
+        if (!color) continue
 
-        const normalized = normalizeHex(color);
-        if (excludedColorCodeSet.has(normalized)) continue;
-        const label = paletteLabels.get(normalized);
-        if (!label) continue;
-        const text = label;
-        const fontSize = Math.max(8, Math.min(14, Math.floor(cellSize / Math.max(text.length * 0.62, 2.8))));
-        ctx.font = `700 ${fontSize}px Geist, sans-serif`;
-        ctx.fillStyle = getContrastText(color);
+        const normalized = normalizeHex(color)
+        if (excludedColorCodeSet.has(normalized)) continue
+        const label = paletteLabels.get(normalized)
+        if (!label) continue
+        const text = label
+        const fontSize = Math.max(
+          8,
+          Math.min(14, Math.floor(cellSize / Math.max(text.length * 0.62, 2.8)))
+        )
+        ctx.font = `700 ${fontSize}px Geist, sans-serif`
+        ctx.fillStyle = getContrastText(color)
         ctx.fillText(
           text,
           gridOriginX + col * cellSize + cellSize / 2,
           gridOriginY + row * cellSize + cellSize / 2
-        );
+        )
       }
     }
   }
 
   if (showGrid) {
     if (showMinorGrid) {
-      ctx.globalAlpha = 0.28;
-      ctx.fillStyle = gridColor;
+      ctx.globalAlpha = 0.28
+      ctx.fillStyle = gridColor
       for (let col = 0; col <= cols; col += 1) {
-        const x = gridOriginX + col * cellSize;
-        drawVerticalGridLine(ctx, x, gridOriginY, contentHeight, MINOR_GRID_WIDTH);
+        const x = gridOriginX + col * cellSize
+        drawVerticalGridLine(
+          ctx,
+          x,
+          gridOriginY,
+          contentHeight,
+          MINOR_GRID_WIDTH
+        )
       }
       for (let row = 0; row <= rows; row += 1) {
-        const y = gridOriginY + row * cellSize;
-        drawHorizontalGridLine(ctx, gridOriginX, y, contentWidth, MINOR_GRID_WIDTH);
+        const y = gridOriginY + row * cellSize
+        drawHorizontalGridLine(
+          ctx,
+          gridOriginX,
+          y,
+          contentWidth,
+          MINOR_GRID_WIDTH
+        )
       }
-      ctx.globalAlpha = 1;
+      ctx.globalAlpha = 1
     }
 
-    ctx.fillStyle = gridColor;
+    ctx.fillStyle = gridColor
     for (let col = 0; col <= cols; col += gridInterval) {
-      const x = gridOriginX + col * cellSize;
-      drawVerticalGridLine(ctx, x, gridOriginY, contentHeight, MAJOR_GRID_WIDTH);
+      const x = gridOriginX + col * cellSize
+      drawVerticalGridLine(ctx, x, gridOriginY, contentHeight, MAJOR_GRID_WIDTH)
     }
     if (cols % gridInterval !== 0) {
-      drawVerticalGridLine(ctx, gridOriginX + contentWidth, gridOriginY, contentHeight, MAJOR_GRID_WIDTH);
+      drawVerticalGridLine(
+        ctx,
+        gridOriginX + contentWidth,
+        gridOriginY,
+        contentHeight,
+        MAJOR_GRID_WIDTH
+      )
     }
     for (let row = 0; row <= rows; row += gridInterval) {
-      const y = gridOriginY + row * cellSize;
-      drawHorizontalGridLine(ctx, gridOriginX, y, contentWidth, MAJOR_GRID_WIDTH);
+      const y = gridOriginY + row * cellSize
+      drawHorizontalGridLine(
+        ctx,
+        gridOriginX,
+        y,
+        contentWidth,
+        MAJOR_GRID_WIDTH
+      )
     }
     if (rows % gridInterval !== 0) {
-      drawHorizontalGridLine(ctx, gridOriginX, gridOriginY + contentHeight, contentWidth, MAJOR_GRID_WIDTH);
+      drawHorizontalGridLine(
+        ctx,
+        gridOriginX,
+        gridOriginY + contentHeight,
+        contentWidth,
+        MAJOR_GRID_WIDTH
+      )
     }
   } else {
-    ctx.strokeStyle = "rgba(15,23,42,0.16)";
-    ctx.lineWidth = 1;
-    ctx.strokeRect(gridOriginX + 0.5, gridOriginY + 0.5, contentWidth, contentHeight);
+    ctx.strokeStyle = "rgba(15,23,42,0.16)"
+    ctx.lineWidth = 1
+    ctx.strokeRect(
+      gridOriginX + 0.5,
+      gridOriginY + 0.5,
+      contentWidth,
+      contentHeight
+    )
   }
 
   if (showAxis) {
-    ctx.fillStyle = "#94A3B8";
-    ctx.font = `600 ${Math.max(12, Math.floor(axisSize * 0.52))}px Geist, sans-serif`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
+    ctx.fillStyle = "#94A3B8"
+    ctx.font = `600 ${Math.max(12, Math.floor(axisSize * 0.52))}px Geist, sans-serif`
+    ctx.textAlign = "center"
+    ctx.textBaseline = "middle"
 
     for (let col = 0; col < cols; col += 1) {
       const text = autoCrop
         ? String(col + 1)
-        : String(mirrorFlip ? bounds.maxX - col + 1 : bounds.minX + col + 1);
-      const x = gridOriginX + col * cellSize + cellSize / 2;
-      ctx.fillText(text, x, headerMetrics.headerHeight + axisSize / 2);
-      ctx.fillText(text, x, headerMetrics.headerHeight + gridHeight - axisSize / 2);
+        : String(mirrorFlip ? bounds.maxX - col + 1 : bounds.minX + col + 1)
+      const x = gridOriginX + col * cellSize + cellSize / 2
+      ctx.fillText(text, x, headerMetrics.headerHeight + axisSize / 2)
+      ctx.fillText(
+        text,
+        x,
+        headerMetrics.headerHeight + gridHeight - axisSize / 2
+      )
     }
 
     for (let row = 0; row < rows; row += 1) {
-      const text = autoCrop ? String(row + 1) : String(bounds.minY + row + 1);
-      const y = gridOriginY + row * cellSize + cellSize / 2;
-      ctx.fillText(text, axisSize / 2, y);
-      ctx.fillText(text, exportWidth - axisSize / 2, y);
+      const text = autoCrop ? String(row + 1) : String(bounds.minY + row + 1)
+      const y = gridOriginY + row * cellSize + cellSize / 2
+      ctx.fillText(text, axisSize / 2, y)
+      ctx.fillText(text, exportWidth - axisSize / 2, y)
     }
   }
 
   if (colorStatsLayout.badges.length > 0) {
     for (const badge of colorStatsLayout.badges) {
-      const badgeX = badge.x;
-      const badgeY = colorStatsTop + badge.y;
-      const countText = String(badge.item.count);
+      const badgeX = badge.x
+      const badgeY = colorStatsTop + badge.y
+      const countText = String(badge.item.count)
 
-      ctx.fillStyle = whiteBackground ? "#FFFFFF" : "rgba(255,255,255,0.88)";
-      ctx.beginPath();
+      ctx.fillStyle = whiteBackground ? "#FFFFFF" : "rgba(255,255,255,0.88)"
+      ctx.beginPath()
       ctx.roundRect(
         badgeX,
         badgeY,
         badge.width,
         colorStatsMetrics.badgeHeight,
         colorStatsMetrics.badgeRadius
-      );
-      ctx.fill();
+      )
+      ctx.fill()
 
-      ctx.strokeStyle = "rgba(148,163,184,0.38)";
-      ctx.lineWidth = 1;
-      ctx.stroke();
+      ctx.strokeStyle = "rgba(148,163,184,0.38)"
+      ctx.lineWidth = 1
+      ctx.stroke()
 
-      const dotX = badgeX + colorStatsMetrics.badgePaddingX + colorStatsMetrics.dotSize / 2;
-      const dotY = badgeY + colorStatsMetrics.badgeHeight / 2;
-      ctx.fillStyle = badge.item.color;
-      ctx.beginPath();
-      ctx.arc(dotX, dotY, colorStatsMetrics.dotSize / 2, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = "rgba(15,23,42,0.12)";
-      ctx.stroke();
+      const dotX =
+        badgeX + colorStatsMetrics.badgePaddingX + colorStatsMetrics.dotSize / 2
+      const dotY = badgeY + colorStatsMetrics.badgeHeight / 2
+      ctx.fillStyle = badge.item.color
+      ctx.beginPath()
+      ctx.arc(dotX, dotY, colorStatsMetrics.dotSize / 2, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.strokeStyle = "rgba(15,23,42,0.12)"
+      ctx.stroke()
 
-      ctx.font = colorStatsMetrics.labelFont;
-      ctx.textAlign = "left";
-      ctx.textBaseline = "middle";
-      ctx.fillStyle = "#0F172A";
-      const labelX = badgeX + colorStatsMetrics.badgePaddingX + colorStatsMetrics.dotSize + colorStatsMetrics.labelGap;
-      ctx.fillText(badge.label, labelX, badgeY + colorStatsMetrics.badgeHeight / 2);
+      ctx.font = colorStatsMetrics.labelFont
+      ctx.textAlign = "left"
+      ctx.textBaseline = "middle"
+      ctx.fillStyle = "#0F172A"
+      const labelX =
+        badgeX +
+        colorStatsMetrics.badgePaddingX +
+        colorStatsMetrics.dotSize +
+        colorStatsMetrics.labelGap
+      ctx.fillText(
+        badge.label,
+        labelX,
+        badgeY + colorStatsMetrics.badgeHeight / 2
+      )
 
-      ctx.font = colorStatsMetrics.countFont;
+      ctx.font = colorStatsMetrics.countFont
       const countWidth = Math.max(
         colorStatsMetrics.countMinWidth,
-        Math.ceil(ctx.measureText(countText).width) + colorStatsMetrics.countPaddingX * 2
-      );
-      const countX = badgeX + badge.width - colorStatsMetrics.badgePaddingX - countWidth;
-      const countY = badgeY + (colorStatsMetrics.badgeHeight - colorStatsMetrics.countHeight) / 2;
+        Math.ceil(ctx.measureText(countText).width) +
+          colorStatsMetrics.countPaddingX * 2
+      )
+      const countX =
+        badgeX + badge.width - colorStatsMetrics.badgePaddingX - countWidth
+      const countY =
+        badgeY +
+        (colorStatsMetrics.badgeHeight - colorStatsMetrics.countHeight) / 2
 
-      ctx.fillStyle = "rgba(226,232,240,0.96)";
-      ctx.beginPath();
+      ctx.fillStyle = "rgba(226,232,240,0.96)"
+      ctx.beginPath()
       ctx.roundRect(
         countX,
         countY,
         countWidth,
         colorStatsMetrics.countHeight,
         colorStatsMetrics.countRadius
-      );
-      ctx.fill();
+      )
+      ctx.fill()
 
-      ctx.fillStyle = "#475569";
-      ctx.textAlign = "center";
-      ctx.fillText(countText, countX + countWidth / 2, badgeY + colorStatsMetrics.badgeHeight / 2 + 0.5);
+      ctx.fillStyle = "#475569"
+      ctx.textAlign = "center"
+      ctx.fillText(
+        countText,
+        countX + countWidth / 2,
+        badgeY + colorStatsMetrics.badgeHeight / 2 + 0.5
+      )
     }
   }
 
-  ctx.strokeStyle = EXPORT_BORDER_COLOR;
-  ctx.lineWidth = EXPORT_BORDER_WIDTH;
-  ctx.beginPath();
+  ctx.strokeStyle = EXPORT_BORDER_COLOR
+  ctx.lineWidth = EXPORT_BORDER_WIDTH
+  ctx.beginPath()
   ctx.roundRect(
     EXPORT_BORDER_WIDTH / 2,
     EXPORT_BORDER_WIDTH / 2,
     exportWidth - EXPORT_BORDER_WIDTH,
     exportHeight - EXPORT_BORDER_WIDTH,
     Math.max(0, EXPORT_CORNER_RADIUS - EXPORT_BORDER_WIDTH / 2)
-  );
-  ctx.stroke();
+  )
+  ctx.stroke()
 
-  ctx.restore();
+  ctx.restore()
 
   return {
-    dataUrl: renderOptions.includeDataUrl === false ? "" : canvas.toDataURL("image/png"),
+    dataUrl:
+      renderOptions.includeDataUrl === false
+        ? ""
+        : canvas.toDataURL("image/png"),
     width: exportWidth,
     height: exportHeight,
-  };
+  }
 }
 
 export default function ExportPatternDialog({ open, onOpenChange }: Props) {
-  const { t } = useTranslation();
-  const pixels = useEditorStore((state) => state.pixels);
-  const width = useEditorStore((state) => state.width);
-  const height = useEditorStore((state) => state.height);
-  const currentPaletteId = usePaletteStore((state) => state.currentPaletteId);
-  const currentPalette = useMemo(() => getSystemPalette(currentPaletteId), [currentPaletteId]);
-  const nearWhiteSwatches = useMemo<PaletteSwatch[]>(() => getNearWhiteSwatches(currentPalette), [currentPalette]);
-  const [persistedSettings, setPersistedSettings] = useState<ExportDialogSettings>(() => loadExportDialogSettings());
-  const [autoCrop, setAutoCrop] = useState(persistedSettings.autoCrop);
-  const [whiteBackground, setWhiteBackground] = useState(persistedSettings.whiteBackground);
-  const [showGrid, setShowGrid] = useState(persistedSettings.showGrid);
-  const [showMinorGrid, setShowMinorGrid] = useState(persistedSettings.showMinorGrid);
-  const [gridInterval, setGridInterval] = useState(persistedSettings.gridInterval);
-  const [draftGridInterval, setDraftGridInterval] = useState([persistedSettings.gridInterval]);
-  const [gridColor, setGridColor] = useState(persistedSettings.gridColor);
-  const [showAxis, setShowAxis] = useState(persistedSettings.showAxis);
-  const [showColorCode, setShowColorCode] = useState(persistedSettings.showColorCode);
-  const [excludedColorCodes, setExcludedColorCodes] = useState<Set<string>>(() => new Set());
-  const [mirrorFlip, setMirrorFlip] = useState(persistedSettings.mirrorFlip);
-  const [brandLogoImage, setBrandLogoImage] = useState<HTMLImageElement | null>(null);
-  const [brandCompactLogoImage, setBrandCompactLogoImage] = useState<HTMLImageElement | null>(null);
-  const [previewScale, setPreviewScale] = useState(1);
-  const [previewOffset, setPreviewOffset] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [previewViewportElement, setPreviewViewportElement] = useState<HTMLDivElement | null>(null);
-  const [previewResult, setPreviewResult] = useState<Pick<RenderResult, "width" | "height"> | null>(null);
-  const previewCanvasRef = useRef<HTMLCanvasElement | null>(null);
-  const previewViewportRef = useRef<HTMLDivElement | null>(null);
-  const previewScaleRef = useRef(previewScale);
-  const previewOffsetRef = useRef(previewOffset);
+  const { t } = useTranslation()
+  const pixels = useEditorStore((state) => state.pixels)
+  const width = useEditorStore((state) => state.width)
+  const height = useEditorStore((state) => state.height)
+  const currentPaletteId = usePaletteStore((state) => state.currentPaletteId)
+  const currentPalette = useMemo(
+    () => getSystemPalette(currentPaletteId),
+    [currentPaletteId]
+  )
+  const nearWhiteSwatches = useMemo<PaletteSwatch[]>(
+    () => getNearWhiteSwatches(currentPalette),
+    [currentPalette]
+  )
+  const [persistedSettings, setPersistedSettings] =
+    useState<ExportDialogSettings>(() => loadExportDialogSettings())
+  const [autoCrop, setAutoCrop] = useState(persistedSettings.autoCrop)
+  const [whiteBackground, setWhiteBackground] = useState(
+    persistedSettings.whiteBackground
+  )
+  const [showGrid, setShowGrid] = useState(persistedSettings.showGrid)
+  const [showMinorGrid, setShowMinorGrid] = useState(
+    persistedSettings.showMinorGrid
+  )
+  const [gridInterval, setGridInterval] = useState(
+    persistedSettings.gridInterval
+  )
+  const [draftGridInterval, setDraftGridInterval] = useState([
+    persistedSettings.gridInterval,
+  ])
+  const [gridColor, setGridColor] = useState(persistedSettings.gridColor)
+  const [showAxis, setShowAxis] = useState(persistedSettings.showAxis)
+  const [showColorCode, setShowColorCode] = useState(
+    persistedSettings.showColorCode
+  )
+  const [excludedColorCodes, setExcludedColorCodes] = useState<Set<string>>(
+    () => new Set()
+  )
+  const [mirrorFlip, setMirrorFlip] = useState(persistedSettings.mirrorFlip)
+  const [brandLogoImage, setBrandLogoImage] = useState<HTMLImageElement | null>(
+    null
+  )
+  const [brandCompactLogoImage, setBrandCompactLogoImage] =
+    useState<HTMLImageElement | null>(null)
+  const [previewScale, setPreviewScale] = useState(1)
+  const [previewOffset, setPreviewOffset] = useState({ x: 0, y: 0 })
+  const [isDragging, setIsDragging] = useState(false)
+  const [previewViewportElement, setPreviewViewportElement] =
+    useState<HTMLDivElement | null>(null)
+  const [previewResult, setPreviewResult] = useState<Pick<
+    RenderResult,
+    "width" | "height"
+  > | null>(null)
+  const previewCanvasRef = useRef<HTMLCanvasElement | null>(null)
+  const previewViewportRef = useRef<HTMLDivElement | null>(null)
+  const previewScaleRef = useRef(previewScale)
+  const previewOffsetRef = useRef(previewOffset)
   const previewGestureRef = useRef<{
-    distance: number;
-    midpoint: { x: number; y: number };
-    scale: number;
-    offset: { x: number; y: number };
-  } | null>(null);
+    distance: number
+    midpoint: { x: number; y: number }
+    scale: number
+    offset: { x: number; y: number }
+  } | null>(null)
 
   useEffect(() => {
-    if (!open) return;
-    const defaultColor = nearWhiteSwatches[0]?.color;
+    if (!open) return
+    const defaultColor = nearWhiteSwatches[0]?.color
     queueMicrotask(() => {
-      setExcludedColorCodes(defaultColor ? new Set([normalizeHex(defaultColor)]) : new Set());
-    });
-  }, [open, currentPaletteId, nearWhiteSwatches]);
+      setExcludedColorCodes(
+        defaultColor ? new Set([normalizeHex(defaultColor)]) : new Set()
+      )
+    })
+  }, [open, currentPaletteId, nearWhiteSwatches])
 
-  const excludedColorCodeList = useMemo(() => Array.from(excludedColorCodes), [excludedColorCodes]);
-  const canRenderPreview = useMemo(() => !autoCrop || Object.keys(pixels).length > 0, [autoCrop, pixels]);
+  const excludedColorCodeList = useMemo(
+    () => Array.from(excludedColorCodes),
+    [excludedColorCodes]
+  )
+  const canRenderPreview = useMemo(
+    () => !autoCrop || Object.keys(pixels).length > 0,
+    [autoCrop, pixels]
+  )
 
   const handleToggleExcludedColor = (color: string) => {
-    const key = normalizeHex(color);
+    const key = normalizeHex(color)
     setExcludedColorCodes((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
-  };
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }
   const previewDragRef = useRef<{
-    pointerId: number;
-    startX: number;
-    startY: number;
-    offset: { x: number; y: number };
-  } | null>(null);
+    pointerId: number
+    startX: number
+    startY: number
+    offset: { x: number; y: number }
+  } | null>(null)
 
   useEffect(() => {
-    previewScaleRef.current = previewScale;
-  }, [previewScale]);
+    previewScaleRef.current = previewScale
+  }, [previewScale])
 
   useEffect(() => {
-    previewOffsetRef.current = previewOffset;
-  }, [previewOffset]);
+    previewOffsetRef.current = previewOffset
+  }, [previewOffset])
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined") return
 
-    queueMicrotask(() => setBrandLogoImage(null));
-    queueMicrotask(() => setBrandCompactLogoImage(null));
-    const image = new window.Image();
-    const compactImage = new window.Image();
-    image.onload = () => setBrandLogoImage(image);
-    compactImage.onload = () => setBrandCompactLogoImage(compactImage);
-    image.src = BRAND_LOGO_SRC;
-    compactImage.src = BRAND_COMPACT_LOGO_SRC;
+    queueMicrotask(() => setBrandLogoImage(null))
+    queueMicrotask(() => setBrandCompactLogoImage(null))
+    const image = new window.Image()
+    const compactImage = new window.Image()
+    image.onload = () => setBrandLogoImage(image)
+    compactImage.onload = () => setBrandCompactLogoImage(compactImage)
+    image.src = BRAND_LOGO_SRC
+    compactImage.src = BRAND_COMPACT_LOGO_SRC
 
     if (image.complete && image.naturalWidth > 0) {
-      queueMicrotask(() => setBrandLogoImage(image));
+      queueMicrotask(() => setBrandLogoImage(image))
     }
     if (compactImage.complete && compactImage.naturalWidth > 0) {
-      queueMicrotask(() => setBrandCompactLogoImage(compactImage));
+      queueMicrotask(() => setBrandCompactLogoImage(compactImage))
     }
 
     return () => {
-      image.onload = null;
-      compactImage.onload = null;
-    };
-  }, []);
+      image.onload = null
+      compactImage.onload = null
+    }
+  }, [])
 
   useEffect(() => {
     const nextSettings: ExportDialogSettings = {
@@ -1022,7 +1313,7 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
       showAxis,
       showColorCode,
       mirrorFlip,
-    };
+    }
 
     queueMicrotask(() =>
       setPersistedSettings((current) => {
@@ -1035,11 +1326,11 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
           current.gridColor === nextSettings.gridColor &&
           current.showAxis === nextSettings.showAxis &&
           current.showColorCode === nextSettings.showColorCode &&
-          current.mirrorFlip === nextSettings.mirrorFlip;
+          current.mirrorFlip === nextSettings.mirrorFlip
 
-        return unchanged ? current : nextSettings;
+        return unchanged ? current : nextSettings
       })
-    );
+    )
   }, [
     autoCrop,
     whiteBackground,
@@ -1050,41 +1341,48 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
     showAxis,
     showColorCode,
     mirrorFlip,
-  ]);
+  ])
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    window.localStorage.setItem(EXPORT_DIALOG_SETTINGS_STORAGE_KEY, JSON.stringify(persistedSettings));
-  }, [persistedSettings]);
+    if (typeof window === "undefined") return
+    window.localStorage.setItem(
+      EXPORT_DIALOG_SETTINGS_STORAGE_KEY,
+      JSON.stringify(persistedSettings)
+    )
+  }, [persistedSettings])
 
   const paletteLabels = useMemo(() => {
-    const palette = currentPalette;
-    if (!palette) return new Map<string, string>();
+    const palette = currentPalette
+    if (!palette) return new Map<string, string>()
 
-    const matcher = createColorMatcher(palette);
-    const resolved = new Map<string, string>();
-    const uniqueColors = new Set(Object.values(pixels).map((color) => normalizeHex(color)));
+    const matcher = createColorMatcher(palette)
+    const resolved = new Map<string, string>()
+    const uniqueColors = new Set(
+      Object.values(pixels).map((color) => normalizeHex(color))
+    )
 
     uniqueColors.forEach((color) => {
-      const rgb = hexToRgb(color);
-      if (!rgb) return;
-      const exactLabel = palette.swatches.find((swatch) => normalizeHex(swatch.color) === color)?.label;
+      const rgb = hexToRgb(color)
+      if (!rgb) return
+      const exactLabel = palette.swatches.find(
+        (swatch) => normalizeHex(swatch.color) === color
+      )?.label
       if (exactLabel) {
-        resolved.set(color, exactLabel);
-        return;
+        resolved.set(color, exactLabel)
+        return
       }
-      const nearest = matcher.findNearestColor(rgb.r, rgb.g, rgb.b);
-      resolved.set(color, nearest.label);
-    });
+      const nearest = matcher.findNearestColor(rgb.r, rgb.g, rgb.b)
+      resolved.set(color, nearest.label)
+    })
 
-    return resolved;
-  }, [currentPalette, pixels]);
+    return resolved
+  }, [currentPalette, pixels])
 
   const paletteDisplayName = currentPalette
     ? currentPalette.i18nKey
       ? t(currentPalette.i18nKey)
       : currentPalette.name
-    : currentPaletteId;
+    : currentPaletteId
 
   const patternRenderOptions = useMemo(
     () => ({
@@ -1131,172 +1429,177 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
       brandCompactLogoImage,
       t,
     ]
-  );
+  )
 
   useEffect(() => {
     if (!canRenderPreview) {
-      queueMicrotask(() => setPreviewResult(null));
-      return;
+      queueMicrotask(() => setPreviewResult(null))
+      return
     }
 
-    const canvas = previewCanvasRef.current;
-    if (!canvas) return;
+    const canvas = previewCanvasRef.current
+    if (!canvas) return
 
     const result = renderPatternImage(patternRenderOptions, {
       canvas,
       includeDataUrl: false,
-    });
+    })
     queueMicrotask(() => {
       setPreviewResult((current) => {
-        if (!result) return null;
-        if (current?.width === result.width && current.height === result.height) return current;
-        return { width: result.width, height: result.height };
-      });
-    });
-  }, [canRenderPreview, patternRenderOptions]);
+        if (!result) return null
+        if (current?.width === result.width && current.height === result.height)
+          return current
+        return { width: result.width, height: result.height }
+      })
+    })
+  }, [canRenderPreview, patternRenderOptions])
 
   function resetPreviewTransform() {
-    previewScaleRef.current = 1;
-    previewOffsetRef.current = { x: 0, y: 0 };
-    setPreviewScale(1);
-    setPreviewOffset({ x: 0, y: 0 });
+    previewScaleRef.current = 1
+    previewOffsetRef.current = { x: 0, y: 0 }
+    setPreviewScale(1)
+    setPreviewOffset({ x: 0, y: 0 })
   }
 
   const handleGridIntervalChange = (value: number[]) => {
-    setDraftGridInterval(value);
-  };
+    setDraftGridInterval(value)
+  }
 
   const handleGridIntervalCommit = (value: number[]) => {
-    const nextValue = value[0] ?? gridInterval;
-    setDraftGridInterval([nextValue]);
-    setGridInterval(nextValue);
-  };
+    const nextValue = value[0] ?? gridInterval
+    setDraftGridInterval([nextValue])
+    setGridInterval(nextValue)
+  }
 
   useEffect(() => {
-    if (!open) return;
-    queueMicrotask(() => resetPreviewTransform());
-  }, [open]);
+    if (!open) return
+    queueMicrotask(() => resetPreviewTransform())
+  }, [open])
 
   const handleDownload = () => {
-    if (!previewResult || typeof document === "undefined") return;
-    const result = renderPatternImage(patternRenderOptions);
-    if (!result?.dataUrl) return;
+    if (!previewResult || typeof document === "undefined") return
+    const result = renderPatternImage(patternRenderOptions)
+    if (!result?.dataUrl) return
 
-    const link = document.createElement("a");
-    link.href = result.dataUrl;
-    link.download = `pixelfox-pattern-${width}x${height}.png`;
-    link.click();
-  };
+    const link = document.createElement("a")
+    link.href = result.dataUrl
+    link.download = `pixelfox-pattern-${width}x${height}.png`
+    link.click()
+  }
 
-  const zoomPreviewAtPoint = (nextScale: number, anchor: { x: number; y: number }) => {
-    const element = previewViewportRef.current;
-    if (!element) return;
+  const zoomPreviewAtPoint = (
+    nextScale: number,
+    anchor: { x: number; y: number }
+  ) => {
+    const element = previewViewportRef.current
+    if (!element) return
 
-    const rect = element.getBoundingClientRect();
-    const currentScale = previewScaleRef.current;
-    const currentOffset = previewOffsetRef.current;
-    const clampedScale = clampPreviewScale(nextScale);
-    const anchorX = anchor.x - rect.left;
-    const anchorY = anchor.y - rect.top;
-    const centerX = rect.width / 2;
-    const centerY = rect.height / 2;
+    const rect = element.getBoundingClientRect()
+    const currentScale = previewScaleRef.current
+    const currentOffset = previewOffsetRef.current
+    const clampedScale = clampPreviewScale(nextScale)
+    const anchorX = anchor.x - rect.left
+    const anchorY = anchor.y - rect.top
+    const centerX = rect.width / 2
+    const centerY = rect.height / 2
 
-    if (clampedScale === currentScale) return;
+    if (clampedScale === currentScale) return
 
-    const worldX = (anchorX - centerX - currentOffset.x) / currentScale;
-    const worldY = (anchorY - centerY - currentOffset.y) / currentScale;
+    const worldX = (anchorX - centerX - currentOffset.x) / currentScale
+    const worldY = (anchorY - centerY - currentOffset.y) / currentScale
 
     const nextOffset = {
       x: anchorX - centerX - worldX * clampedScale,
       y: anchorY - centerY - worldY * clampedScale,
-    };
+    }
 
-    previewScaleRef.current = clampedScale;
-    previewOffsetRef.current = nextOffset;
-    setPreviewScale(clampedScale);
-    setPreviewOffset(nextOffset);
-  };
+    previewScaleRef.current = clampedScale
+    previewOffsetRef.current = nextOffset
+    setPreviewScale(clampedScale)
+    setPreviewOffset(nextOffset)
+  }
 
   const panPreviewByDelta = (dx: number, dy: number) => {
     const nextOffset = {
       x: previewOffsetRef.current.x - dx * PREVIEW_PAN_SPEED,
       y: previewOffsetRef.current.y - dy * PREVIEW_PAN_SPEED,
-    };
-    previewOffsetRef.current = nextOffset;
-    setPreviewOffset(nextOffset);
-  };
+    }
+    previewOffsetRef.current = nextOffset
+    setPreviewOffset(nextOffset)
+  }
 
   const stepPreviewScale = (delta: number) => {
-    const element = previewViewportRef.current;
-    if (!element) return;
-    const rect = element.getBoundingClientRect();
+    const element = previewViewportRef.current
+    if (!element) return
+    const rect = element.getBoundingClientRect()
     zoomPreviewAtPoint(previewScaleRef.current + delta, {
       x: rect.left + rect.width / 2,
       y: rect.top + rect.height / 2,
-    });
-  };
+    })
+  }
 
   const stopPreviewDrag = () => {
-    previewDragRef.current = null;
-    setIsDragging(false);
-  };
+    previewDragRef.current = null
+    setIsDragging(false)
+  }
 
   const handlePreviewPointerDown = (event: PointerEvent<HTMLDivElement>) => {
-    if (!previewResult) return;
-    if (event.pointerType !== "mouse") return;
-    if (event.button !== 0) return;
-    if (event.target instanceof HTMLElement && event.target.closest("button")) return;
+    if (!previewResult) return
+    if (event.pointerType !== "mouse") return
+    if (event.button !== 0) return
+    if (event.target instanceof HTMLElement && event.target.closest("button"))
+      return
 
     previewDragRef.current = {
       pointerId: event.pointerId,
       startX: event.clientX,
       startY: event.clientY,
       offset: previewOffsetRef.current,
-    };
-    setIsDragging(true);
+    }
+    setIsDragging(true)
 
-    event.currentTarget.setPointerCapture(event.pointerId);
-    event.preventDefault();
-  };
+    event.currentTarget.setPointerCapture(event.pointerId)
+    event.preventDefault()
+  }
 
   const handlePreviewPointerMove = (event: PointerEvent<HTMLDivElement>) => {
-    const drag = previewDragRef.current;
-    if (!drag || drag.pointerId !== event.pointerId) return;
+    const drag = previewDragRef.current
+    if (!drag || drag.pointerId !== event.pointerId) return
 
     const nextOffset = {
       x: drag.offset.x + (event.clientX - drag.startX),
       y: drag.offset.y + (event.clientY - drag.startY),
-    };
+    }
 
-    previewOffsetRef.current = nextOffset;
-    setPreviewOffset(nextOffset);
-  };
+    previewOffsetRef.current = nextOffset
+    setPreviewOffset(nextOffset)
+  }
 
   const handlePreviewPointerUp = (event: PointerEvent<HTMLDivElement>) => {
-    const drag = previewDragRef.current;
-    if (!drag || drag.pointerId !== event.pointerId) return;
+    const drag = previewDragRef.current
+    if (!drag || drag.pointerId !== event.pointerId) return
 
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-      event.currentTarget.releasePointerCapture(event.pointerId);
+      event.currentTarget.releasePointerCapture(event.pointerId)
     }
-    stopPreviewDrag();
-  };
+    stopPreviewDrag()
+  }
 
   const handlePreviewPointerCancel = (event: PointerEvent<HTMLDivElement>) => {
-    const drag = previewDragRef.current;
-    if (!drag || drag.pointerId !== event.pointerId) return;
-    stopPreviewDrag();
-  };
+    const drag = previewDragRef.current
+    if (!drag || drag.pointerId !== event.pointerId) return
+    stopPreviewDrag()
+  }
 
   const handlePreviewTouchStart = (event: TouchEvent<HTMLDivElement>) => {
-    if (!previewResult) return;
-    if (event.touches.length < 2) return;
+    if (!previewResult) return
+    if (event.touches.length < 2) return
 
-    event.preventDefault();
-    const element = previewViewportRef.current;
-    if (!element) return;
-    const rect = element.getBoundingClientRect();
-    const midpoint = getTouchMidpoint(event.touches);
+    event.preventDefault()
+    const element = previewViewportRef.current
+    if (!element) return
+    const rect = element.getBoundingClientRect()
+    const midpoint = getTouchMidpoint(event.touches)
     previewGestureRef.current = {
       distance: getTouchDistance(event.touches),
       midpoint: {
@@ -1305,131 +1608,189 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
       },
       scale: previewScaleRef.current,
       offset: previewOffsetRef.current,
-    };
-  };
+    }
+  }
 
   const handlePreviewTouchMove = (event: TouchEvent<HTMLDivElement>) => {
-    if (!previewResult) return;
-    if (event.touches.length < 2) return;
+    if (!previewResult) return
+    if (event.touches.length < 2) return
 
-    event.preventDefault();
-    const start = previewGestureRef.current;
-    const element = previewViewportRef.current;
-    if (!start || !element) return;
+    event.preventDefault()
+    const start = previewGestureRef.current
+    const element = previewViewportRef.current
+    if (!start || !element) return
 
-    const rect = element.getBoundingClientRect();
-    const currentDistance = getTouchDistance(event.touches);
-    const midpoint = getTouchMidpoint(event.touches);
+    const rect = element.getBoundingClientRect()
+    const currentDistance = getTouchDistance(event.touches)
+    const midpoint = getTouchMidpoint(event.touches)
     const screenMidpoint = {
       x: midpoint.x - rect.left,
       y: midpoint.y - rect.top,
-    };
+    }
 
-    if (currentDistance <= 0 || start.distance <= 0) return;
+    if (currentDistance <= 0 || start.distance <= 0) return
 
-    const nextScale = clampPreviewScale(start.scale * (currentDistance / start.distance));
-    const worldX = (start.midpoint.x - rect.width / 2 - start.offset.x) / start.scale;
-    const worldY = (start.midpoint.y - rect.height / 2 - start.offset.y) / start.scale;
+    const nextScale = clampPreviewScale(
+      start.scale * (currentDistance / start.distance)
+    )
+    const worldX =
+      (start.midpoint.x - rect.width / 2 - start.offset.x) / start.scale
+    const worldY =
+      (start.midpoint.y - rect.height / 2 - start.offset.y) / start.scale
 
     const nextOffset = {
       x: screenMidpoint.x - rect.width / 2 - worldX * nextScale,
       y: screenMidpoint.y - rect.height / 2 - worldY * nextScale,
-    };
+    }
 
-    previewScaleRef.current = nextScale;
-    previewOffsetRef.current = nextOffset;
-    setPreviewScale(nextScale);
-    setPreviewOffset(nextOffset);
-  };
+    previewScaleRef.current = nextScale
+    previewOffsetRef.current = nextOffset
+    setPreviewScale(nextScale)
+    setPreviewOffset(nextOffset)
+  }
 
   const handlePreviewTouchEnd = () => {
-    previewGestureRef.current = null;
-  };
+    previewGestureRef.current = null
+  }
 
   useEffect(() => {
-    if (!open) return;
-    const element = previewViewportElement;
-    if (!element) return;
+    if (!open) return
+    const element = previewViewportElement
+    if (!element) return
 
     const handleNativeWheel = (event: globalThis.WheelEvent) => {
-      if (!previewResult) return;
-      event.preventDefault();
-      event.stopPropagation();
+      if (!previewResult) return
+      event.preventDefault()
+      event.stopPropagation()
       if (event.ctrlKey || event.metaKey || isLikelyMouseWheel(event)) {
-        const factor = Math.exp(-event.deltaY / 80);
-        zoomPreviewAtPoint(previewScaleRef.current * factor, { x: event.clientX, y: event.clientY });
-        return;
+        const factor = Math.exp(-event.deltaY / 80)
+        zoomPreviewAtPoint(previewScaleRef.current * factor, {
+          x: event.clientX,
+          y: event.clientY,
+        })
+        return
       }
 
-      let dx = event.deltaX;
-      let dy = event.deltaY;
+      let dx = event.deltaX
+      let dy = event.deltaY
       if (event.deltaMode === 1) {
-        dx *= 16;
-        dy *= 16;
+        dx *= 16
+        dy *= 16
       } else if (event.deltaMode === 2) {
-        dx *= element.clientWidth;
-        dy *= element.clientHeight;
+        dx *= element.clientWidth
+        dy *= element.clientHeight
       }
-      panPreviewByDelta(dx, dy);
-    };
+      panPreviewByDelta(dx, dy)
+    }
 
     const handleDocumentWheel = (event: globalThis.WheelEvent) => {
-      if (!previewResult) return;
-      const target = event.target;
-      if (!(target instanceof Node)) return;
-      if (!element.contains(target)) return;
+      if (!previewResult) return
+      const target = event.target
+      if (!(target instanceof Node)) return
+      if (!element.contains(target)) return
 
-      event.preventDefault();
-      event.stopPropagation();
+      event.preventDefault()
+      event.stopPropagation()
       if (event.ctrlKey || event.metaKey || isLikelyMouseWheel(event)) {
-        const factor = Math.exp(-event.deltaY / 80);
-        zoomPreviewAtPoint(previewScaleRef.current * factor, { x: event.clientX, y: event.clientY });
-        return;
+        const factor = Math.exp(-event.deltaY / 80)
+        zoomPreviewAtPoint(previewScaleRef.current * factor, {
+          x: event.clientX,
+          y: event.clientY,
+        })
+        return
       }
 
-      let dx = event.deltaX;
-      let dy = event.deltaY;
+      let dx = event.deltaX
+      let dy = event.deltaY
       if (event.deltaMode === 1) {
-        dx *= 16;
-        dy *= 16;
+        dx *= 16
+        dy *= 16
       } else if (event.deltaMode === 2) {
-        dx *= element.clientWidth;
-        dy *= element.clientHeight;
+        dx *= element.clientWidth
+        dy *= element.clientHeight
       }
-      panPreviewByDelta(dx, dy);
-    };
+      panPreviewByDelta(dx, dy)
+    }
 
     const preventGestureZoom = (event: Event) => {
-      if (!previewResult) return;
-      event.preventDefault();
-      event.stopPropagation();
-    };
+      if (!previewResult) return
+      event.preventDefault()
+      event.stopPropagation()
+    }
 
-    element.addEventListener("wheel", handleNativeWheel, { passive: false });
-    document.addEventListener("wheel", handleDocumentWheel, { passive: false, capture: true });
-    element.addEventListener("gesturestart", preventGestureZoom as EventListener, { passive: false });
-    element.addEventListener("gesturechange", preventGestureZoom as EventListener, { passive: false });
-    element.addEventListener("gestureend", preventGestureZoom as EventListener, { passive: false });
-    document.addEventListener("gesturestart", preventGestureZoom as EventListener, { passive: false, capture: true });
-    document.addEventListener("gesturechange", preventGestureZoom as EventListener, { passive: false, capture: true });
-    document.addEventListener("gestureend", preventGestureZoom as EventListener, { passive: false, capture: true });
+    element.addEventListener("wheel", handleNativeWheel, { passive: false })
+    document.addEventListener("wheel", handleDocumentWheel, {
+      passive: false,
+      capture: true,
+    })
+    element.addEventListener(
+      "gesturestart",
+      preventGestureZoom as EventListener,
+      { passive: false }
+    )
+    element.addEventListener(
+      "gesturechange",
+      preventGestureZoom as EventListener,
+      { passive: false }
+    )
+    element.addEventListener(
+      "gestureend",
+      preventGestureZoom as EventListener,
+      { passive: false }
+    )
+    document.addEventListener(
+      "gesturestart",
+      preventGestureZoom as EventListener,
+      { passive: false, capture: true }
+    )
+    document.addEventListener(
+      "gesturechange",
+      preventGestureZoom as EventListener,
+      { passive: false, capture: true }
+    )
+    document.addEventListener(
+      "gestureend",
+      preventGestureZoom as EventListener,
+      { passive: false, capture: true }
+    )
 
     return () => {
-      element.removeEventListener("wheel", handleNativeWheel);
-      document.removeEventListener("wheel", handleDocumentWheel, true);
-      element.removeEventListener("gesturestart", preventGestureZoom as EventListener);
-      element.removeEventListener("gesturechange", preventGestureZoom as EventListener);
-      element.removeEventListener("gestureend", preventGestureZoom as EventListener);
-      document.removeEventListener("gesturestart", preventGestureZoom as EventListener, true);
-      document.removeEventListener("gesturechange", preventGestureZoom as EventListener, true);
-      document.removeEventListener("gestureend", preventGestureZoom as EventListener, true);
-    };
-  }, [open, previewResult, previewViewportElement]);
+      element.removeEventListener("wheel", handleNativeWheel)
+      document.removeEventListener("wheel", handleDocumentWheel, true)
+      element.removeEventListener(
+        "gesturestart",
+        preventGestureZoom as EventListener
+      )
+      element.removeEventListener(
+        "gesturechange",
+        preventGestureZoom as EventListener
+      )
+      element.removeEventListener(
+        "gestureend",
+        preventGestureZoom as EventListener
+      )
+      document.removeEventListener(
+        "gesturestart",
+        preventGestureZoom as EventListener,
+        true
+      )
+      document.removeEventListener(
+        "gesturechange",
+        preventGestureZoom as EventListener,
+        true
+      )
+      document.removeEventListener(
+        "gestureend",
+        preventGestureZoom as EventListener,
+        true
+      )
+    }
+  }, [open, previewResult, previewViewportElement])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[980px] w-[calc(100vw-32px)] md:w-full p-0 flex flex-col gap-0 max-h-[95vh]">
-        <DialogHeader className="px-3 pt-3 pb-2 md:px-6 md:pt-6 md:pb-4 shrink-0 text-left">
+      <DialogContent className="flex max-h-[95vh] w-[calc(100vw-32px)] max-w-[980px] flex-col gap-0 p-0 md:w-full">
+        <DialogHeader className="shrink-0 px-3 pt-3 pb-2 text-left md:px-6 md:pt-6 md:pb-4">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
               <DialogTitle className="flex items-center gap-2">
@@ -1438,7 +1799,9 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
                 </span>
                 <span>{t("editor.exportDialog.title")}</span>
               </DialogTitle>
-              <DialogDescription>{t("editor.exportDialog.description")}</DialogDescription>
+              <DialogDescription>
+                {t("editor.exportDialog.description")}
+              </DialogDescription>
             </div>
             <DialogClose asChild>
               <Button variant="ghost" size="icon" className="rounded-full">
@@ -1450,15 +1813,19 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
 
         <Separator className="shrink-0" />
 
-        <div className="flex-1 overflow-auto px-3 pb-3 md:px-6 md:pb-6 flex flex-col md:flex-row md:items-stretch gap-3 md:gap-5">
-          <div className="w-full md:w-[260px] md:shrink-0 space-y-3 md:space-y-4 order-2 md:order-none">
+        <div className="flex flex-1 flex-col gap-3 overflow-auto px-3 pb-3 md:flex-row md:items-stretch md:gap-5 md:px-6 md:pb-6">
+          <div className="order-2 w-full space-y-3 md:order-none md:w-[260px] md:shrink-0 md:space-y-4">
             <div className="space-y-4 pt-3">
-              <h3 className="text-sm font-semibold">{t("editor.exportDialog.sectionSettings")}</h3>
+              <h3 className="text-sm font-semibold">
+                {t("editor.exportDialog.sectionSettings")}
+              </h3>
 
               <div className="space-y-3">
                 <div className="flex items-center justify-between gap-3">
                   <div className="space-y-0.5">
-                    <Label className="text-[11px] font-semibold">{t("editor.exportDialog.autoCrop")}</Label>
+                    <Label className="text-[11px] font-semibold">
+                      {t("editor.exportDialog.autoCrop")}
+                    </Label>
                     <div className="text-[10px] text-muted-foreground">
                       {t("editor.exportDialog.autoCropHint")}
                     </div>
@@ -1466,20 +1833,24 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
                   <Switch
                     checked={autoCrop}
                     onCheckedChange={setAutoCrop}
-                    className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                    className="data-[state=checked]:border-primary data-[state=checked]:bg-primary"
                   />
                 </div>
                 <div className="flex items-center justify-between gap-3">
-                  <Label className="text-[11px] font-semibold">{t("editor.exportDialog.whiteBackground")}</Label>
+                  <Label className="text-[11px] font-semibold">
+                    {t("editor.exportDialog.whiteBackground")}
+                  </Label>
                   <Switch
                     checked={whiteBackground}
                     onCheckedChange={setWhiteBackground}
-                    className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                    className="data-[state=checked]:border-primary data-[state=checked]:bg-primary"
                   />
                 </div>
                 <div className="flex items-center justify-between gap-3">
                   <div className="space-y-0.5">
-                    <Label className="text-[11px] font-semibold">{t("editor.exportDialog.showAxis")}</Label>
+                    <Label className="text-[11px] font-semibold">
+                      {t("editor.exportDialog.showAxis")}
+                    </Label>
                     <div className="text-[10px] text-muted-foreground">
                       {t("editor.exportDialog.showAxisHint")}
                     </div>
@@ -1487,12 +1858,14 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
                   <Switch
                     checked={showAxis}
                     onCheckedChange={setShowAxis}
-                    className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                    className="data-[state=checked]:border-primary data-[state=checked]:bg-primary"
                   />
                 </div>
                 <div className="flex items-center justify-between gap-3">
                   <div className="space-y-0.5">
-                    <Label className="text-[11px] font-semibold">{t("editor.exportDialog.mirrorFlip")}</Label>
+                    <Label className="text-[11px] font-semibold">
+                      {t("editor.exportDialog.mirrorFlip")}
+                    </Label>
                     <div className="text-[10px] text-muted-foreground">
                       {t("editor.exportDialog.mirrorFlipHint")}
                     </div>
@@ -1500,7 +1873,7 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
                   <Switch
                     checked={mirrorFlip}
                     onCheckedChange={setMirrorFlip}
-                    className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                    className="data-[state=checked]:border-primary data-[state=checked]:bg-primary"
                   />
                 </div>
               </div>
@@ -1509,14 +1882,18 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
             <Separator className="shrink-0" />
 
             <div className="space-y-4">
-              <h3 className="text-sm font-semibold">{t("editor.exportDialog.sectionColor")}</h3>
+              <h3 className="text-sm font-semibold">
+                {t("editor.exportDialog.sectionColor")}
+              </h3>
 
               <div className="flex items-center justify-between gap-3">
-                <Label className="text-[11px] font-semibold">{t("editor.exportDialog.showColorCode")}</Label>
+                <Label className="text-[11px] font-semibold">
+                  {t("editor.exportDialog.showColorCode")}
+                </Label>
                 <Switch
                   checked={showColorCode}
                   onCheckedChange={setShowColorCode}
-                  className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                  className="data-[state=checked]:border-primary data-[state=checked]:bg-primary"
                 />
               </div>
 
@@ -1526,8 +1903,8 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
                 </Label>
                 <div className="grid grid-cols-6 gap-2">
                   {nearWhiteSwatches.map((swatch) => {
-                    const key = normalizeHex(swatch.color);
-                    const isSelected = excludedColorCodes.has(key);
+                    const key = normalizeHex(swatch.color)
+                    const isSelected = excludedColorCodes.has(key)
                     return (
                       <button
                         key={`${swatch.label}-${key}`}
@@ -1545,19 +1922,21 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
                           <span
                             className={cn(
                               "text-[8px] font-bold transition-colors",
-                              isDarkColor(swatch.color) ? "text-white" : "text-black/60"
+                              isDarkColor(swatch.color)
+                                ? "text-white"
+                                : "text-black/60"
                             )}
                           >
                             {swatch.label}
                           </span>
                           {isSelected && (
-                            <div className="absolute -right-0.5 -top-0.5 flex size-3 items-center justify-center rounded-full bg-primary text-white shadow-sm">
+                            <div className="absolute -top-0.5 -right-0.5 flex size-3 items-center justify-center rounded-full bg-primary text-white shadow-sm">
                               <Check className="size-2" />
                             </div>
                           )}
                         </div>
                       </button>
-                    );
+                    )
                   })}
                 </div>
               </div>
@@ -1566,35 +1945,54 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
             <Separator className="shrink-0" />
 
             <div className="space-y-4">
-              <h3 className="text-sm font-semibold">{t("editor.exportDialog.sectionGrid")}</h3>
+              <h3 className="text-sm font-semibold">
+                {t("editor.exportDialog.sectionGrid")}
+              </h3>
 
               <div className="flex items-center justify-between gap-3">
-                <Label className="text-[11px] font-semibold">{t("editor.exportDialog.showGrid")}</Label>
+                <Label className="text-[11px] font-semibold">
+                  {t("editor.exportDialog.showGrid")}
+                </Label>
                 <Switch
                   checked={showGrid}
                   onCheckedChange={setShowGrid}
-                  className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                  className="data-[state=checked]:border-primary data-[state=checked]:bg-primary"
                 />
               </div>
 
               <div className="flex items-center justify-between gap-3">
-                <Label className={cn("text-[11px] font-semibold", !showGrid && "text-muted-foreground")}>
+                <Label
+                  className={cn(
+                    "text-[11px] font-semibold",
+                    !showGrid && "text-muted-foreground"
+                  )}
+                >
                   {t("editor.exportDialog.showMinorGrid")}
                 </Label>
                 <Switch
                   checked={showMinorGrid}
                   onCheckedChange={setShowMinorGrid}
                   disabled={!showGrid}
-                  className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                  className="data-[state=checked]:border-primary data-[state=checked]:bg-primary"
                 />
               </div>
 
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <Label className={cn("text-[11px] font-semibold", !showGrid && "text-muted-foreground")}>
+                  <Label
+                    className={cn(
+                      "text-[11px] font-semibold",
+                      !showGrid && "text-muted-foreground"
+                    )}
+                  >
                     {t("editor.exportDialog.gridInterval")}
                   </Label>
-                  <span className={cn("text-[11px] font-medium", !showGrid && "text-muted-foreground")}>
+                  <span
+                    className={cn(
+                      "text-[11px] font-medium",
+                      !showGrid && "text-muted-foreground"
+                    )}
+                  >
                     {draftGridInterval[0]}
                   </span>
                 </div>
@@ -1613,12 +2011,22 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
               </div>
 
               <div className="space-y-2">
-                <Label className={cn("text-[11px] font-semibold", !showGrid && "text-muted-foreground")}>
+                <Label
+                  className={cn(
+                    "text-[11px] font-semibold",
+                    !showGrid && "text-muted-foreground"
+                  )}
+                >
                   {t("editor.exportDialog.gridColor")}
                 </Label>
-                <div className={cn("grid grid-cols-6 gap-2", !showGrid && "opacity-50 pointer-events-none")}>
+                <div
+                  className={cn(
+                    "grid grid-cols-6 gap-2",
+                    !showGrid && "pointer-events-none opacity-50"
+                  )}
+                >
                   {PATTERN_GRID_COLORS.map((c) => {
-                    const selected = c.toLowerCase() === gridColor.toLowerCase();
+                    const selected = c.toLowerCase() === gridColor.toLowerCase()
                     return (
                       <button
                         key={c}
@@ -1635,31 +2043,35 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
                           style={{ backgroundColor: c }}
                         >
                           {selected && (
-                            <div className="absolute -right-0.5 -top-0.5 flex size-3 items-center justify-center rounded-full bg-primary text-white shadow-sm">
+                            <div className="absolute -top-0.5 -right-0.5 flex size-3 items-center justify-center rounded-full bg-primary text-white shadow-sm">
                               <Check className="size-2" />
                             </div>
                           )}
                         </div>
                       </button>
-                    );
+                    )
                   })}
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="flex-1 min-w-0 pb-3 md:pb-4 md:flex md:flex-col md:self-stretch order-1 md:order-none">
-            <div className="pt-3 pb-4 flex items-baseline gap-2 flex-wrap">
-              <h3 className="text-sm font-semibold">{t("editor.exportDialog.preview")}</h3>
-              <span className="text-xs text-muted-foreground">({t("editor.exportDialog.previewHint")})</span>
+          <div className="order-1 min-w-0 flex-1 pb-3 md:order-none md:flex md:flex-col md:self-stretch md:pb-4">
+            <div className="flex flex-wrap items-baseline gap-2 pt-3 pb-4">
+              <h3 className="text-sm font-semibold">
+                {t("editor.exportDialog.preview")}
+              </h3>
+              <span className="text-xs text-muted-foreground">
+                ({t("editor.exportDialog.previewHint")})
+              </span>
             </div>
 
             <div
               ref={(node) => {
-                previewViewportRef.current = node;
-                setPreviewViewportElement(node);
+                previewViewportRef.current = node
+                setPreviewViewportElement(node)
               }}
-              className="relative rounded-xl border overflow-hidden overscroll-contain flex items-center justify-center min-h-[420px] md:min-h-0 md:flex-1 bg-[linear-gradient(45deg,#f5f5f5_25%,transparent_25%,transparent_75%,#f5f5f5_75%,#f5f5f5),linear-gradient(45deg,#f5f5f5_25%,transparent_25%,transparent_75%,#f5f5f5_75%,#f5f5f5)] bg-[length:10px_10px] bg-[position:0_0,5px_5px] bg-repeat [touch-action:pan-y] md:[touch-action:none]"
+              className="relative flex min-h-[420px] [touch-action:pan-y] items-center justify-center overflow-hidden overscroll-contain rounded-xl border bg-[linear-gradient(45deg,#f5f5f5_25%,transparent_25%,transparent_75%,#f5f5f5_75%,#f5f5f5),linear-gradient(45deg,#f5f5f5_25%,transparent_25%,transparent_75%,#f5f5f5_75%,#f5f5f5)] bg-[length:10px_10px] bg-[position:0_0,5px_5px] bg-repeat md:min-h-0 md:flex-1 md:[touch-action:none]"
               onTouchStart={handlePreviewTouchStart}
               onTouchMove={handlePreviewTouchMove}
               onTouchEnd={handlePreviewTouchEnd}
@@ -1669,15 +2081,21 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
               onPointerUp={handlePreviewPointerUp}
               onPointerCancel={handlePreviewPointerCancel}
               onLostPointerCapture={stopPreviewDrag}
-              style={{ cursor: previewResult ? (isDragging ? "grabbing" : "grab") : "default" }}
+              style={{
+                cursor: previewResult
+                  ? isDragging
+                    ? "grabbing"
+                    : "grab"
+                  : "default",
+              }}
             >
               {canRenderPreview ? (
-                <div className="flex h-full w-full min-h-0 min-w-0 items-center justify-center overflow-hidden p-3">
+                <div className="flex h-full min-h-0 w-full min-w-0 items-center justify-center overflow-hidden p-3">
                   <canvas
                     ref={previewCanvasRef}
                     aria-label={t("editor.exportDialog.previewTitle")}
                     role="img"
-                    className="max-h-full max-w-full rounded-xl object-contain mx-auto border border-black/10 shadow-[0_12px_30px_rgba(15,23,42,0.12),0_2px_8px_rgba(15,23,42,0.08)]"
+                    className="mx-auto max-h-full max-w-full rounded-xl border border-black/10 object-contain shadow-[0_12px_30px_rgba(15,23,42,0.12),0_2px_8px_rgba(15,23,42,0.08)]"
                     style={{
                       transform: `translate(${previewOffset.x}px, ${previewOffset.y}px) scale(${previewScale})`,
                       transformOrigin: "center center",
@@ -1685,7 +2103,7 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
                   />
                 </div>
               ) : (
-                <div className="aspect-[3/4] w-full max-w-[420px] rounded-md border bg-transparent flex items-center justify-center text-sm text-muted-foreground">
+                <div className="flex aspect-[3/4] w-full max-w-[420px] items-center justify-center rounded-md border bg-transparent text-sm text-muted-foreground">
                   {t("editor.exportDialog.previewPlaceholder")}
                 </div>
               )}
@@ -1727,14 +2145,14 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
 
         <Separator className="shrink-0" />
 
-        <div className="px-3 py-2.5 md:px-6 md:py-4 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 shrink-0">
+        <div className="flex shrink-0 flex-col-reverse items-stretch justify-end gap-2 px-3 py-2.5 sm:flex-row sm:items-center md:px-6 md:py-4">
           <DialogClose asChild>
             <Button variant="outline" className="w-full sm:w-auto">
               {t("editor.exportDialog.close")}
             </Button>
           </DialogClose>
           <Button
-            className="w-full sm:w-auto gap-2 bg-gradient-to-r from-primary to-primary/80 hover:opacity-90 border-none text-white font-medium"
+            className="w-full gap-2 border-none bg-gradient-to-r from-primary to-primary/80 font-medium text-white hover:opacity-90 sm:w-auto"
             type="button"
             onClick={handleDownload}
             disabled={!previewResult}
@@ -1745,5 +2163,5 @@ export default function ExportPatternDialog({ open, onOpenChange }: Props) {
         </div>
       </DialogContent>
     </Dialog>
-  );
+  )
 }

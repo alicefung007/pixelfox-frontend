@@ -1,37 +1,64 @@
-import { useTranslation } from "react-i18next";
-import { Brush, Download, Eraser, Hand, PaintBucket, Pipette, Redo2, Trash2, Undo2, WandSparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { useEditorStore } from "@/store/useEditorStore";
-import type { ToolType } from "@/store/useEditorStore";
+import { useTranslation } from "react-i18next"
+import {
+  Brush,
+  Download,
+  Eraser,
+  Hand,
+  PaintBucket,
+  Pipette,
+  Redo2,
+  Trash2,
+  Undo2,
+  WandSparkles,
+} from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
+import { useEditorStore } from "@/store/useEditorStore"
+import type { ToolType } from "@/store/useEditorStore"
 
 type Props = {
-  onExport?: () => void;
-  className?: string;
-};
+  onExport?: () => void
+  className?: string
+}
 
 const tools: { id: ToolType; icon: React.ReactNode; labelKey: string }[] = [
   { id: "brush", icon: <Brush size={16} />, labelKey: "sidebar.brush" },
   { id: "bucket", icon: <PaintBucket size={16} />, labelKey: "sidebar.bucket" },
   { id: "hand", icon: <Hand size={16} />, labelKey: "sidebar.hand" },
   { id: "eraser", icon: <Eraser size={16} />, labelKey: "sidebar.eraser" },
-  { id: "eyedropper", icon: <Pipette size={16} />, labelKey: "sidebar.eyedropper" },
+  {
+    id: "eyedropper",
+    icon: <Pipette size={16} />,
+    labelKey: "sidebar.eyedropper",
+  },
   { id: "wand", icon: <WandSparkles size={16} />, labelKey: "sidebar.wand" },
-];
+]
 
-export default function MobileEditorQuickActions({ onExport, className }: Props) {
-  const { t } = useTranslation();
-  const currentTool = useEditorStore((state) => state.currentTool);
-  const setTool = useEditorStore((state) => state.setTool);
-  const undo = useEditorStore((state) => state.undo);
-  const redo = useEditorStore((state) => state.redo);
-  const canUndo = useEditorStore((state) => state.historyIndex > 0);
-  const canRedo = useEditorStore((state) => state.historyIndex < state.history.length - 1);
-  const clear = useEditorStore((state) => state.clear);
-  const hasPixels = useEditorStore((state) => Object.keys(state.pixels).length > 0);
+export default function MobileEditorQuickActions({
+  onExport,
+  className,
+}: Props) {
+  const { t } = useTranslation()
+  const currentTool = useEditorStore((state) => state.currentTool)
+  const setTool = useEditorStore((state) => state.setTool)
+  const undo = useEditorStore((state) => state.undo)
+  const redo = useEditorStore((state) => state.redo)
+  const canUndo = useEditorStore((state) => state.historyIndex > 0)
+  const canRedo = useEditorStore(
+    (state) => state.historyIndex < state.history.length - 1
+  )
+  const clear = useEditorStore((state) => state.clear)
+  const hasPixels = useEditorStore(
+    (state) => Object.keys(state.pixels).length > 0
+  )
 
   return (
-    <div className={cn("border-b bg-background/95 px-2 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/80", className)}>
+    <div
+      className={cn(
+        "border-b bg-background/95 px-2 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/80",
+        className
+      )}
+    >
       <div className="flex items-center gap-1.5 overflow-x-auto">
         <Button
           variant="outline"
@@ -85,7 +112,8 @@ export default function MobileEditorQuickActions({ onExport, className }: Props)
               onClick={() => setTool(tool.id)}
               className={cn(
                 "h-7 w-7 shrink-0",
-                currentTool === tool.id && "bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary"
+                currentTool === tool.id &&
+                  "bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary"
               )}
               aria-label={t(tool.labelKey)}
               title={t(tool.labelKey)}
@@ -96,5 +124,5 @@ export default function MobileEditorQuickActions({ onExport, className }: Props)
         </div>
       </div>
     </div>
-  );
+  )
 }

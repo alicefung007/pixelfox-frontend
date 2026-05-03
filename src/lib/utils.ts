@@ -34,16 +34,16 @@ export function getRgbColorDistance(colorA: string, colorB: string) {
 }
 
 export function hexLabel(hex: string) {
-  const v = normalizeHex(hex);
-  return v.startsWith("#") ? v.slice(1) : v;
+  const v = normalizeHex(hex)
+  return v.startsWith("#") ? v.slice(1) : v
 }
 
 export function isDarkColor(hex: string): boolean {
-  const rgb = hexToRgb(hex);
-  if (!rgb) return false;
-  const { r, g, b } = rgb;
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return luminance < 0.5;
+  const rgb = hexToRgb(hex)
+  if (!rgb) return false
+  const { r, g, b } = rgb
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+  return luminance < 0.5
 }
 
 export function clamp(value: number, min: number, max: number) {
@@ -63,25 +63,25 @@ export function isLikelyMouseWheel(event: WheelEvent) {
 }
 
 export function getLinePoints(x0: number, y0: number, x1: number, y1: number) {
-  const points: { x: number, y: number }[] = [];
-  const dx = Math.abs(x1 - x0);
-  const dy = Math.abs(y1 - y0);
-  const sx = (x0 < x1) ? 1 : -1;
-  const sy = (y0 < y1) ? 1 : -1;
-  let err = dx - dy;
+  const points: { x: number; y: number }[] = []
+  const dx = Math.abs(x1 - x0)
+  const dy = Math.abs(y1 - y0)
+  const sx = x0 < x1 ? 1 : -1
+  const sy = y0 < y1 ? 1 : -1
+  let err = dx - dy
 
   while (true) {
-    points.push({ x: x0, y: y0 });
-    if (x0 === x1 && y0 === y1) break;
-    const e2 = 2 * err;
+    points.push({ x: x0, y: y0 })
+    if (x0 === x1 && y0 === y1) break
+    const e2 = 2 * err
     if (e2 > -dy) {
-      err -= dy;
-      x0 += sx;
+      err -= dy
+      x0 += sx
     }
     if (e2 < dx) {
-      err += dx;
-      y0 += sy;
+      err += dx
+      y0 += sy
     }
   }
-  return points;
+  return points
 }

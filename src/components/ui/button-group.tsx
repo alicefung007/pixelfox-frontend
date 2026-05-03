@@ -3,15 +3,15 @@ import * as React from "react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
-function ButtonGroup({
-  className,
-  ...props
-}: React.ComponentProps<"div">) {
+function ButtonGroup({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="button-group"
       role="group"
-      className={cn("inline-flex w-fit items-center gap-1 rounded-lg", className)}
+      className={cn(
+        "inline-flex w-fit items-center gap-1 rounded-lg",
+        className
+      )}
       {...props}
     />
   )

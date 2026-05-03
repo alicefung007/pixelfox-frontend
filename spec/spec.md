@@ -1,9 +1,11 @@
 # Project Specification: pixelfox
 
 ## 1. Project Overview
+
 A modern pixel art editor interface (pixelfox.art) built using a modern React stack. The project aims to provide a pixel-based art creation environment with features like brush tools, bucket fill, color palettes, and zoomable canvas.
 
 ## 2. Tech Stack
+
 - **Frontend Framework**: React 19 (Vite)
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS (with `@tailwindcss/vite` v4 support)
@@ -14,6 +16,7 @@ A modern pixel art editor interface (pixelfox.art) built using a modern React st
 - **i18n**: react-i18next + i18next
 
 ## 3. Key Features
+
 - **Canvas Editor**: Interactive pixel grid with zoom and pan support.
 - **Drawing Tools**: Brush, Bucket, Eraser, Eyedropper, Text.
 - **Color Palette**: Preset color swatches, "Used Colors", and "Recent" history.
@@ -27,11 +30,14 @@ A modern pixel art editor interface (pixelfox.art) built using a modern React st
 - **Multi-language**: Support for English and Chinese (i18n).
 
 ## 4. Architecture
+
 ### 4.1 State Management (Zustand)
+
 - `useEditorStore`: Tracks canvas state (pixels, size, history), current tool, zoom level, and primary/secondary colors.
 - `useUIStore`: Tracks UI-related state like active panels or theme.
 
 ### 4.2 Component Hierarchy
+
 - `AppLayout`: Main container with `Navbar`, `Sidebar`, and `MainView`.
 - `Navbar`: Global actions and navigation.
 - `Sidebar`:
@@ -46,15 +52,18 @@ A modern pixel art editor interface (pixelfox.art) built using a modern React st
   - `ColorTabs`: Used, Recent, All.
 
 ### 4.3 Routing
+
 - `/editor`: The main drawing interface (default).
 - `/gallery`: Placeholder for community art.
 - `/upscaler`: Placeholder for AI upscaling tool.
 
 ### 4.4 i18n Strategy
+
 - Localization files stored in `src/i18n/locales/{en|zh}.json`.
 - `t()` hook used for all UI strings.
 
 ## 5. Design Tokens (Based on shadcn-ui)
+
 - Primary color: Vibrant pink/purple gradient for key buttons (Export).
 - Background: Light/Dark mode compatible using shadcn-ui's theme variables.
 - Borders: Subtle separators for panels.
@@ -62,9 +71,11 @@ A modern pixel art editor interface (pixelfox.art) built using a modern React st
 ## 6. Code Standards & Conventions
 
 ### 6.1 Configuration Management
+
 All hardcoded magic numbers and constants MUST be centralized in `src/lib/constants.ts`.
 
 #### Configuration Categories:
+
 - **EDITOR_CONFIG**: Canvas editor settings (dimensions, zoom, colors)
 - **PALETTE_CONFIG**: Color palette limits and storage
 - **CANVAS_CONFIG**: Grid rendering settings
@@ -72,20 +83,23 @@ All hardcoded magic numbers and constants MUST be centralized in `src/lib/consta
 - **PANEL_CONFIG**: Panel layout settings
 
 #### Usage Pattern:
+
 ```typescript
-import { EDITOR_CONFIG } from '@/lib/constants';
+import { EDITOR_CONFIG } from "@/lib/constants"
 
 // ✅ Correct
-const zoom = EDITOR_CONFIG.DEFAULT_ZOOM;
+const zoom = EDITOR_CONFIG.DEFAULT_ZOOM
 
 // ❌ Incorrect
-const zoom = 160;
+const zoom = 160
 ```
 
 ### 6.2 Utility Functions
+
 Reusable utility functions MUST be centralized in `src/lib/utils.ts`.
 
 #### Available Utilities:
+
 - `cn()`: Class name merging (clsx + tailwind-merge)
 - `normalizeHex()`: Normalize hex color strings
 - `hexLabel()`: Convert hex to display label
@@ -94,56 +108,62 @@ Reusable utility functions MUST be centralized in `src/lib/utils.ts`.
 - `getLinePoints()`: Bresenham's line algorithm for pixel drawing
 
 #### Usage Pattern:
+
 ```typescript
-import { normalizeHex, isDarkColor, clampZoom } from '@/lib/utils';
+import { normalizeHex, isDarkColor, clampZoom } from "@/lib/utils"
 
 // ✅ Correct
-const normalized = normalizeHex('#ff0000');
-const isDark = isDarkColor('#000000');
-const clampedZoom = clampZoom(500);
+const normalized = normalizeHex("#ff0000")
+const isDark = isDarkColor("#000000")
+const clampedZoom = clampZoom(500)
 
 // ❌ Incorrect - local function definition
 function normalizeHex(hex: string) {
-  return hex.trim().toUpperCase().replace(/^#/, "");
+  return hex.trim().toUpperCase().replace(/^#/, "")
 }
 ```
 
 ### 6.3 Component Organization
+
 - Components should be placed in `src/components/{feature}/`
 - Each feature folder contains related components
 - Shared UI components in `src/components/ui/`
 - Use index.ts for barrel exports when appropriate
 
 ### 6.4 State Management (Zustand)
+
 - Store files in `src/store/`
 - Use `persist` middleware for localStorage persistence
 - Configuration keys MUST use constants from `constants.ts`
 
 ### 6.5 Type Definitions
+
 - Palette types in `src/lib/palettes/types.ts`
 - Use TypeScript interfaces for state shapes
 - Export types alongside implementations
 
 ### 6.6 Import Conventions
+
 ```typescript
 // External libraries
-import { create } from 'zustand';
+import { create } from "zustand"
 
 // Internal utilities
-import { normalizeHex, cn } from '@/lib/utils';
-import { EDITOR_CONFIG, PALETTE_CONFIG } from '@/lib/constants';
+import { normalizeHex, cn } from "@/lib/utils"
+import { EDITOR_CONFIG, PALETTE_CONFIG } from "@/lib/constants"
 
 // Components
-import { Button } from '@/components/ui/button';
-import PixelCanvas from '@/components/editor/PixelCanvas';
+import { Button } from "@/components/ui/button"
+import PixelCanvas from "@/components/editor/PixelCanvas"
 
 // Types
-import type { PaletteDefinition } from '@/lib/palettes/types';
+import type { PaletteDefinition } from "@/lib/palettes/types"
 ```
 
 ## 7. Configuration Reference
 
 ### EDITOR_CONFIG
+
 ```typescript
 {
   DEFAULT_WIDTH: 30,          // Default canvas width
@@ -159,6 +179,7 @@ import type { PaletteDefinition } from '@/lib/palettes/types';
 ```
 
 ### PALETTE_CONFIG
+
 ```typescript
 {
   RECENT_COLORS_LIMIT: 20,     // Max recent colors to track
@@ -168,6 +189,7 @@ import type { PaletteDefinition } from '@/lib/palettes/types';
 ```
 
 ### CANVAS_CONFIG
+
 ```typescript
 {
   GRID_LINE_WIDTH: 1,          // Base grid line width
@@ -183,6 +205,7 @@ import type { PaletteDefinition } from '@/lib/palettes/types';
 ```
 
 ### CURSOR_CONFIG
+
 ```typescript
 {
   ICON_SIZE: 18,              // Cursor icon size in pixels
@@ -192,6 +215,7 @@ import type { PaletteDefinition } from '@/lib/palettes/types';
 ```
 
 ### PANEL_CONFIG
+
 ```typescript
 {
   DEFAULT_HEIGHT: 280,         // Default palette panel height

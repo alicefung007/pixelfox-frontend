@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Link as RouterLink, useLocation } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react"
+import { useTranslation } from "react-i18next"
+import { Link as RouterLink, useLocation } from "react-router-dom"
 import {
   Upload,
   Save,
@@ -19,66 +19,134 @@ import {
   Type,
   X,
   Link,
-  Unlink
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Slider } from "@/components/ui/slider";
-import { useEditorStore } from "@/store/useEditorStore";
-import type { ToolType } from "@/store/useEditorStore";
-import { cn } from "@/lib/utils";
+  Unlink,
+} from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Separator } from "@/components/ui/separator"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Slider } from "@/components/ui/slider"
+import { useEditorStore } from "@/store/useEditorStore"
+import type { ToolType } from "@/store/useEditorStore"
+import { cn } from "@/lib/utils"
 
 type Props = {
-  isOpen?: boolean;
-  onClose?: () => void;
-  onUpload?: () => void;
-  onAssembly?: () => void;
-  onPreview3D?: () => void;
-  onExport?: () => void;
-};
+  isOpen?: boolean
+  onClose?: () => void
+  onUpload?: () => void
+  onAssembly?: () => void
+  onPreview3D?: () => void
+  onExport?: () => void
+}
 
-export default function Sidebar({ isOpen = true, onClose, onUpload, onAssembly, onPreview3D, onExport }: Props) {
-  const { t } = useTranslation();
-  const location = useLocation();
-  const currentTool = useEditorStore((state) => state.currentTool);
-  const setTool = useEditorStore((state) => state.setTool);
-  const undo = useEditorStore((state) => state.undo);
-  const redo = useEditorStore((state) => state.redo);
-  const canUndo = useEditorStore((state) => state.historyIndex > 0);
-  const canRedo = useEditorStore((state) => state.historyIndex < state.history.length - 1);
-  const clear = useEditorStore((state) => state.clear);
-  const width = useEditorStore((state) => state.width);
-  const height = useEditorStore((state) => state.height);
-  const setSize = useEditorStore((state) => state.setSize);
-  const saveHistory = useEditorStore((state) => state.saveHistory);
-  const backgroundColor = useEditorStore((state) => state.backgroundColor);
-  const setBackgroundColor = useEditorStore((state) => state.setBackgroundColor);
-  const hasPixels = useEditorStore((state) => Object.keys(state.pixels).length > 0);
+export default function Sidebar({
+  isOpen = true,
+  onClose,
+  onUpload,
+  onAssembly,
+  onPreview3D,
+  onExport,
+}: Props) {
+  const { t } = useTranslation()
+  const location = useLocation()
+  const currentTool = useEditorStore((state) => state.currentTool)
+  const setTool = useEditorStore((state) => state.setTool)
+  const undo = useEditorStore((state) => state.undo)
+  const redo = useEditorStore((state) => state.redo)
+  const canUndo = useEditorStore((state) => state.historyIndex > 0)
+  const canRedo = useEditorStore(
+    (state) => state.historyIndex < state.history.length - 1
+  )
+  const clear = useEditorStore((state) => state.clear)
+  const width = useEditorStore((state) => state.width)
+  const height = useEditorStore((state) => state.height)
+  const setSize = useEditorStore((state) => state.setSize)
+  const saveHistory = useEditorStore((state) => state.saveHistory)
+  const backgroundColor = useEditorStore((state) => state.backgroundColor)
+  const setBackgroundColor = useEditorStore((state) => state.setBackgroundColor)
+  const hasPixels = useEditorStore(
+    (state) => Object.keys(state.pixels).length > 0
+  )
 
   const actionButtons = [
-    { icon: <Upload size={18} />, label: t("sidebar.upload"), shortcut: "⌘ U", onClick: onUpload },
+    {
+      icon: <Upload size={18} />,
+      label: t("sidebar.upload"),
+      shortcut: "⌘ U",
+      onClick: onUpload,
+    },
     { icon: <Save size={18} />, label: t("sidebar.save"), shortcut: "⌘ S" },
-    { icon: <Layers size={18} />, label: t("sidebar.assembly"), onClick: onAssembly },
-    { icon: <Box size={18} />, label: t("sidebar.preview3d"), onClick: onPreview3D },
-  ];
+    {
+      icon: <Layers size={18} />,
+      label: t("sidebar.assembly"),
+      onClick: onAssembly,
+    },
+    {
+      icon: <Box size={18} />,
+      label: t("sidebar.preview3d"),
+      onClick: onPreview3D,
+    },
+  ]
 
-  const tools: { id: ToolType; icon: React.ReactNode; label: string; shortcut: string; hidden?: boolean }[] = [
-    { id: 'brush', icon: <Brush size={18} />, label: t("sidebar.brush"), shortcut: "B" },
-    { id: 'bucket', icon: <PaintBucket size={18} />, label: t("sidebar.bucket"), shortcut: "G" },
-    { id: 'hand', icon: <Hand size={18} />, label: t("sidebar.hand"), shortcut: "H" },
-    { id: 'eraser', icon: <Eraser size={18} />, label: t("sidebar.eraser"), shortcut: "E" },
-    { id: 'eyedropper', icon: <Pipette size={18} />, label: t("sidebar.eyedropper"), shortcut: "I" },
-    { id: 'wand', icon: <WandSparkles size={18} />, label: t("sidebar.wand"), shortcut: "W" },
-    { id: 'text', icon: <Type size={18} />, label: t("sidebar.text"), shortcut: "T", hidden: true },
-  ];
+  const tools: {
+    id: ToolType
+    icon: React.ReactNode
+    label: string
+    shortcut: string
+    hidden?: boolean
+  }[] = [
+    {
+      id: "brush",
+      icon: <Brush size={18} />,
+      label: t("sidebar.brush"),
+      shortcut: "B",
+    },
+    {
+      id: "bucket",
+      icon: <PaintBucket size={18} />,
+      label: t("sidebar.bucket"),
+      shortcut: "G",
+    },
+    {
+      id: "hand",
+      icon: <Hand size={18} />,
+      label: t("sidebar.hand"),
+      shortcut: "H",
+    },
+    {
+      id: "eraser",
+      icon: <Eraser size={18} />,
+      label: t("sidebar.eraser"),
+      shortcut: "E",
+    },
+    {
+      id: "eyedropper",
+      icon: <Pipette size={18} />,
+      label: t("sidebar.eyedropper"),
+      shortcut: "I",
+    },
+    {
+      id: "wand",
+      icon: <WandSparkles size={18} />,
+      label: t("sidebar.wand"),
+      shortcut: "W",
+    },
+    {
+      id: "text",
+      icon: <Type size={18} />,
+      label: t("sidebar.text"),
+      shortcut: "T",
+      hidden: true,
+    },
+  ]
 
   return (
     <>
-      <aside className={cn(
-        "w-64 border-r bg-background flex flex-col h-full overflow-hidden shrink-0",
-        "hidden md:flex"
-      )}>
+      <aside
+        className={cn(
+          "flex h-full w-64 shrink-0 flex-col overflow-hidden border-r bg-background",
+          "hidden md:flex"
+        )}
+      >
         <ScrollArea className="flex-1">
           <SidebarContent
             actionButtons={actionButtons}
@@ -105,20 +173,29 @@ export default function Sidebar({ isOpen = true, onClose, onUpload, onAssembly, 
 
       <div
         className={cn(
-          "fixed inset-0 z-50 bg-black/50 md:hidden transition-opacity duration-200",
-          isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+          "fixed inset-0 z-50 bg-black/50 transition-opacity duration-200 md:hidden",
+          isOpen
+            ? "pointer-events-auto opacity-100"
+            : "pointer-events-none opacity-0"
         )}
         onClick={onClose}
       />
 
-      <aside className={cn(
-        "fixed left-0 top-14 bottom-0 w-72 border-r bg-background flex flex-col z-50 md:hidden",
-        "transition-transform duration-200 ease-out",
-        isOpen ? "translate-x-0" : "-translate-x-full"
-      )}>
-        <div className="flex items-center justify-between p-3 border-b">
+      <aside
+        className={cn(
+          "fixed top-14 bottom-0 left-0 z-50 flex w-72 flex-col border-r bg-background md:hidden",
+          "transition-transform duration-200 ease-out",
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
+        <div className="flex items-center justify-between border-b p-3">
           <span className="text-sm font-semibold">{t("sidebar.menu")}</span>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onClose}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={onClose}
+          >
             <X size={18} />
           </Button>
         </div>
@@ -129,7 +206,9 @@ export default function Sidebar({ isOpen = true, onClose, onUpload, onAssembly, 
               onClick={onClose}
               className={cn(
                 "flex h-9 items-center rounded-md px-2 text-sm font-medium transition-colors hover:bg-primary/10 hover:text-primary",
-                location.pathname === "/" ? "bg-primary/10 text-primary" : "text-muted-foreground"
+                location.pathname === "/"
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground"
               )}
             >
               {t("nav.editor")}
@@ -139,7 +218,7 @@ export default function Sidebar({ isOpen = true, onClose, onUpload, onAssembly, 
               aria-disabled="true"
             >
               <span className="leading-none">{t("nav.explore")}</span>
-              <span className="text-[10px] font-medium leading-none text-muted-foreground/50">
+              <span className="text-[10px] leading-none font-medium text-muted-foreground/50">
                 {t("nav.comingSoon")}
               </span>
             </span>
@@ -170,30 +249,41 @@ export default function Sidebar({ isOpen = true, onClose, onUpload, onAssembly, 
         </ScrollArea>
       </aside>
     </>
-  );
+  )
 }
 
 type SidebarContentProps = {
-  actionButtons: { icon: React.ReactNode; label: string; shortcut?: string; onClick?: () => void }[];
-  tools: { id: ToolType; icon: React.ReactNode; label: string; shortcut: string; hidden?: boolean }[];
-  currentTool: ToolType;
-  onToolChange: (tool: ToolType) => void;
-  width: number;
-  height: number;
-  onSizeChange: (width: number, height: number) => void;
-  onSizeCommit: () => void;
-  backgroundColor: string | null;
-  onBackgroundColorChange: (color: string | null) => void;
-  undo: () => void;
-  redo: () => void;
-  canUndo: boolean;
-  canRedo: boolean;
-  clear: () => void;
-  onExport?: () => void;
-  hasExportableContent: boolean;
-  t: (key: string) => string;
-  onAction?: () => void;
-};
+  actionButtons: {
+    icon: React.ReactNode
+    label: string
+    shortcut?: string
+    onClick?: () => void
+  }[]
+  tools: {
+    id: ToolType
+    icon: React.ReactNode
+    label: string
+    shortcut: string
+    hidden?: boolean
+  }[]
+  currentTool: ToolType
+  onToolChange: (tool: ToolType) => void
+  width: number
+  height: number
+  onSizeChange: (width: number, height: number) => void
+  onSizeCommit: () => void
+  backgroundColor: string | null
+  onBackgroundColorChange: (color: string | null) => void
+  undo: () => void
+  redo: () => void
+  canUndo: boolean
+  canRedo: boolean
+  clear: () => void
+  onExport?: () => void
+  hasExportableContent: boolean
+  t: (key: string) => string
+  onAction?: () => void
+}
 
 function SidebarContent({
   actionButtons,
@@ -214,26 +304,26 @@ function SidebarContent({
   onExport,
   hasExportableContent,
   t,
-  onAction
+  onAction,
 }: SidebarContentProps) {
-  const [draftWidth, setDraftWidth] = useState(width);
-  const [draftHeight, setDraftHeight] = useState(height);
-  const [aspectRatioLocked, setAspectRatioLocked] = useState(true);
-  const [aspectRatio, setAspectRatio] = useState(width / height);
+  const [draftWidth, setDraftWidth] = useState(width)
+  const [draftHeight, setDraftHeight] = useState(height)
+  const [aspectRatioLocked, setAspectRatioLocked] = useState(true)
+  const [aspectRatio, setAspectRatio] = useState(width / height)
 
   useEffect(() => {
-    setDraftWidth(width);
-  }, [width]);
+    setDraftWidth(width)
+  }, [width])
 
   useEffect(() => {
-    setDraftHeight(height);
-  }, [height]);
+    setDraftHeight(height)
+  }, [height])
 
   useEffect(() => {
     if (aspectRatioLocked) {
-      setAspectRatio(draftWidth / draftHeight);
+      setAspectRatio(draftWidth / draftHeight)
     }
-  }, [aspectRatioLocked, draftWidth, draftHeight]);
+  }, [aspectRatioLocked, draftWidth, draftHeight])
 
   const backgroundOptions = useMemo(() => {
     return [
@@ -244,27 +334,31 @@ function SidebarContent({
       { key: "pink", color: "#FBCFE8" },
       { key: "blue", color: "#DBEAFE" },
       { key: "green", color: "#D1FAE5" },
-    ];
-  }, []);
+    ]
+  }, [])
 
   return (
-    <div className="p-3 space-y-4">
+    <div className="space-y-4 p-3">
       <div className="space-y-1">
         {actionButtons.map((btn, i) => (
           <Button
             key={i}
             variant="ghost"
-            className="w-full justify-between h-9 px-2 text-sm font-normal"
+            className="h-9 w-full justify-between px-2 text-sm font-normal"
             onClick={() => {
-              btn.onClick?.();
-              onAction?.();
+              btn.onClick?.()
+              onAction?.()
             }}
           >
             <div className="flex items-center gap-2">
               {btn.icon}
               <span>{btn.label}</span>
             </div>
-            {btn.shortcut && <span className="text-[10px] text-muted-foreground uppercase">{btn.shortcut}</span>}
+            {btn.shortcut && (
+              <span className="text-[10px] text-muted-foreground uppercase">
+                {btn.shortcut}
+              </span>
+            )}
           </Button>
         ))}
       </div>
@@ -275,7 +369,7 @@ function SidebarContent({
         <Button
           variant="outline"
           size="sm"
-          className="h-auto py-2 flex flex-col gap-1 items-center"
+          className="flex h-auto flex-col items-center gap-1 py-2"
           onClick={undo}
           disabled={!canUndo}
         >
@@ -283,12 +377,14 @@ function SidebarContent({
             <Undo2 size={16} />
             <span className="text-xs">{t("sidebar.undo")}</span>
           </div>
-          <div className="text-[9px] text-muted-foreground uppercase text-center w-full">⌘ Z</div>
+          <div className="w-full text-center text-[9px] text-muted-foreground uppercase">
+            ⌘ Z
+          </div>
         </Button>
         <Button
           variant="outline"
           size="sm"
-          className="h-auto py-2 flex flex-col gap-1 items-center"
+          className="flex h-auto flex-col items-center gap-1 py-2"
           onClick={redo}
           disabled={!canRedo}
         >
@@ -296,40 +392,51 @@ function SidebarContent({
             <Redo2 size={16} />
             <span className="text-xs">{t("sidebar.redo")}</span>
           </div>
-          <div className="text-[9px] text-muted-foreground uppercase text-center w-full">⌘ ⇧ Z / ⌘ Y</div>
+          <div className="w-full text-center text-[9px] text-muted-foreground uppercase">
+            ⌘ ⇧ Z / ⌘ Y
+          </div>
         </Button>
       </div>
 
       <div className="space-y-2">
         <Button
           variant="outline"
-          className="w-full justify-between h-9 px-2 text-sm font-normal text-destructive hover:text-destructive"
+          className="h-9 w-full justify-between px-2 text-sm font-normal text-destructive hover:text-destructive"
           onClick={clear}
         >
           <div className="flex items-center gap-2 text-destructive">
             <Trash2 size={18} />
             <span>{t("sidebar.clear")}</span>
           </div>
-          <span className="text-[10px] text-destructive/80 uppercase hidden sm:inline">⌘ ⌫</span>
+          <span className="hidden text-[10px] text-destructive/80 uppercase sm:inline">
+            ⌘ ⌫
+          </span>
         </Button>
         <span
-          className={cn("block w-full", !hasExportableContent && "cursor-not-allowed")}
+          className={cn(
+            "block w-full",
+            !hasExportableContent && "cursor-not-allowed"
+          )}
           tabIndex={hasExportableContent ? -1 : 0}
-          title={!hasExportableContent ? t("sidebar.exportDisabledEmpty") : undefined}
+          title={
+            !hasExportableContent ? t("sidebar.exportDisabledEmpty") : undefined
+          }
         >
           <Button
-            className="w-full justify-between h-10 bg-gradient-to-r from-primary to-primary/80 hover:opacity-90 border-none text-white font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
+            className="h-10 w-full justify-between border-none bg-gradient-to-r from-primary to-primary/80 font-medium text-white hover:opacity-90 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
             disabled={!hasExportableContent}
             onClick={() => {
-              onExport?.();
-              onAction?.();
+              onExport?.()
+              onAction?.()
             }}
           >
             <div className="flex items-center gap-2">
               <Download size={18} />
               <span>{t("sidebar.export")}</span>
             </div>
-            <span className="text-[10px] opacity-80 uppercase hidden sm:inline">⌘ E</span>
+            <span className="hidden text-[10px] uppercase opacity-80 sm:inline">
+              ⌘ E
+            </span>
           </Button>
         </span>
       </div>
@@ -337,28 +444,34 @@ function SidebarContent({
       <Separator />
 
       <div className="space-y-1">
-        <span className="text-[10px] font-bold text-muted-foreground uppercase px-2 mb-1 block">
+        <span className="mb-1 block px-2 text-[10px] font-bold text-muted-foreground uppercase">
           {t("sidebar.tools")}
         </span>
-        {tools.filter((tool) => !tool.hidden).map((tool) => (
-          <Button 
-            key={tool.id} 
-            variant={currentTool === tool.id ? "secondary" : "ghost"} 
-            onClick={() => {
-              onToolChange(tool.id);
-              onAction?.();
-            }}
-            className={`w-full justify-between h-9 px-2 text-sm font-normal ${
-              currentTool === tool.id ? "bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary" : ""
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              {tool.icon}
-              <span>{tool.label}</span>
-            </div>
-            <span className="text-[10px] text-muted-foreground uppercase hidden sm:inline">{tool.shortcut}</span>
-          </Button>
-        ))}
+        {tools
+          .filter((tool) => !tool.hidden)
+          .map((tool) => (
+            <Button
+              key={tool.id}
+              variant={currentTool === tool.id ? "secondary" : "ghost"}
+              onClick={() => {
+                onToolChange(tool.id)
+                onAction?.()
+              }}
+              className={`h-9 w-full justify-between px-2 text-sm font-normal ${
+                currentTool === tool.id
+                  ? "bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary"
+                  : ""
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                {tool.icon}
+                <span>{tool.label}</span>
+              </div>
+              <span className="hidden text-[10px] text-muted-foreground uppercase sm:inline">
+                {tool.shortcut}
+              </span>
+            </Button>
+          ))}
       </div>
 
       <Separator />
@@ -366,7 +479,7 @@ function SidebarContent({
       <div className="space-y-4 px-2 pb-4">
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-muted-foreground uppercase block">
+            <span className="block text-[10px] font-bold text-muted-foreground uppercase">
               {t("sidebar.canvasSize")}
             </span>
             <Button
@@ -375,38 +488,52 @@ function SidebarContent({
               className={aspectRatioLocked ? "" : "text-muted-foreground"}
               onClick={() => {
                 if (!aspectRatioLocked) {
-                  setDraftHeight(draftWidth);
-                  onSizeChange(draftWidth, draftWidth);
-                  onSizeCommit();
+                  setDraftHeight(draftWidth)
+                  onSizeChange(draftWidth, draftWidth)
+                  onSizeCommit()
                 }
-                setAspectRatioLocked(!aspectRatioLocked);
+                setAspectRatioLocked(!aspectRatioLocked)
               }}
-              title={aspectRatioLocked ? t("editor.uploadDialog.unlockAspectRatio") : t("editor.uploadDialog.lockAspectRatio")}
+              title={
+                aspectRatioLocked
+                  ? t("editor.uploadDialog.unlockAspectRatio")
+                  : t("editor.uploadDialog.lockAspectRatio")
+              }
             >
-              {aspectRatioLocked ? <Link className="size-3.5" /> : <Unlink className="size-3.5" />}
+              {aspectRatioLocked ? (
+                <Link className="size-3.5" />
+              ) : (
+                <Unlink className="size-3.5" />
+              )}
             </Button>
           </div>
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">{t("sidebar.width")}</span>
-              <span className="text-xs font-medium tabular-nums text-muted-foreground/90">{draftWidth}</span>
+              <span className="text-xs text-muted-foreground">
+                {t("sidebar.width")}
+              </span>
+              <span className="text-xs font-medium text-muted-foreground/90 tabular-nums">
+                {draftWidth}
+              </span>
             </div>
             <Slider
               value={[draftWidth]}
               onValueChange={([val]) => {
-                setDraftWidth(val);
+                setDraftWidth(val)
                 if (aspectRatioLocked) {
-                  setDraftHeight(Math.round(val / aspectRatio));
+                  setDraftHeight(Math.round(val / aspectRatio))
                 }
               }}
               onValueCommit={([val]) => {
-                const newWidth = val;
-                const newHeight = aspectRatioLocked ? Math.round(newWidth / aspectRatio) : draftHeight;
-                setDraftWidth(newWidth);
-                setDraftHeight(newHeight);
-                onSizeChange(newWidth, newHeight);
-                onSizeCommit();
+                const newWidth = val
+                const newHeight = aspectRatioLocked
+                  ? Math.round(newWidth / aspectRatio)
+                  : draftHeight
+                setDraftWidth(newWidth)
+                setDraftHeight(newHeight)
+                onSizeChange(newWidth, newHeight)
+                onSizeCommit()
               }}
               min={1}
               max={200}
@@ -416,24 +543,30 @@ function SidebarContent({
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">{t("sidebar.height")}</span>
-              <span className="text-xs font-medium tabular-nums text-muted-foreground/90">{draftHeight}</span>
+              <span className="text-xs text-muted-foreground">
+                {t("sidebar.height")}
+              </span>
+              <span className="text-xs font-medium text-muted-foreground/90 tabular-nums">
+                {draftHeight}
+              </span>
             </div>
             <Slider
               value={[draftHeight]}
               onValueChange={([val]) => {
-                setDraftHeight(val);
+                setDraftHeight(val)
                 if (aspectRatioLocked) {
-                  setDraftWidth(Math.round(val * aspectRatio));
+                  setDraftWidth(Math.round(val * aspectRatio))
                 }
               }}
               onValueCommit={([val]) => {
-                const newHeight = val;
-                const newWidth = aspectRatioLocked ? Math.round(newHeight * aspectRatio) : draftWidth;
-                setDraftHeight(newHeight);
-                setDraftWidth(newWidth);
-                onSizeChange(newWidth, newHeight);
-                onSizeCommit();
+                const newHeight = val
+                const newWidth = aspectRatioLocked
+                  ? Math.round(newHeight * aspectRatio)
+                  : draftWidth
+                setDraftHeight(newHeight)
+                setDraftWidth(newWidth)
+                onSizeChange(newWidth, newHeight)
+                onSizeCommit()
               }}
               min={1}
               max={200}
@@ -443,13 +576,13 @@ function SidebarContent({
         </div>
 
         <div className="space-y-2">
-          <span className="text-[10px] font-bold text-muted-foreground uppercase block">
+          <span className="block text-[10px] font-bold text-muted-foreground uppercase">
             {t("sidebar.backgroundColor")}
           </span>
           <div className="flex flex-wrap gap-2">
             {backgroundOptions.map((opt) => {
-              const selected = backgroundColor === opt.color;
-              const isTransparent = opt.color === null;
+              const selected = backgroundColor === opt.color
+              const isTransparent = opt.color === null
               return (
                 <button
                   key={opt.key}
@@ -457,7 +590,9 @@ function SidebarContent({
                   onClick={() => onBackgroundColorChange(opt.color)}
                   className={cn(
                     "h-9 w-9 rounded-md border ring-offset-background transition",
-                    selected ? "ring-2 ring-primary border-primary" : "hover:ring-2 hover:ring-ring/30"
+                    selected
+                      ? "border-primary ring-2 ring-primary"
+                      : "hover:ring-2 hover:ring-ring/30"
                   )}
                   style={
                     isTransparent
@@ -470,13 +605,15 @@ function SidebarContent({
                         }
                       : { backgroundColor: opt.color ?? undefined }
                   }
-                  aria-label={isTransparent ? t("sidebar.transparent") : opt.color ?? ""}
+                  aria-label={
+                    isTransparent ? t("sidebar.transparent") : (opt.color ?? "")
+                  }
                 />
-              );
+              )
             })}
           </div>
         </div>
       </div>
     </div>
-  );
+  )
 }

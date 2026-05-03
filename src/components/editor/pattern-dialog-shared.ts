@@ -1,5 +1,5 @@
-import type { PaletteDefinition, PaletteSwatch } from "@/lib/palettes";
-import { getRgbColorDistance } from "@/lib/utils";
+import type { PaletteDefinition, PaletteSwatch } from "@/lib/palettes"
+import { getRgbColorDistance } from "@/lib/utils"
 
 export const PATTERN_GRID_COLORS = [
   "#DCE6F2",
@@ -14,25 +14,31 @@ export const PATTERN_GRID_COLORS = [
   "#06B6D4",
   "#E6D8B5",
   "#F9FAFB",
-] as const;
+] as const
 
 export function clampPatternGridInterval(value: number, fallback: number) {
-  if (!Number.isFinite(value)) return fallback;
-  return Math.min(30, Math.max(1, Math.round(value)));
+  if (!Number.isFinite(value)) return fallback
+  return Math.min(30, Math.max(1, Math.round(value)))
 }
 
 export function sanitizePatternGridColor(color: unknown, fallback: string) {
-  return typeof color === "string" && PATTERN_GRID_COLORS.includes(color as (typeof PATTERN_GRID_COLORS)[number])
+  return typeof color === "string" &&
+    PATTERN_GRID_COLORS.includes(color as (typeof PATTERN_GRID_COLORS)[number])
     ? color
-    : fallback;
+    : fallback
 }
 
-export function getNearWhiteSwatches(palette: PaletteDefinition | undefined, limit = 6): PaletteSwatch[] {
+export function getNearWhiteSwatches(
+  palette: PaletteDefinition | undefined,
+  limit = 6
+): PaletteSwatch[] {
   return [...(palette?.swatches ?? [])]
     .sort((a, b) => {
-      const distance = getRgbColorDistance(a.color, "#FFFFFF") - getRgbColorDistance(b.color, "#FFFFFF");
-      if (distance !== 0) return distance;
-      return a.label.localeCompare(b.label);
+      const distance =
+        getRgbColorDistance(a.color, "#FFFFFF") -
+        getRgbColorDistance(b.color, "#FFFFFF")
+      if (distance !== 0) return distance
+      return a.label.localeCompare(b.label)
     })
-    .slice(0, limit);
+    .slice(0, limit)
 }

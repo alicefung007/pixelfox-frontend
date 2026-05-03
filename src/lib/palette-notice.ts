@@ -1,26 +1,28 @@
-import { createElement } from "react";
-import type { TFunction } from "i18next";
-import { CheckCircle2, X } from "lucide-react";
-import { toast } from "sonner";
+import { createElement } from "react"
+import type { TFunction } from "i18next"
+import { CheckCircle2, X } from "lucide-react"
+import { toast } from "sonner"
 
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import type { PaletteDefinition } from "@/lib/palettes";
-import { hexLabel, normalizeHex } from "@/lib/utils";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import type { PaletteDefinition } from "@/lib/palettes"
+import { hexLabel, normalizeHex } from "@/lib/utils"
 
 function getSwatchLabel(color: string, palette: PaletteDefinition) {
-  const normalized = normalizeHex(color);
-  const swatch = palette.swatches.find((item) => normalizeHex(item.color) === normalized);
-  return swatch?.label ?? hexLabel(color);
+  const normalized = normalizeHex(color)
+  const swatch = palette.swatches.find(
+    (item) => normalizeHex(item.color) === normalized
+  )
+  return swatch?.label ?? hexLabel(color)
 }
 
 export function showPaletteRemapToast(params: {
-  fromColor: string;
-  toColor: string;
-  palette: PaletteDefinition;
-  t: TFunction;
+  fromColor: string
+  toColor: string
+  palette: PaletteDefinition
+  t: TFunction
 }) {
-  const { fromColor, toColor, palette, t } = params;
-  if (normalizeHex(fromColor) === normalizeHex(toColor)) return;
+  const { fromColor, toColor, palette, t } = params
+  if (normalizeHex(fromColor) === normalizeHex(toColor)) return
 
   toast(t("palette.remapNotice.title"), {
     description: t("palette.remapNotice.description", {
@@ -29,22 +31,22 @@ export function showPaletteRemapToast(params: {
       palette: palette.i18nKey ? t(palette.i18nKey) : palette.name,
     }),
     duration: 2800,
-  });
+  })
 }
 
 export function showUsedColorReplaceToast(params: {
-  fromColor: string;
-  toColor: string;
-  palette: PaletteDefinition;
-  t: TFunction;
+  fromColor: string
+  toColor: string
+  palette: PaletteDefinition
+  t: TFunction
 }) {
-  const { fromColor, toColor, palette, t } = params;
-  if (normalizeHex(fromColor) === normalizeHex(toColor)) return;
+  const { fromColor, toColor, palette, t } = params
+  if (normalizeHex(fromColor) === normalizeHex(toColor)) return
 
   const description = t("palette.replaceNotice.description", {
     from: getSwatchLabel(fromColor, palette),
     to: getSwatchLabel(toColor, palette),
-  });
+  })
 
   toast.custom(
     (id) =>
@@ -66,9 +68,9 @@ export function showUsedColorReplaceToast(params: {
             className:
               "absolute right-2 top-2 inline-flex size-6 items-center justify-center rounded-md text-emerald-700/70 transition-colors hover:bg-emerald-500/10 hover:text-emerald-900 dark:text-emerald-300/70 dark:hover:text-emerald-50",
           },
-          createElement(X, { className: "size-3.5" }),
-        ),
+          createElement(X, { className: "size-3.5" })
+        )
       ),
-    { duration: 2400 },
-  );
+    { duration: 2400 }
+  )
 }

@@ -1,7 +1,7 @@
-import { type FormEvent, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Bug, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { type FormEvent, useState } from "react"
+import { useTranslation } from "react-i18next"
+import { Bug, X } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogClose,
@@ -11,19 +11,19 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { FEEDBACK_CONFIG } from "@/lib/constants";
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { FEEDBACK_CONFIG } from "@/lib/constants"
 
 export default function FeedbackDialog() {
-  const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
-  const [content, setContent] = useState("");
-  const [email, setEmail] = useState("");
+  const { t } = useTranslation()
+  const [open, setOpen] = useState(false)
+  const [content, setContent] = useState("")
+  const [email, setEmail] = useState("")
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+    event.preventDefault()
 
     const body = [
       `${t("nav.feedbackDialog.contentLabel")}:`,
@@ -31,11 +31,11 @@ export default function FeedbackDialog() {
       "",
       `${t("nav.feedbackDialog.emailLabel")}: ${email.trim() || "-"}`,
       `URL: ${window.location.href}`,
-    ].join("\n");
+    ].join("\n")
 
-    const mailtoHref = `mailto:${FEEDBACK_CONFIG.EMAIL}?subject=${encodeURIComponent(t("nav.feedbackDialog.emailSubject"))}&body=${encodeURIComponent(body)}`;
-    window.location.href = mailtoHref;
-  };
+    const mailtoHref = `mailto:${FEEDBACK_CONFIG.EMAIL}?subject=${encodeURIComponent(t("nav.feedbackDialog.emailSubject"))}&body=${encodeURIComponent(body)}`
+    window.location.href = mailtoHref
+  }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -43,7 +43,7 @@ export default function FeedbackDialog() {
         <Button
           variant="ghost"
           size="icon"
-          className="text-muted-foreground h-9 w-9"
+          className="h-9 w-9 text-muted-foreground"
           aria-label={t("nav.feedback")}
           title={t("nav.feedback")}
         >
@@ -94,7 +94,7 @@ export default function FeedbackDialog() {
                 placeholder={t("nav.feedbackDialog.contentPlaceholder")}
                 required
                 rows={6}
-                className="min-h-40 w-full resize-y rounded-md border border-transparent bg-input/50 px-3 py-3 text-base outline-none transition-[color,box-shadow,background-color,border-color] placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/30 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40"
+                className="min-h-40 w-full resize-y rounded-md border border-transparent bg-input/50 px-3 py-3 text-base transition-[color,box-shadow,background-color,border-color] outline-none placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/30 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40"
               />
             </div>
             <div className="space-y-2">
@@ -118,12 +118,10 @@ export default function FeedbackDialog() {
                 {t("nav.feedbackDialog.cancel")}
               </Button>
             </DialogClose>
-            <Button type="submit">
-              {t("nav.feedbackDialog.submit")}
-            </Button>
+            <Button type="submit">{t("nav.feedbackDialog.submit")}</Button>
           </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
-  );
+  )
 }
