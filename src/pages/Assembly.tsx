@@ -9,7 +9,7 @@ export default function Assembly() {
       standalone
       open
       onOpenChange={(nextOpen) => {
-        if (!nextOpen) navigate("/")
+        if (!nextOpen) navigate("/editor")
       }}
     />
   )

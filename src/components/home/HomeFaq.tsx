@@ -1,0 +1,46 @@
+import { faqItems } from "@/components/home/home-data"
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
+
+export default function HomeFaq() {
+  return (
+    <section
+      id="faq"
+      aria-labelledby="home-faq-title"
+      className="scroll-fade-in border-b bg-muted/35 py-16 sm:py-20 lg:py-24"
+    >
+      <div className="mx-auto grid w-full max-w-4xl gap-8 px-4 sm:px-6 lg:px-8">
+        <header className="text-center">
+          <p className="text-sm font-medium text-primary">常见问题</p>
+          <h2
+            id="home-faq-title"
+            className="mt-3 text-3xl font-semibold tracking-normal text-balance sm:text-4xl"
+          >
+            关于拼豆图纸制作的关键问题
+          </h2>
+          <p className="mt-4 text-base leading-7 text-muted-foreground">
+            从适用场景、照片转换到图纸导出，快速了解 PixelFox
+            能否满足你的拼豆创作和交付需求。
+          </p>
+        </header>
+
+        <Accordion type="single" collapsible className="rounded-xl border px-5">
+          {faqItems.map((item) => (
+            <AccordionItem key={item.question} value={item.question}>
+              <AccordionTrigger className="text-base">
+                {item.question}
+              </AccordionTrigger>
+              <AccordionContent className="text-base leading-7">
+                {item.answer}
+              </AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
+      </div>
+    </section>
+  )
+}

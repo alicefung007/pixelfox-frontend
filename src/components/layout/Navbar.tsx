@@ -39,7 +39,7 @@ export default function Navbar({ onMenuClick }: Props) {
   }
 
   const navItems: NavItem[] = [
-    { label: t("nav.editor"), path: "/" },
+    { label: t("nav.editor"), path: "/editor" },
     { label: t("nav.explore"), disabled: true },
   ]
   const activeMenuItemClass =

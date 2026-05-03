@@ -202,11 +202,11 @@ export default function Sidebar({
         <div className="border-b p-3">
           <div className="space-y-1">
             <RouterLink
-              to="/"
+              to="/editor"
               onClick={onClose}
               className={cn(
                 "flex h-9 items-center rounded-md px-2 text-sm font-medium transition-colors hover:bg-primary/10 hover:text-primary",
-                location.pathname === "/"
+                location.pathname === "/editor"
                   ? "bg-primary/10 text-primary"
                   : "text-muted-foreground"
               )}

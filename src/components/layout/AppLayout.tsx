@@ -14,7 +14,7 @@ import { useTranslation } from "react-i18next"
 export default function AppLayout() {
   const { t } = useTranslation()
   const location = useLocation()
-  const isEditorPage = location.pathname === "/"
+  const isEditorPage = location.pathname === "/editor"
   const showNavbar = location.pathname !== "/assembly"
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
