@@ -25,6 +25,177 @@
       "system": "跟随系统"
     }
   },
+  "home": {
+    "skipToContent": "跳到主要内容",
+    "seo": {
+      "title": "PixelFox | 拼豆图纸与像素画编辑器",
+      "description": "PixelFox 是面向拼豆创作者、像素画爱好者和手作品牌的在线拼豆图纸编辑器，支持照片转像素画、色板管理、3D 预览、分色拼搭和高清图纸导出。",
+      "keywords": "PixelFox,拼豆图纸,拼豆设计,拼豆图纸编辑器,像素画编辑器,照片转像素画,拼豆配色,拼豆教程,拼豆制作工具,perler beads pattern",
+      "imageAlt": "PixelFox 拼豆图纸编辑器品牌图标"
+    },
+    "brand": {
+      "title": "PixelFox 拼豆图纸编辑器",
+      "wordmarkAlt": "PixelFox 拼豆图纸编辑器品牌标识",
+      "footerWordmarkAlt": "PixelFox 拼豆图纸编辑器页脚品牌标识"
+    },
+    "nav": {
+      "mainLabel": "官网主导航",
+      "homeAria": "PixelFox 官网首页",
+      "actionsLabel": "官网快捷操作",
+      "openMobile": "打开移动端导航",
+      "mobileDescription": "拼豆图纸、像素画编辑与分色拼搭工具。",
+      "mobileLabel": "移动端官网导航",
+      "mobileActionsLabel": "移动端快捷操作",
+      "items": {
+        "features": {
+          "label": "产品能力",
+          "description": "了解 PixelFox 的拼豆图纸编辑能力"
+        },
+        "workflow": {
+          "label": "创作流程",
+          "description": "查看从照片到图纸的完整流程"
+        },
+        "useCases": {
+          "label": "适用场景",
+          "description": "浏览个人创作和手作品牌的使用场景"
+        },
+        "faq": {
+          "label": "常见问题",
+          "description": "查看拼豆图纸制作的常见问题"
+        }
+      }
+    },
+    "cta": {
+      "primary": "免费开始创作",
+      "gallery": "浏览优秀作品",
+      "galleryAria": "浏览优秀作品，即将推出",
+      "comingSoon": "即将推出"
+    },
+    "hero": {
+      "eyebrow": "面向拼豆创作者的在线图纸工作台",
+      "title": "PixelFox 拼豆图纸与像素创作平台",
+      "description": "从照片转像素画、拼豆配色管理、3D 预览到高清图纸导出，PixelFox 帮助个人创作者和手作品牌更快完成可拼搭、可分享、可复用的拼豆设计。",
+      "actionsLabel": "首页主要操作"
+    },
+    "features": {
+      "eyebrow": "产品能力",
+      "title": "为拼豆创作者设计的核心能力",
+      "description": "PixelFox 把拼豆图纸制作中的像素转换、真实色板、图纸修整、3D 预览和分色拼搭集中在同一个工作台，减少重复导入导出和手工统计。",
+      "items": {
+        "photo": {
+          "title": "照片智能转拼豆图纸",
+          "description": "上传图片后可调整尺寸、裁边、翻转和旋转，并把照片转换为受系统色板约束的像素画网格。"
+        },
+        "palette": {
+          "title": "专业色板与配色管理",
+          "description": "内置多套拼豆色板，支持已用色统计、最近颜色、拖拽替换和跨色板近似映射。"
+        },
+        "drawing": {
+          "title": "像素级绘制工具",
+          "description": "画笔、油漆桶、魔棒、吸色器、橡皮擦和手型工具覆盖手绘、修图和局部调整。"
+        },
+        "preview": {
+          "title": "3D 拼豆预览",
+          "description": "在导出前用 3D 视角检查拼豆质感、轮廓和整体效果，减少返工成本。"
+        },
+        "assembly": {
+          "title": "分色拼搭流程",
+          "description": "按颜色生成装裱步骤，支持进度记录、镜像翻转、坐标和色号辅助，适合实体拼搭。"
+        },
+        "export": {
+          "title": "高清图纸导出",
+          "description": "导出带品牌信息、网格、坐标、色号和用色统计的 PNG 拼豆图纸，便于保存和分享。"
+        }
+      }
+    },
+    "workflow": {
+      "eyebrow": "创作流程",
+      "title": "从照片到拼豆成品的完整链路",
+      "description": "首页按真实使用流程组织内容，搜索引擎和新用户都能快速理解 PixelFox 如何完成拼豆图纸设计、配色校准和拼搭执行。",
+      "carouselLabel": "PixelFox 拼豆图纸创作流程轮播",
+      "editorReady": "可在编辑器中直接完成",
+      "steps": {
+        "upload": {
+          "eyebrow": "01 上传",
+          "title": "导入照片或新建画布",
+          "description": "从空白画布开始手绘，也可以上传照片作为拼豆图纸的起点。"
+        },
+        "convert": {
+          "eyebrow": "02 转换",
+          "title": "设置尺寸与目标色板",
+          "description": "控制图纸宽高、裁边和颜色合并强度，让像素结果适配实际拼豆数量。"
+        },
+        "edit": {
+          "eyebrow": "03 编辑",
+          "title": "逐格修图并管理颜色",
+          "description": "使用画笔、魔棒和色板工具处理边缘、背景、阴影和局部色差。"
+        },
+        "preview": {
+          "eyebrow": "04 预览",
+          "title": "检查 3D 效果与分色步骤",
+          "description": "在导出前查看拼豆立体效果，并确认每个颜色步骤都清晰可执行。"
+        },
+        "export": {
+          "eyebrow": "05 导出",
+          "title": "生成高清拼豆图纸",
+          "description": "导出带网格、坐标、色号和用色统计的 PNG 图纸，方便打印或分享。"
+        }
+      }
+    },
+    "useCases": {
+      "eyebrow": "适用场景",
+      "title": "让拼豆图纸更容易创作、交付和复用",
+      "description": "无论是个人创作、手作品牌打样、课程教学还是社群分享，PixelFox 都围绕拼豆图纸的真实生产流程组织工具和导出信息。",
+      "items": {
+        "personal": {
+          "title": "个人拼豆创作",
+          "description": "把头像、宠物、动漫角色或纪念照片整理成可拼搭图纸，降低从灵感到成品的门槛。"
+        },
+        "brand": {
+          "title": "手作品牌打样",
+          "description": "快速评估尺寸、颜色和材料用量，为定制订单、教程内容和小批量产品做前期方案。"
+        },
+        "teaching": {
+          "title": "教学与社群分享",
+          "description": "用清晰网格、坐标和颜色步骤组织教学素材，让新手也能跟着图纸完成作品。"
+        },
+        "archive": {
+          "title": "长期图纸资产管理",
+          "description": "统一导出格式和品牌信息，便于后续整理作品库、发布教程和沉淀可复用图纸。"
+        }
+      }
+    },
+    "faq": {
+      "eyebrow": "常见问题",
+      "title": "关于拼豆图纸制作的关键问题",
+      "description": "从适用场景、照片转换到图纸导出，快速了解 PixelFox 能否满足你的拼豆创作和交付需求。",
+      "items": {
+        "patterns": {
+          "question": "PixelFox 适合做哪些拼豆图纸？",
+          "answer": "PixelFox 适合制作头像、宠物、徽章、摆件、钥匙扣、装饰画和小型手作周边。你可以从照片转换开始，也可以直接在像素画布上逐格绘制。"
+        },
+        "editing": {
+          "question": "照片转像素画后还能继续编辑吗？",
+          "answer": "可以。转换完成后，图纸会进入编辑器画布，你可以继续用画笔、油漆桶、魔棒、吸色器和颜色替换工具调整细节。"
+        },
+        "export": {
+          "question": "导出的拼豆图纸包含哪些信息？",
+          "answer": "导出图纸可包含品牌头图、像素网格、坐标轴、色号、尺寸、拼豆数量和用色统计，适合打印、存档和分享给拼搭者。"
+        }
+      }
+    },
+    "footer": {
+      "ctaEyebrow": "开始创作",
+      "ctaTitle": "准备把灵感变成可拼搭的拼豆图纸？",
+      "ctaDescription": "进入编辑器新建画布、上传照片并调整配色，快速生成适合制作和分享的拼豆图纸。",
+      "actionsLabel": "页脚主要操作",
+      "brandLabel": "PixelFox 品牌信息",
+      "brandDescription": "PixelFox 帮助创作者把照片、灵感和配色方案整理成清晰可拼搭的拼豆图纸。",
+      "linksLabel": "页脚内部链接",
+      "editorLink": "在线编辑器",
+      "tagline": "拼豆图纸编辑器、像素画创作工具、照片转像素画平台。"
+    }
+  },
   "sidebar": {
     "menu": "菜单",
     "upload": "上传",

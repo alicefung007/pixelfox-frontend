@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next"
+
 import HomeFaq from "@/components/home/HomeFaq"
 import HomeFeatures from "@/components/home/HomeFeatures"
 import HomeFooter from "@/components/home/HomeFooter"
@@ -8,6 +10,8 @@ import HomeUseCases from "@/components/home/HomeUseCases"
 import HomeWorkflow from "@/components/home/HomeWorkflow"
 
 export default function Home() {
+  const { t } = useTranslation()
+
   return (
     <>
       <HomeSeo />
@@ -16,7 +20,7 @@ export default function Home() {
           href="#main-content"
           className="sr-only z-[60] rounded-md bg-background px-4 py-2 text-sm font-medium shadow focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
         >
-          跳到主要内容
+          {t("home.skipToContent")}
         </a>
         <HomeNavbar />
         <main id="main-content">

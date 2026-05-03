@@ -1,4 +1,5 @@
 import { CheckCircle2 } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 import { workflowSteps } from "@/components/home/home-data"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,6 +12,8 @@ import {
 } from "@/components/ui/carousel"
 
 export default function HomeWorkflow() {
+  const { t } = useTranslation()
+
   return (
     <section
       id="workflow"
@@ -19,45 +22,46 @@ export default function HomeWorkflow() {
     >
       <div className="mx-auto grid w-full max-w-7xl gap-10 px-4 sm:px-6 lg:px-8">
         <header className="max-w-3xl">
-          <p className="text-sm font-medium text-primary">创作流程</p>
+          <p className="text-sm font-medium text-primary">
+            {t("home.workflow.eyebrow")}
+          </p>
           <h2
             id="home-workflow-title"
             className="mt-3 text-3xl font-semibold tracking-normal text-balance sm:text-4xl"
           >
-            从照片到拼豆成品的完整链路
+            {t("home.workflow.title")}
           </h2>
           <p className="mt-4 text-base leading-7 text-muted-foreground">
-            首页按真实使用流程组织内容，搜索引擎和新用户都能快速理解 PixelFox
-            如何完成拼豆图纸设计、配色校准和拼搭执行。
+            {t("home.workflow.description")}
           </p>
         </header>
 
         <Carousel
-          aria-label="PixelFox 拼豆图纸创作流程轮播"
+          aria-label={t("home.workflow.carouselLabel")}
           className="-mx-4 overflow-visible"
         >
           <CarouselContent>
             {workflowSteps.map((step) => (
               <CarouselItem
-                key={step.eyebrow}
+                key={step.key}
                 className="basis-[88%] sm:basis-[48%] lg:basis-[31%]"
               >
                 <Card className="h-full border-border/70 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                   <CardHeader>
                     <p className="text-sm font-medium text-primary">
-                      {step.eyebrow}
+                      {t(`home.workflow.steps.${step.key}.eyebrow`)}
                     </p>
                     <CardTitle asChild>
-                      <h3>{step.title}</h3>
+                      <h3>{t(`home.workflow.steps.${step.key}.title`)}</h3>
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className="leading-7 text-muted-foreground">
-                      {step.description}
+                      {t(`home.workflow.steps.${step.key}.description`)}
                     </p>
                     <p className="mt-5 flex items-center gap-2 text-sm font-medium">
                       <CheckCircle2 className="size-4 text-emerald-500" />
-                      可在编辑器中直接完成
+                      {t("home.workflow.editorReady")}
                     </p>
                   </CardContent>
                 </Card>

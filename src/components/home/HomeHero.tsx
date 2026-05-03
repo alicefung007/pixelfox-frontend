@@ -1,9 +1,12 @@
 import { Link } from "react-router-dom"
 import { ArrowRight, Sparkles } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 import { Button } from "@/components/ui/button"
 
 export default function HomeHero() {
+  const { t } = useTranslation()
+
   return (
     <section
       id="hero"
@@ -15,25 +18,24 @@ export default function HomeHero() {
         <header className="mx-auto flex max-w-4xl flex-col items-center text-center">
           <p className="mb-4 inline-flex items-center gap-2 rounded-full border bg-background/80 px-3 py-1 text-sm text-muted-foreground shadow-sm backdrop-blur">
             <Sparkles className="size-4 text-primary" />
-            面向拼豆创作者的在线图纸工作台
+            {t("home.hero.eyebrow")}
           </p>
           <h1
             id="home-hero-title"
             className="max-w-4xl text-4xl leading-tight font-semibold tracking-normal text-balance sm:text-5xl lg:text-6xl"
           >
-            PixelFox 拼豆图纸与像素创作平台
+            {t("home.hero.title")}
           </h1>
           <p className="mt-6 max-w-2xl text-base leading-8 text-muted-foreground sm:text-lg">
-            从照片转像素画、拼豆配色管理、3D 预览到高清图纸导出，PixelFox
-            帮助个人创作者和手作品牌更快完成可拼搭、可分享、可复用的拼豆设计。
+            {t("home.hero.description")}
           </p>
           <section
-            aria-label="首页主要操作"
+            aria-label={t("home.hero.actionsLabel")}
             className="mt-8 flex w-full flex-col items-center justify-center gap-3 sm:w-auto sm:flex-row"
           >
             <Button size="lg" asChild className="w-full sm:w-auto">
               <Link to="/editor">
-                免费开始创作
+                {t("home.cta.primary")}
                 <ArrowRight className="size-4" />
               </Link>
             </Button>
@@ -42,12 +44,12 @@ export default function HomeHero() {
               variant="outline"
               className="w-full cursor-not-allowed bg-background/80 sm:w-auto"
               disabled
-              aria-label="浏览优秀作品，即将推出"
-              title="浏览优秀作品，即将推出"
+              aria-label={t("home.cta.galleryAria")}
+              title={t("home.cta.galleryAria")}
             >
-              <span>浏览优秀作品</span>
+              <span>{t("home.cta.gallery")}</span>
               <span className="text-xs font-medium text-muted-foreground">
-                即将推出
+                {t("home.cta.comingSoon")}
               </span>
             </Button>
           </section>

@@ -1,17 +1,26 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/logo.png" />
-    <link rel="canonical" href="https://pixelfox.art/" />
+    <link rel="canonical" href="https://pixelfox.art/?lng=en" />
+    <link rel="alternate" hreflang="x-default" href="https://pixelfox.art/" />
+    <link rel="alternate" hreflang="en" href="https://pixelfox.art/?lng=en" />
+    <link
+      rel="alternate"
+      hreflang="zh-CN"
+      href="https://pixelfox.art/?lng=zh"
+    />
+    <link rel="alternate" hreflang="ja" href="https://pixelfox.art/?lng=ja" />
+    <link rel="alternate" hreflang="ko" href="https://pixelfox.art/?lng=ko" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="PixelFox 是面向拼豆创作者、像素画爱好者和手作品牌的在线拼豆图纸编辑器，支持照片转像素画、色板管理、3D 预览、分色拼搭和高清图纸导出。"
+      content="PixelFox is an online fuse bead pattern editor for bead artists, pixel art creators, and handmade brands. It supports photo-to-pixel conversion, palette management, 3D preview, color-by-color assembly, and high-resolution pattern export."
     />
     <meta
       name="keywords"
-      content="PixelFox,拼豆图纸,拼豆设计,拼豆图纸编辑器,像素画编辑器,照片转像素画,拼豆配色,拼豆教程,拼豆制作工具,perler beads pattern"
+      content="PixelFox,fuse bead pattern,bead pattern editor,pixel art editor,photo to pixel art,bead palette,perler beads pattern,bead design tool"
     />
     <meta
       name="robots"
@@ -19,33 +28,243 @@
     />
     <meta name="theme-color" content="#f77c31" />
     <meta property="og:type" content="website" />
-    <meta property="og:locale" content="zh_CN" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale:alternate" content="zh_CN" />
+    <meta property="og:locale:alternate" content="ja_JP" />
+    <meta property="og:locale:alternate" content="ko_KR" />
     <meta property="og:site_name" content="PixelFox" />
     <meta
       property="og:title"
-      content="PixelFox | 拼豆图纸与像素画编辑器"
+      content="PixelFox | Fuse Bead Pattern and Pixel Art Editor"
     />
     <meta
       property="og:description"
-      content="PixelFox 支持照片转像素画、拼豆色板管理、3D 预览、分色拼搭和高清 PNG 图纸导出，帮助创作者更快完成可拼搭的拼豆设计。"
+      content="PixelFox is an online fuse bead pattern editor for bead artists, pixel art creators, and handmade brands. It supports photo-to-pixel conversion, palette management, 3D preview, color-by-color assembly, and high-resolution pattern export."
     />
-    <meta property="og:url" content="https://pixelfox.art/" />
+    <meta property="og:url" content="https://pixelfox.art/?lng=en" />
     <meta property="og:image" content="https://pixelfox.art/logo-large.png" />
-    <meta property="og:image:alt" content="PixelFox 拼豆图纸编辑器品牌图标" />
+    <meta
+      property="og:image:alt"
+      content="PixelFox fuse bead pattern editor brand icon"
+    />
     <meta name="twitter:card" content="summary_large_image" />
     <meta
       name="twitter:title"
-      content="PixelFox | 拼豆图纸与像素画编辑器"
+      content="PixelFox | Fuse Bead Pattern and Pixel Art Editor"
     />
     <meta
       name="twitter:description"
-      content="在线制作拼豆图纸：照片转像素画、配色管理、3D 预览、分色拼搭与高清图纸导出。"
+      content="Create fuse bead patterns online with photo-to-pixel conversion, palette management, 3D preview, color-by-color assembly, and high-resolution export."
     />
-    <meta
-      name="twitter:image"
-      content="https://pixelfox.art/logo-large.png"
-    />
-    <title>PixelFox | 拼豆图纸与像素画编辑器</title>
+    <meta name="twitter:image" content="https://pixelfox.art/logo-large.png" />
+    <title>PixelFox | Fuse Bead Pattern and Pixel Art Editor</title>
+    <script>
+      ;(() => {
+        const siteUrl = "https://pixelfox.art/"
+        const ogImage = `${siteUrl}logo-large.png`
+        const jsonLdId = "pixelfox-home-jsonld"
+        const languageMeta = {
+          en: {
+            lang: "en",
+            ogLocale: "en_US",
+            title: "PixelFox | Fuse Bead Pattern and Pixel Art Editor",
+            description:
+              "PixelFox is an online fuse bead pattern editor for bead artists, pixel art creators, and handmade brands. It supports photo-to-pixel conversion, palette management, 3D preview, color-by-color assembly, and high-resolution pattern export.",
+            keywords:
+              "PixelFox,fuse bead pattern,bead pattern editor,pixel art editor,photo to pixel art,bead palette,perler beads pattern,bead design tool",
+            imageAlt: "PixelFox fuse bead pattern editor brand icon",
+          },
+          zh: {
+            lang: "zh-CN",
+            ogLocale: "zh_CN",
+            title: "PixelFox | 拼豆图纸与像素画编辑器",
+            description:
+              "PixelFox 是面向拼豆创作者、像素画爱好者和手作品牌的在线拼豆图纸编辑器，支持照片转像素画、色板管理、3D 预览、分色拼搭和高清图纸导出。",
+            keywords:
+              "PixelFox,拼豆图纸,拼豆设计,拼豆图纸编辑器,像素画编辑器,照片转像素画,拼豆配色,拼豆教程,拼豆制作工具,perler beads pattern",
+            imageAlt: "PixelFox 拼豆图纸编辑器品牌图标",
+          },
+          ja: {
+            lang: "ja",
+            ogLocale: "ja_JP",
+            title: "PixelFox | アイロンビーズ図案・ピクセルアートエディター",
+            description:
+              "PixelFox は、アイロンビーズ作家、ピクセルアート制作者、ハンドメイドブランド向けのオンライン図案エディターです。写真のピクセル化、パレット管理、3D プレビュー、色別組み立て、高解像度エクスポートに対応します。",
+            keywords:
+              "PixelFox,アイロンビーズ図案,ビーズ図案エディター,ピクセルアートエディター,写真をピクセル化,ビーズ配色,perler beads pattern",
+            imageAlt: "PixelFox アイロンビーズ図案エディターのブランドアイコン",
+          },
+          ko: {
+            lang: "ko",
+            ogLocale: "ko_KR",
+            title: "PixelFox | 비즈 도안 및 픽셀 아트 편집기",
+            description:
+              "PixelFox는 비즈 아트 창작자, 픽셀 아트 사용자, 핸드메이드 브랜드를 위한 온라인 비즈 도안 편집기입니다. 사진 픽셀화, 팔레트 관리, 3D 미리보기, 색상별 조립, 고해상도 도안 내보내기를 지원합니다.",
+            keywords:
+              "PixelFox,비즈 도안,비즈 도안 편집기,픽셀 아트 편집기,사진 픽셀화,비즈 팔레트,perler beads pattern,비즈 디자인 도구",
+            imageAlt: "PixelFox 비즈 도안 편집기 브랜드 아이콘",
+          },
+        }
+
+        const getSavedLanguage = () => {
+          try {
+            return window.localStorage.getItem("i18nextLng")
+          } catch {
+            return null
+          }
+        }
+
+        const getCurrentLanguage = () => {
+          const params = new URLSearchParams(window.location.search)
+          const requestedLanguage = String(
+            params.get("lng") || getSavedLanguage() || "en"
+          ).toLowerCase()
+          const baseLanguage = requestedLanguage.split("-")[0]
+
+          if (languageMeta[requestedLanguage]) {
+            return requestedLanguage
+          }
+
+          if (languageMeta[baseLanguage]) {
+            return baseLanguage
+          }
+
+          return "en"
+        }
+
+        const upsertMeta = (selector, attributes) => {
+          let element = document.head.querySelector(selector)
+
+          if (!element) {
+            element = document.createElement("meta")
+            document.head.appendChild(element)
+          }
+
+          Object.entries(attributes).forEach(([key, value]) => {
+            element.setAttribute(key, value)
+          })
+        }
+
+        const upsertLink = (selector, attributes) => {
+          let element = document.head.querySelector(selector)
+
+          if (!element) {
+            element = document.createElement("link")
+            document.head.appendChild(element)
+          }
+
+          Object.entries(attributes).forEach(([key, value]) => {
+            element.setAttribute(key, value)
+          })
+        }
+
+        const upsertOgLocaleAlternates = (currentLocale) => {
+          document
+            .querySelectorAll("meta[property='og:locale:alternate']")
+            .forEach((element) => element.remove())
+
+          Object.values(languageMeta)
+            .map((item) => item.ogLocale)
+            .filter((locale) => locale !== currentLocale)
+            .forEach((locale) => {
+              const element = document.createElement("meta")
+              element.setAttribute("property", "og:locale:alternate")
+              element.setAttribute("content", locale)
+              document.head.appendChild(element)
+            })
+        }
+
+        const upsertJsonLd = (content) => {
+          let element = document.getElementById(jsonLdId)
+
+          if (!element) {
+            element = document.createElement("script")
+            element.id = jsonLdId
+            element.type = "application/ld+json"
+            document.head.appendChild(element)
+          }
+
+          element.text = content
+        }
+
+        const language = getCurrentLanguage()
+        const meta = languageMeta[language]
+        const currentUrl = `${siteUrl}?lng=${language}`
+        const jsonLd = {
+          "@context": "https://schema.org",
+          "@type": "WebApplication",
+          name: "PixelFox",
+          url: currentUrl,
+          applicationCategory: "DesignApplication",
+          operatingSystem: "Web",
+          description: meta.description,
+          offers: {
+            "@type": "Offer",
+            price: "0",
+            priceCurrency: "USD",
+          },
+          publisher: {
+            "@type": "Organization",
+            name: "PixelFox",
+            url: siteUrl,
+            logo: `${siteUrl}logo.png`,
+          },
+        }
+
+        document.documentElement.setAttribute("lang", meta.lang)
+        document.title = meta.title
+        upsertLink("link[rel='canonical']", {
+          rel: "canonical",
+          href: currentUrl,
+        })
+        upsertMeta("meta[name='description']", {
+          name: "description",
+          content: meta.description,
+        })
+        upsertMeta("meta[name='keywords']", {
+          name: "keywords",
+          content: meta.keywords,
+        })
+        upsertMeta("meta[property='og:locale']", {
+          property: "og:locale",
+          content: meta.ogLocale,
+        })
+        upsertOgLocaleAlternates(meta.ogLocale)
+        upsertMeta("meta[property='og:title']", {
+          property: "og:title",
+          content: meta.title,
+        })
+        upsertMeta("meta[property='og:description']", {
+          property: "og:description",
+          content: meta.description,
+        })
+        upsertMeta("meta[property='og:url']", {
+          property: "og:url",
+          content: currentUrl,
+        })
+        upsertMeta("meta[property='og:image']", {
+          property: "og:image",
+          content: ogImage,
+        })
+        upsertMeta("meta[property='og:image:alt']", {
+          property: "og:image:alt",
+          content: meta.imageAlt,
+        })
+        upsertMeta("meta[name='twitter:title']", {
+          name: "twitter:title",
+          content: meta.title,
+        })
+        upsertMeta("meta[name='twitter:description']", {
+          name: "twitter:description",
+          content: meta.description,
+        })
+        upsertMeta("meta[name='twitter:image']", {
+          name: "twitter:image",
+          content: ogImage,
+        })
+        upsertJsonLd(JSON.stringify(jsonLd))
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

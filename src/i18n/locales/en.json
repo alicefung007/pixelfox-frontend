@@ -25,6 +25,177 @@
       "system": "System"
     }
   },
+  "home": {
+    "skipToContent": "Skip to main content",
+    "seo": {
+      "title": "PixelFox | Fuse Bead Pattern and Pixel Art Editor",
+      "description": "PixelFox is an online fuse bead pattern editor for bead artists, pixel art creators, and handmade brands. It supports photo-to-pixel conversion, palette management, 3D preview, color-by-color assembly, and high-resolution pattern export.",
+      "keywords": "PixelFox,fuse bead pattern,bead pattern editor,pixel art editor,photo to pixel art,bead palette,perler beads pattern,bead design tool",
+      "imageAlt": "PixelFox fuse bead pattern editor brand icon"
+    },
+    "brand": {
+      "title": "PixelFox fuse bead pattern editor",
+      "wordmarkAlt": "PixelFox fuse bead pattern editor brand mark",
+      "footerWordmarkAlt": "PixelFox footer brand mark for the fuse bead pattern editor"
+    },
+    "nav": {
+      "mainLabel": "Website navigation",
+      "homeAria": "PixelFox home page",
+      "actionsLabel": "Website quick actions",
+      "openMobile": "Open mobile navigation",
+      "mobileDescription": "Fuse bead patterns, pixel art editing, and color-by-color assembly.",
+      "mobileLabel": "Mobile website navigation",
+      "mobileActionsLabel": "Mobile quick actions",
+      "items": {
+        "features": {
+          "label": "Features",
+          "description": "Learn about PixelFox pattern editing features"
+        },
+        "workflow": {
+          "label": "Workflow",
+          "description": "See the full workflow from photo to pattern"
+        },
+        "useCases": {
+          "label": "Use Cases",
+          "description": "Browse use cases for creators and handmade brands"
+        },
+        "faq": {
+          "label": "FAQ",
+          "description": "Read common questions about making fuse bead patterns"
+        }
+      }
+    },
+    "cta": {
+      "primary": "Start Creating Free",
+      "gallery": "Browse Featured Works",
+      "galleryAria": "Browse featured works, coming soon",
+      "comingSoon": "Coming soon"
+    },
+    "hero": {
+      "eyebrow": "An online pattern workspace for bead creators",
+      "title": "PixelFox Fuse Bead Pattern and Pixel Art Platform",
+      "description": "From photo-to-pixel conversion and bead palette management to 3D previews and high-resolution exports, PixelFox helps creators and handmade brands build patterns that are easy to make, share, and reuse.",
+      "actionsLabel": "Home page primary actions"
+    },
+    "features": {
+      "eyebrow": "Features",
+      "title": "Core tools designed for bead creators",
+      "description": "PixelFox brings pixel conversion, real bead palettes, pattern cleanup, 3D preview, and color-by-color assembly into one workspace, reducing repeated exports and manual counting.",
+      "items": {
+        "photo": {
+          "title": "Smart photo-to-pattern conversion",
+          "description": "Upload an image, adjust size, trim edges, flip or rotate it, and convert it into a palette-constrained pixel grid."
+        },
+        "palette": {
+          "title": "Palette and color management",
+          "description": "Use built-in bead palettes, track used colors, keep recent colors, replace colors by drag and drop, and remap colors across palettes."
+        },
+        "drawing": {
+          "title": "Pixel-level drawing tools",
+          "description": "Brush, bucket, magic wand, eyedropper, eraser, and hand tools cover manual drawing, cleanup, and local edits."
+        },
+        "preview": {
+          "title": "3D bead preview",
+          "description": "Check the bead texture, silhouette, and overall result in 3D before exporting your pattern."
+        },
+        "assembly": {
+          "title": "Color-by-color assembly",
+          "description": "Generate assembly steps by color, with progress tracking, mirror flip, coordinates, and color-code helpers."
+        },
+        "export": {
+          "title": "High-resolution pattern export",
+          "description": "Export PNG patterns with branding, grids, coordinates, color codes, and usage statistics for saving and sharing."
+        }
+      }
+    },
+    "workflow": {
+      "eyebrow": "Workflow",
+      "title": "A complete path from photo to finished bead art",
+      "description": "The home page follows the real creation flow so new users can quickly understand how PixelFox supports pattern design, palette adjustment, and assembly.",
+      "carouselLabel": "PixelFox fuse bead pattern workflow carousel",
+      "editorReady": "Available directly in the editor",
+      "steps": {
+        "upload": {
+          "eyebrow": "01 Upload",
+          "title": "Import a photo or create a canvas",
+          "description": "Start from a blank canvas or upload a photo as the base for your bead pattern."
+        },
+        "convert": {
+          "eyebrow": "02 Convert",
+          "title": "Set size and target palette",
+          "description": "Control pattern width, height, trimming, and color merging so the pixel result fits your bead count."
+        },
+        "edit": {
+          "eyebrow": "03 Edit",
+          "title": "Retouch cells and manage colors",
+          "description": "Use brush, magic wand, and palette tools to refine edges, backgrounds, shadows, and local color differences."
+        },
+        "preview": {
+          "eyebrow": "04 Preview",
+          "title": "Review 3D results and color steps",
+          "description": "Check the 3D bead effect and make sure every color step is clear before export."
+        },
+        "export": {
+          "eyebrow": "05 Export",
+          "title": "Generate a high-resolution pattern",
+          "description": "Export a PNG pattern with grids, coordinates, color codes, and usage statistics for printing or sharing."
+        }
+      }
+    },
+    "useCases": {
+      "eyebrow": "Use Cases",
+      "title": "Make bead patterns easier to create, deliver, and reuse",
+      "description": "Whether you create for yourself, prototype handmade products, teach classes, or share with a community, PixelFox organizes tools and exports around the real production flow.",
+      "items": {
+        "personal": {
+          "title": "Personal bead art",
+          "description": "Turn portraits, pets, characters, or keepsake photos into makeable patterns with a lower path from idea to finished piece."
+        },
+        "brand": {
+          "title": "Handmade brand prototyping",
+          "description": "Quickly estimate size, colors, and material usage for custom orders, tutorials, and small-batch products."
+        },
+        "teaching": {
+          "title": "Teaching and community sharing",
+          "description": "Use clear grids, coordinates, and color steps to prepare teaching materials that beginners can follow."
+        },
+        "archive": {
+          "title": "Long-term pattern assets",
+          "description": "Keep a consistent export format and brand information for organizing work, publishing tutorials, and reusing patterns."
+        }
+      }
+    },
+    "faq": {
+      "eyebrow": "FAQ",
+      "title": "Key questions about making fuse bead patterns",
+      "description": "From use cases and photo conversion to pattern export, quickly see whether PixelFox fits your bead creation and delivery workflow.",
+      "items": {
+        "patterns": {
+          "question": "What kinds of bead patterns is PixelFox good for?",
+          "answer": "PixelFox works well for portraits, pets, badges, decor, keychains, wall pieces, and small handmade products. You can start from photo conversion or draw directly on the pixel canvas."
+        },
+        "editing": {
+          "question": "Can I keep editing after converting a photo to pixel art?",
+          "answer": "Yes. After conversion, the pattern opens in the editor canvas, where you can keep refining it with brush, bucket, magic wand, eyedropper, and color replacement tools."
+        },
+        "export": {
+          "question": "What information is included in exported patterns?",
+          "answer": "Exports can include a brand header, pixel grid, coordinates, color codes, size, bead count, and color usage statistics, making them useful for printing, archiving, and sharing."
+        }
+      }
+    },
+    "footer": {
+      "ctaEyebrow": "Start Creating",
+      "ctaTitle": "Ready to turn an idea into a makeable bead pattern?",
+      "ctaDescription": "Open the editor, create a canvas, upload a photo, and adjust colors to quickly generate a pattern for making and sharing.",
+      "actionsLabel": "Footer primary actions",
+      "brandLabel": "PixelFox brand information",
+      "brandDescription": "PixelFox helps creators turn photos, ideas, and color plans into clear, makeable bead patterns.",
+      "linksLabel": "Footer internal links",
+      "editorLink": "Online Editor",
+      "tagline": "Fuse bead pattern editor, pixel art creation tool, and photo-to-pixel platform."
+    }
+  },
   "sidebar": {
     "menu": "Menu",
     "upload": "Upload",

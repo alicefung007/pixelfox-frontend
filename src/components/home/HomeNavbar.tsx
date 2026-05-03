@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom"
-import { ArrowRight, Menu } from "lucide-react"
+import { ArrowRight, Check, Languages, Menu } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 import { homeNavItems } from "@/components/home/home-data"
 import { Button } from "@/components/ui/button"
@@ -13,30 +14,53 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
   NavigationMenu,
   NavigationMenuItem,
   NavigationMenuLink,
   NavigationMenuList,
 } from "@/components/ui/navigation-menu"
 import { Separator } from "@/components/ui/separator"
+import i18n from "@/i18n/config"
+
+const languages = [
+  { code: "en", label: "English" },
+  { code: "zh", label: "简体中文" },
+  { code: "ko", label: "한국어" },
+  { code: "ja", label: "日本語" },
+]
 
 export default function HomeNavbar() {
+  const { t } = useTranslation()
+
+  const changeLanguage = (lng: string) => {
+    i18n.changeLanguage(lng)
+    const url = new URL(window.location.href)
+    url.searchParams.set("lng", lng)
+    window.history.replaceState(null, "", url)
+  }
+
   return (
     <header className="sticky top-0 z-50 border-b bg-background/85 backdrop-blur-xl supports-[backdrop-filter]:bg-background/75">
       <nav
-        aria-label="官网主导航"
+        aria-label={t("home.nav.mainLabel")}
         className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8"
       >
         <a
           href="#hero"
           className="inline-flex items-center rounded-md focus-visible:ring-3 focus-visible:ring-ring/30 focus-visible:outline-none"
-          aria-label="PixelFox 官网首页"
+          aria-label={t("home.nav.homeAria")}
         >
           <img
             src="/home/pixelfox-wordmark-276.png"
             srcSet="/home/pixelfox-wordmark-276.png 1x, /home/pixelfox-wordmark-552.png 2x"
-            alt="PixelFox 拼豆图纸编辑器品牌标识"
-            title="PixelFox 拼豆图纸编辑器"
+            alt={t("home.brand.wordmarkAlt")}
+            title={t("home.brand.title")}
             width={138}
             height={30}
             decoding="async"
@@ -49,8 +73,11 @@ export default function HomeNavbar() {
             {homeNavItems.map((item) => (
               <NavigationMenuItem key={item.href}>
                 <NavigationMenuLink asChild>
-                  <a href={item.href} title={item.description}>
-                    {item.label}
+                  <a
+                    href={item.href}
+                    title={t(`home.nav.items.${item.key}.description`)}
+                  >
+                    {t(`home.nav.items.${item.key}.label`)}
                   </a>
                 </NavigationMenuLink>
               </NavigationMenuItem>
@@ -59,12 +86,38 @@ export default function HomeNavbar() {
         </NavigationMenu>
 
         <section
-          aria-label="官网快捷操作"
+          aria-label={t("home.nav.actionsLabel")}
           className="hidden items-center gap-2 sm:flex"
         >
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={t("nav.language")}
+                title={t("nav.language")}
+              >
+                <Languages className="size-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44 space-y-1">
+              {languages.map((lang) => (
+                <DropdownMenuItem
+                  key={lang.code}
+                  onClick={() => changeLanguage(lang.code)}
+                  className="flex items-center justify-between"
+                >
+                  <span>{lang.label}</span>
+                  {i18n.language === lang.code && (
+                    <Check className="ml-2 size-4 opacity-90" />
+                  )}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button asChild>
             <Link to="/editor">
-              免费开始创作
+              {t("home.cta.primary")}
               <ArrowRight className="size-4" />
             </Link>
           </Button>
@@ -76,8 +129,8 @@ export default function HomeNavbar() {
               variant="ghost"
               size="icon"
               className="sm:hidden"
-              aria-label="打开移动端导航"
-              title="打开移动端导航"
+              aria-label={t("home.nav.openMobile")}
+              title={t("home.nav.openMobile")}
             >
               <Menu className="size-5" />
             </Button>
@@ -86,29 +139,54 @@ export default function HomeNavbar() {
             <DialogHeader>
               <DialogTitle>PixelFox</DialogTitle>
               <DialogDescription>
-                拼豆图纸、像素画编辑与分色拼搭工具。
+                {t("home.nav.mobileDescription")}
               </DialogDescription>
             </DialogHeader>
             <Separator />
-            <nav aria-label="移动端官网导航" className="grid gap-1">
+            <nav aria-label={t("home.nav.mobileLabel")} className="grid gap-1">
               {homeNavItems.map((item) => (
                 <DialogClose asChild key={item.href}>
                   <a
                     href={item.href}
                     className="rounded-lg px-3 py-3 text-sm font-medium transition-colors hover:bg-muted"
-                    title={item.description}
+                    title={t(`home.nav.items.${item.key}.description`)}
                   >
-                    {item.label}
+                    {t(`home.nav.items.${item.key}.label`)}
                   </a>
                 </DialogClose>
               ))}
             </nav>
             <Separator />
-            <section aria-label="移动端快捷操作" className="grid gap-2">
+            <section
+              aria-label={t("home.nav.mobileActionsLabel")}
+              className="grid gap-2"
+            >
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="justify-between">
+                    <span>{t("nav.language")}</span>
+                    <Languages className="size-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-44 space-y-1">
+                  {languages.map((lang) => (
+                    <DropdownMenuItem
+                      key={lang.code}
+                      onClick={() => changeLanguage(lang.code)}
+                      className="flex items-center justify-between"
+                    >
+                      <span>{lang.label}</span>
+                      {i18n.language === lang.code && (
+                        <Check className="ml-2 size-4 opacity-90" />
+                      )}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
               <DialogClose asChild>
                 <Button asChild>
                   <Link to="/editor">
-                    免费开始创作
+                    {t("home.cta.primary")}
                     <ArrowRight className="size-4" />
                   </Link>
                 </Button>

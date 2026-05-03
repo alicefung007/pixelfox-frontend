@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next"
+
 import { faqItems } from "@/components/home/home-data"
 import {
   Accordion,
@@ -7,6 +9,8 @@ import {
 } from "@/components/ui/accordion"
 
 export default function HomeFaq() {
+  const { t } = useTranslation()
+
   return (
     <section
       id="faq"
@@ -15,27 +19,28 @@ export default function HomeFaq() {
     >
       <div className="mx-auto grid w-full max-w-4xl gap-8 px-4 sm:px-6 lg:px-8">
         <header className="text-center">
-          <p className="text-sm font-medium text-primary">常见问题</p>
+          <p className="text-sm font-medium text-primary">
+            {t("home.faq.eyebrow")}
+          </p>
           <h2
             id="home-faq-title"
             className="mt-3 text-3xl font-semibold tracking-normal text-balance sm:text-4xl"
           >
-            关于拼豆图纸制作的关键问题
+            {t("home.faq.title")}
           </h2>
           <p className="mt-4 text-base leading-7 text-muted-foreground">
-            从适用场景、照片转换到图纸导出，快速了解 PixelFox
-            能否满足你的拼豆创作和交付需求。
+            {t("home.faq.description")}
           </p>
         </header>
 
         <Accordion type="single" collapsible className="rounded-xl border px-5">
           {faqItems.map((item) => (
-            <AccordionItem key={item.question} value={item.question}>
+            <AccordionItem key={item.key} value={item.key}>
               <AccordionTrigger className="text-base">
-                {item.question}
+                {t(`home.faq.items.${item.key}.question`)}
               </AccordionTrigger>
               <AccordionContent className="text-base leading-7">
-                {item.answer}
+                {t(`home.faq.items.${item.key}.answer`)}
               </AccordionContent>
             </AccordionItem>
           ))}

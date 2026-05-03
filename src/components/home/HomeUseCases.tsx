@@ -1,7 +1,11 @@
+import { useTranslation } from "react-i18next"
+
 import { useCaseItems } from "@/components/home/home-data"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 export default function HomeUseCases() {
+  const { t } = useTranslation()
+
   return (
     <section
       id="use-cases"
@@ -10,16 +14,17 @@ export default function HomeUseCases() {
     >
       <div className="mx-auto grid w-full max-w-7xl gap-10 px-4 sm:px-6 lg:px-8">
         <header className="max-w-3xl">
-          <p className="text-sm font-medium text-primary">适用场景</p>
+          <p className="text-sm font-medium text-primary">
+            {t("home.useCases.eyebrow")}
+          </p>
           <h2
             id="home-use-cases-title"
             className="mt-3 text-3xl font-semibold tracking-normal text-balance sm:text-4xl"
           >
-            让拼豆图纸更容易创作、交付和复用
+            {t("home.useCases.title")}
           </h2>
           <p className="mt-4 text-base leading-7 text-muted-foreground">
-            无论是个人创作、手作品牌打样、课程教学还是社群分享，PixelFox
-            都围绕拼豆图纸的真实生产流程组织工具和导出信息。
+            {t("home.useCases.description")}
           </p>
         </header>
 
@@ -28,19 +33,19 @@ export default function HomeUseCases() {
             const Icon = item.icon
 
             return (
-              <li key={item.title}>
+              <li key={item.key}>
                 <Card className="h-full border-border/70 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                   <CardHeader>
                     <span className="flex size-10 items-center justify-center rounded-lg bg-cyan-500/10 text-cyan-600 dark:text-cyan-400">
                       <Icon className="size-5" />
                     </span>
                     <CardTitle asChild>
-                      <h3>{item.title}</h3>
+                      <h3>{t(`home.useCases.items.${item.key}.title`)}</h3>
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className="leading-7 text-muted-foreground">
-                      {item.description}
+                      {t(`home.useCases.items.${item.key}.description`)}
                     </p>
                   </CardContent>
                 </Card>
